@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Video, FileText, Play, Clock, Languages, LogIn, ChevronLeft, ChevronRight, Search, X, Plus, Minus } from "lucide-react";
+import { Video, FileText, Play, Clock, Languages, LogIn, ChevronLeft, ChevronRight, Search, X, Plus, Minus, List } from "lucide-react";
 import { TranslatedText } from "@/components/TranslatedText";
 
 interface TranscriptSegment {
@@ -309,98 +309,130 @@ export default function Landing() {
         </div>
 
         {/* Playlist and Video Selectors */}
-        <div className="mb-4">
-          <div className="flex items-center space-x-4">
-            <label className="text-sm font-medium text-slate-700">Select Playlist:</label>
-            <Select 
-              value={selectedPlaylist?.toString()} 
-              onValueChange={(value) => {
-                setSelectedPlaylist(parseInt(value));
-                setSelectedVideo(null);
-              }}
-            >
-              <SelectTrigger className="w-64">
-                <SelectValue placeholder="Choose a playlist" />
-              </SelectTrigger>
-              <SelectContent>
-                {Array.isArray(playlists) && playlists.map((playlist: any) => (
-                  <SelectItem key={playlist.id} value={playlist.id.toString()}>
-                    {playlist.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <div className="mb-6">
+          <div className="bg-white rounded-xl shadow-lg border-0 p-6">
+            <div className="flex items-center space-x-4 flex-wrap gap-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                  <List size={16} className="text-white" />
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-slate-900 block">Select Playlist</label>
+                  <Select 
+                    value={selectedPlaylist?.toString()} 
+                    onValueChange={(value) => {
+                      setSelectedPlaylist(parseInt(value));
+                      setSelectedVideo(null);
+                    }}
+                  >
+                    <SelectTrigger className="w-64 mt-1 border-slate-300 focus:border-indigo-500">
+                      <SelectValue placeholder="Choose a playlist" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.isArray(playlists) && playlists.map((playlist: any) => (
+                        <SelectItem key={playlist.id} value={playlist.id.toString()}>
+                          {playlist.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             
-            {selectedPlaylist && Array.isArray(playlistVideos) && playlistVideos.length > 0 && (
-              <>
-                <label className="text-sm font-medium text-slate-700">Select Video:</label>
-                <Select 
-                  value={selectedVideo?.id?.toString() || ""} 
-                  onValueChange={(value) => {
-                    const video = playlistVideos.find((v: any) => v.id.toString() === value);
-                    setSelectedVideo(video);
-                  }}
-                >
-                  <SelectTrigger className="w-80">
-                    <SelectValue placeholder="Choose a video" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {playlistVideos.map((video: any) => (
-                      <SelectItem key={video.id} value={video.id.toString()}>
-                        <div className="flex items-center space-x-3">
-                          <img 
-                            src={video.thumbnailUrl} 
-                            alt={video.title}
-                            className="w-12 h-8 rounded object-cover flex-shrink-0"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium text-sm truncate">
-                              {video.title}
-                            </div>
-                            <div className="text-xs text-slate-500">
-                              {video.duration}
-                            </div>
-                          </div>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Badge variant="secondary">
-                  {playlistVideos.length} videos
-                </Badge>
-              </>
-            )}
+              {selectedPlaylist && Array.isArray(playlistVideos) && playlistVideos.length > 0 && (
+                <>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
+                      <Play size={16} className="text-white" />
+                    </div>
+                    <div>
+                      <label className="text-sm font-semibold text-slate-900 block">Select Video</label>
+                      <Select 
+                        value={selectedVideo?.id?.toString() || ""} 
+                        onValueChange={(value) => {
+                          const video = playlistVideos.find((v: any) => v.id.toString() === value);
+                          setSelectedVideo(video);
+                        }}
+                      >
+                        <SelectTrigger className="w-80 mt-1 border-slate-300 focus:border-indigo-500">
+                          <SelectValue placeholder="Choose a video" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {playlistVideos.map((video: any) => (
+                            <SelectItem key={video.id} value={video.id.toString()}>
+                              <div className="flex items-center space-x-3">
+                                <img 
+                                  src={video.thumbnailUrl} 
+                                  alt={video.title}
+                                  className="w-12 h-8 rounded object-cover flex-shrink-0"
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-medium text-sm truncate">
+                                    {video.title}
+                                  </div>
+                                  <div className="text-xs text-slate-500">
+                                    {video.duration}
+                                  </div>
+                                </div>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <Badge variant="secondary" className="bg-indigo-100 text-indigo-800 border-indigo-200">
+                    {playlistVideos.length} videos
+                  </Badge>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Main Content - Top Row: Video and Transcript */}
         {selectedPlaylist && (
           <>
-            <div className="grid gap-4 lg:grid-cols-3 mb-4">
+            <div className="grid gap-6 lg:grid-cols-3 mb-6">
               {/* Video Player Column */}
               <div className="lg:col-span-2">
                 {selectedVideo ? (
-                  <Card>
-                    <CardContent className="p-0">
-                      <div className="aspect-video bg-slate-900 rounded-t-lg overflow-hidden">
+                  <Card className="h-full shadow-lg border-0 bg-white">
+                    <CardContent className="p-0 h-full flex flex-col">
+                      <div className="aspect-video bg-gradient-to-br from-slate-900 to-slate-800 rounded-t-lg overflow-hidden">
                         <div ref={playerRef} className="w-full h-full" />
                       </div>
-                      <div className="p-3">
-                        <h2 className="text-lg font-semibold text-slate-900 mb-1">
-                          {selectedVideo.title}
-                        </h2>
-                        <p className="text-sm text-slate-600 line-clamp-2">
+                      <div className="p-4 flex-1">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex-1 min-w-0">
+                            <h2 className="text-xl font-bold text-slate-900 mb-2 line-clamp-2">
+                              {selectedVideo.title}
+                            </h2>
+                            <div className="flex items-center space-x-3 mb-2">
+                              <Badge variant="secondary" className="bg-green-100 text-green-800">
+                                <Play size={12} className="mr-1" />
+                                Playing
+                              </Badge>
+                              <Badge variant="outline">
+                                <Clock size={12} className="mr-1" />
+                                {selectedVideo.duration}
+                              </Badge>
+                            </div>
+                          </div>
+                        </div>
+                        <p className="text-sm text-slate-600 leading-relaxed line-clamp-3">
                           {selectedVideo.description}
                         </p>
                       </div>
                     </CardContent>
                   </Card>
                 ) : (
-                  <Card>
-                    <CardContent className="p-8 text-center">
-                      <Video size={48} className="mx-auto mb-4 text-slate-400" />
-                      <h3 className="text-lg font-medium text-slate-900 mb-2">Select a Video</h3>
+                  <Card className="h-full shadow-lg border-0 bg-gradient-to-br from-slate-50 to-slate-100">
+                    <CardContent className="p-8 text-center h-full flex flex-col justify-center">
+                      <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <Video size={32} className="text-white" />
+                      </div>
+                      <h3 className="text-xl font-bold text-slate-900 mb-2">Select a Video</h3>
                       <p className="text-slate-600">
                         Choose a playlist and video to start watching
                       </p>
@@ -410,131 +442,134 @@ export default function Landing() {
               </div>
 
               {/* Transcript Column */}
-              <div className="lg:col-span-1">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg flex items-center">
-                    <FileText size={18} className="mr-2" />
-                    Transcript
-                  </CardTitle>
-                  <div className="flex items-center space-x-3">
-                    {/* Font Size Controls */}
-                    {segments.length > 0 && (
-                      <div className="flex items-center space-x-1">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={decreaseFontSize}
-                          disabled={fontSize <= 10}
-                          className="h-7 w-7 p-0"
-                          title="Decrease font size"
-                        >
-                          <Minus size={12} />
-                        </Button>
-                        <span className="text-xs text-slate-600 w-8 text-center">
-                          {fontSize}
-                        </span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={increaseFontSize}
-                          disabled={fontSize >= 24}
-                          className="h-7 w-7 p-0"
-                          title="Increase font size"
-                        >
-                          <Plus size={12} />
-                        </Button>
-                      </div>
-                    )}
-                    
-                    {availableLanguages.length > 0 && (
+              <div className="lg:col-span-1 h-full">
+                <Card className="h-full shadow-lg border-0 bg-white flex flex-col">
+                  <CardHeader className="pb-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <CardTitle className="text-lg flex items-center font-bold text-slate-900">
+                        <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
+                          <FileText size={16} className="text-white" />
+                        </div>
+                        Transcript
+                      </CardTitle>
                       <div className="flex items-center space-x-2">
-                        <Languages size={16} className="text-slate-500" />
-                        <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
-                          <SelectTrigger className="w-32">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {availableLanguages.map((lang: any) => (
-                              <SelectItem key={lang.code} value={lang.code}>
-                                {lang.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        {/* Font Size Controls */}
+                        {segments.length > 0 && (
+                          <div className="flex items-center space-x-1 bg-slate-100 rounded-lg p-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={decreaseFontSize}
+                              disabled={fontSize <= 10}
+                              className="h-6 w-6 p-0 hover:bg-white"
+                              title="Decrease font size"
+                            >
+                              <Minus size={10} />
+                            </Button>
+                            <span className="text-xs font-medium text-slate-700 w-6 text-center">
+                              {fontSize}
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={increaseFontSize}
+                              disabled={fontSize >= 24}
+                              className="h-6 w-6 p-0 hover:bg-white"
+                              title="Increase font size"
+                            >
+                              <Plus size={10} />
+                            </Button>
+                          </div>
+                        )}
+                        
+                        {availableLanguages.length > 0 && (
+                          <div className="flex items-center space-x-2">
+                            <Languages size={14} className="text-slate-500" />
+                            <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+                              <SelectTrigger className="w-28 h-8 text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {availableLanguages.map((lang: any) => (
+                                  <SelectItem key={lang.code} value={lang.code} className="text-xs">
+                                    {lang.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                </div>
-                
-                {/* Search Interface */}
-                {segments.length > 0 && (
-                  <div className="flex items-center space-x-2 mt-3">
-                    <div className="relative flex-1">
-                      <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
-                      <Input
-                        placeholder="Search transcript..."
-                        value={searchQuery}
-                        onChange={(e) => performSearch(e.target.value)}
-                        className="pl-10 pr-10"
-                      />
-                      {searchQuery && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={clearSearch}
-                          className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
-                        >
-                          <X size={14} />
-                        </Button>
-                      )}
                     </div>
                     
-                    {searchResults.length > 0 && (
+                    {/* Search Interface */}
+                    {segments.length > 0 && (
                       <div className="flex items-center space-x-2">
-                        <span className="text-sm text-slate-600">
-                          {currentSearchIndex + 1} of {searchResults.length}
-                        </span>
-                        <div className="flex space-x-1">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => navigateSearch('prev')}
-                            className="h-8 w-8 p-0"
-                          >
-                            <ChevronLeft size={14} />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => navigateSearch('next')}
-                            className="h-8 w-8 p-0"
-                          >
-                            <ChevronRight size={14} />
-                          </Button>
+                        <div className="relative flex-1">
+                          <Search size={14} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
+                          <Input
+                            placeholder="Search transcript..."
+                            value={searchQuery}
+                            onChange={(e) => performSearch(e.target.value)}
+                            className="pl-9 pr-8 h-9 text-sm border-slate-200 focus:border-indigo-500"
+                          />
+                          {searchQuery && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={clearSearch}
+                              className="absolute right-1 top-1/2 transform -translate-y-1/2 h-5 w-5 p-0"
+                            >
+                              <X size={12} />
+                            </Button>
+                          )}
                         </div>
+                        
+                        {searchResults.length > 0 && (
+                          <div className="flex items-center space-x-2">
+                            <span className="text-xs text-slate-600 bg-slate-100 px-2 py-1 rounded">
+                              {currentSearchIndex + 1} of {searchResults.length}
+                            </span>
+                            <div className="flex space-x-1">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => navigateSearch('prev')}
+                                className="h-7 w-7 p-0"
+                              >
+                                <ChevronLeft size={12} />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => navigateSearch('next')}
+                                className="h-7 w-7 p-0"
+                              >
+                                <ChevronRight size={12} />
+                              </Button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
-                  </div>
-                )}
-                
-                <CardDescription className="mt-2">
-                  {segments.length > 0 
-                    ? `${segments.length} segments available in ${selectedLanguage === 'ar' ? 'Arabic' : 'English'}${searchResults.length > 0 ? ` • ${searchResults.length} matches found` : ''}`
-                    : 'No transcript available for this language'
-                  }
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div ref={transcriptRef} className="space-y-2 max-h-96 overflow-y-auto">
+                    
+                    {segments.length > 0 && (
+                      <div className="mt-2 text-xs text-slate-600 bg-slate-50 px-3 py-2 rounded-lg">
+                        {segments.length} segments in {selectedLanguage === 'ar' ? 'Arabic' : 'English'}
+                        {searchResults.length > 0 && ` • ${searchResults.length} matches`}
+                      </div>
+                    )}
+                  </CardHeader>
+                  
+                  <CardContent className="flex-1 pt-0">
+                    <div ref={transcriptRef} className="space-y-2 h-full overflow-y-auto pr-2" style={{ maxHeight: 'calc(100vh - 400px)' }}>
                   {segments.map((segment, index) => (
                     <div
                       key={index}
-                      className={`p-2 rounded-lg cursor-pointer transition-colors ${
+                      className={`p-3 rounded-lg cursor-pointer transition-all duration-200 border ${
                         index === activeSegmentIndex
-                          ? 'bg-blue-100 dark:bg-blue-900/50 border-2 border-blue-500 shadow-md'
-                          : 'bg-slate-50 hover:bg-slate-100'
+                          ? 'bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-300 shadow-sm transform scale-[1.02]'
+                          : 'bg-white hover:bg-slate-50 border-slate-200 hover:border-slate-300 hover:shadow-sm'
                       }`}
                       onClick={() => handleSegmentClick(index, segment.time)}
                     >
