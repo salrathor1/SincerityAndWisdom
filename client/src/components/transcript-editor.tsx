@@ -343,8 +343,20 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
   const updateOpenTextFromSegments = (segs: TranscriptSegment[]) => {
     // Convert segments to SRT format
     const srtContent = segs.map((seg: TranscriptSegment, index: number) => {
-      const timeString = convertTimeToSrt(seg.time);
-      return `${index + 1}\n${timeString} --> ${timeString}\n${seg.text}\n`;
+      const startTime = convertTimeToSrt(seg.time);
+      // Calculate end time (start time + 3 seconds as default, or use next segment's start time)
+      const nextSeg = segs[index + 1];
+      let endTime: string;
+      
+      if (nextSeg) {
+        endTime = convertTimeToSrt(nextSeg.time);
+      } else {
+        // For the last segment, add 3 seconds to start time
+        const endSeconds = parseTimeToSeconds(seg.time) + 3;
+        endTime = convertSecondsToSrt(endSeconds);
+      }
+      
+      return `${index + 1}\n${startTime} --> ${endTime}\n${seg.text}\n`;
     }).join('\n');
     setOpenTextContent(srtContent);
   };
@@ -372,6 +384,14 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
       return `${parseInt(minutes)}:${seconds}`;
     }
     return `${parseInt(hours)}:${minutes}:${seconds}`;
+  };
+
+  const convertSecondsToSrt = (totalSeconds: number): string => {
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${Math.floor(seconds).toString().padStart(2, '0')},000`;
   };
 
   const updateSegmentsFromOpenText = (text: string) => {
