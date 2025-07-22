@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Video, FileText, Play, Clock, Languages, LogIn } from "lucide-react";
+import { Video, FileText, Play, Clock, Languages, LogIn, ChevronLeft, ChevronRight } from "lucide-react";
 import { TranslatedText } from "@/components/TranslatedText";
 
 interface TranscriptSegment {
@@ -33,6 +33,7 @@ export default function Landing() {
   const [activeSegmentIndex, setActiveSegmentIndex] = useState(0);
   const [player, setPlayer] = useState<any>(null);
   const [currentTime, setCurrentTime] = useState(0);
+  const [showPlaylistPanel, setShowPlaylistPanel] = useState(true);
   const playerRef = useRef<HTMLDivElement>(null);
   const transcriptRef = useRef<HTMLDivElement>(null);
 
@@ -213,10 +214,29 @@ export default function Landing() {
               <p className="text-sm text-slate-600">Watch videos with synchronized transcripts</p>
             </div>
           </div>
-          <Button onClick={handleLogin} variant="outline" size="sm">
-            <LogIn size={16} className="mr-2" />
-            Admin Login
-          </Button>
+          <div className="flex items-center space-x-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowPlaylistPanel(!showPlaylistPanel)}
+            >
+              {showPlaylistPanel ? (
+                <>
+                  <ChevronLeft size={16} className="mr-2" />
+                  Hide Playlist
+                </>
+              ) : (
+                <>
+                  <ChevronRight size={16} className="mr-2" />
+                  Show Playlist
+                </>
+              )}
+            </Button>
+            <Button onClick={handleLogin} variant="outline" size="sm">
+              <LogIn size={16} className="mr-2" />
+              Admin Login
+            </Button>
+          </div>
         </div>
 
         {/* Playlist Selector */}
@@ -249,10 +269,115 @@ export default function Landing() {
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-6">
-          {/* Video List */}
-          <div className="lg:col-span-1">
+        <div className={`grid gap-6 ${showPlaylistPanel ? 'lg:grid-cols-12' : 'lg:grid-cols-8'}`}>
+          {/* Video Player Column */}
+          <div className={showPlaylistPanel ? 'lg:col-span-5' : 'lg:col-span-4'}>
+            {selectedVideo ? (
+              <Card>
+                <CardContent className="p-0">
+                  <div className="aspect-video bg-slate-900 rounded-t-lg overflow-hidden">
+                    <div ref={playerRef} className="w-full h-full" />
+                  </div>
+                  <div className="p-4">
+                    <h2 className="text-lg font-semibold text-slate-900 mb-2">
+                      {selectedVideo.title}
+                    </h2>
+                    <p className="text-sm text-slate-600 line-clamp-3">
+                      {selectedVideo.description}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardContent className="p-16 text-center">
+                  <Video size={48} className="mx-auto mb-4 text-slate-400" />
+                  <h3 className="text-lg font-medium text-slate-900 mb-2">Select a Video</h3>
+                  <p className="text-slate-600">
+                    Choose a playlist and video to start watching
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          {/* Transcript Column */}
+          <div className={showPlaylistPanel ? 'lg:col-span-4' : 'lg:col-span-4'}>
             <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg flex items-center">
+                    <FileText size={18} className="mr-2" />
+                    Transcript
+                  </CardTitle>
+                  {availableLanguages.length > 0 && (
+                    <div className="flex items-center space-x-2">
+                      <Languages size={16} className="text-slate-500" />
+                      <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+                        <SelectTrigger className="w-32">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableLanguages.map((lang: any) => (
+                            <SelectItem key={lang.code} value={lang.code}>
+                              {lang.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </div>
+                <CardDescription>
+                  {segments.length > 0 
+                    ? `${segments.length} segments available in ${selectedLanguage === 'ar' ? 'Arabic' : 'English'}`
+                    : 'No transcript available for this language'
+                  }
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div ref={transcriptRef} className="space-y-3 max-h-96 overflow-y-auto">
+                  {segments.map((segment, index) => (
+                    <div
+                      key={index}
+                      className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                        index === activeSegmentIndex
+                          ? 'bg-primary/10 border border-primary/20'
+                          : 'bg-slate-50 hover:bg-slate-100'
+                      }`}
+                      onClick={() => handleSegmentClick(index, segment.time)}
+                    >
+                      <div className="flex items-start space-x-3">
+                        <Badge variant="secondary" className="text-xs flex-shrink-0 mt-0.5">
+                          {segment.time}
+                        </Badge>
+                        {selectedLanguage === 'ar' ? (
+                          <TranslatedText 
+                            text={segment.text} 
+                            className={`text-sm leading-relaxed text-right`}
+                          />
+                        ) : (
+                          <p className="text-sm leading-relaxed text-left">
+                            {segment.text}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )) || (
+                    <div className="text-center py-8 text-slate-500">
+                      <FileText size={32} className="mx-auto mb-3 opacity-50" />
+                      <p>No transcript available for this video in {selectedLanguage === 'ar' ? 'Arabic' : 'English'}</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Playlist Panel - Videos List */}
+          {showPlaylistPanel && (
+            <div className="lg:col-span-3">
+              <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center">
                   <Play size={18} className="mr-2" />
@@ -301,112 +426,8 @@ export default function Landing() {
                 </div>
               </CardContent>
             </Card>
-          </div>
-
-          {/* Video Player & Transcript */}
-          <div className="lg:col-span-2 space-y-6">
-            {selectedVideo ? (
-              <>
-                {/* Video Player */}
-                <Card>
-                  <CardContent className="p-0">
-                    <div className="aspect-video bg-slate-900 rounded-t-lg overflow-hidden">
-                      <div ref={playerRef} className="w-full h-full" />
-                    </div>
-                    <div className="p-4">
-                      <h2 className="text-lg font-semibold text-slate-900 mb-2">
-                        {selectedVideo.title}
-                      </h2>
-                      <p className="text-sm text-slate-600 line-clamp-3">
-                        {selectedVideo.description}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Transcript Viewer */}
-                <Card>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg flex items-center">
-                        <FileText size={18} className="mr-2" />
-                        Transcript
-                      </CardTitle>
-                      {availableLanguages.length > 0 && (
-                        <div className="flex items-center space-x-2">
-                          <Languages size={16} className="text-slate-500" />
-                          <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
-                            <SelectTrigger className="w-32">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {availableLanguages.map((lang: any) => (
-                                <SelectItem key={lang.code} value={lang.code}>
-                                  {lang.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      )}
-                    </div>
-                    <CardDescription>
-                      {segments.length > 0 
-                        ? `${segments.length} segments available in ${selectedLanguage === 'ar' ? 'Arabic' : 'English'}`
-                        : 'No transcript available for this language'
-                      }
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div ref={transcriptRef} className="space-y-3 max-h-96 overflow-y-auto">
-                      {segments.map((segment, index) => (
-                        <div
-                          key={index}
-                          className={`p-3 rounded-lg cursor-pointer transition-colors ${
-                            index === activeSegmentIndex
-                              ? 'bg-primary/10 border border-primary/20'
-                              : 'bg-slate-50 hover:bg-slate-100'
-                          }`}
-                          onClick={() => handleSegmentClick(index, segment.time)}
-                        >
-                          <div className="flex items-start space-x-3">
-                            <Badge variant="secondary" className="text-xs flex-shrink-0 mt-0.5">
-                              {segment.time}
-                            </Badge>
-                            {selectedLanguage === 'ar' ? (
-                              <TranslatedText 
-                                text={segment.text} 
-                                className={`text-sm leading-relaxed text-right`}
-                              />
-                            ) : (
-                              <p className="text-sm leading-relaxed text-left">
-                                {segment.text}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      )) || (
-                        <div className="text-center py-8 text-slate-500">
-                          <FileText size={32} className="mx-auto mb-3 opacity-50" />
-                          <p>No transcript available for this video in {selectedLanguage === 'ar' ? 'Arabic' : 'English'}</p>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </>
-            ) : (
-              <Card>
-                <CardContent className="p-16 text-center">
-                  <Video size={48} className="mx-auto mb-4 text-slate-400" />
-                  <h3 className="text-lg font-medium text-slate-900 mb-2">Select a Video</h3>
-                  <p className="text-slate-600">
-                    Choose a playlist and video from the left to start watching with synchronized transcripts
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
