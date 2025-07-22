@@ -354,14 +354,14 @@ export default function Landing() {
                         <SelectContent>
                           {playlistVideos.map((video: any) => (
                             <SelectItem key={video.id} value={video.id.toString()}>
-                              <div className="flex items-center space-x-2">
+                              <div className="flex items-center space-x-3 py-1">
                                 <img 
                                   src={video.thumbnailUrl} 
                                   alt={video.title}
-                                  className="w-8 h-6 rounded object-cover flex-shrink-0"
+                                  className="w-12 h-9 rounded object-cover flex-shrink-0"
                                 />
                                 <div className="flex-1 min-w-0">
-                                  <div className="font-medium text-xs truncate max-w-[200px]">
+                                  <div className="font-medium text-sm truncate max-w-[180px]">
                                     {video.title}
                                   </div>
                                   <div className="text-xs text-slate-500">
