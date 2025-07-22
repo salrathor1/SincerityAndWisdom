@@ -33,6 +33,7 @@ export default function Landing() {
   const [player, setPlayer] = useState<any>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const playerRef = useRef<HTMLDivElement>(null);
+  const transcriptRef = useRef<HTMLDivElement>(null);
 
   // Fetch playlists for public viewing
   const { data: playlists } = useQuery({
@@ -54,6 +55,14 @@ export default function Landing() {
   const handleLogin = () => {
     window.location.href = "/api/login";
   };
+
+  const currentTranscript = Array.isArray(videoTranscripts) ? videoTranscripts.find((t: any) => t.language === selectedLanguage) : null;
+  const segments: TranscriptSegment[] = currentTranscript?.content || [];
+
+  const availableLanguages = Array.isArray(videoTranscripts) ? videoTranscripts.map((t: any) => ({
+    code: t.language,
+    name: t.language === "en" ? "English" : t.language === "ar" ? "Arabic" : t.language.toUpperCase()
+  })) : [];
 
   // Helper function to parse time string to seconds
   const parseTimeToSeconds = (timeString: string): number => {
@@ -88,7 +97,14 @@ export default function Landing() {
         player.destroy();
       }
 
-      const newPlayer = new window.YT.Player(playerRef.current, {
+      // Clear the container and create a new div for the player
+      playerRef.current.innerHTML = '';
+      const playerDiv = document.createElement('div');
+      playerDiv.style.width = '100%';
+      playerDiv.style.height = '100%';
+      playerRef.current.appendChild(playerDiv);
+
+      const newPlayer = new window.YT.Player(playerDiv, {
         height: '100%',
         width: '100%',
         videoId: selectedVideo.youtubeId,
@@ -98,7 +114,7 @@ export default function Landing() {
         },
         events: {
           onReady: (event: any) => {
-            console.log('Player ready');
+            console.log('Player ready for:', selectedVideo.title);
             setPlayer(event.target);
           },
           onStateChange: (event: any) => {
@@ -111,43 +127,50 @@ export default function Landing() {
     }
   }, [selectedVideo, window.YT]);
 
-  // Track current time and update active segment
-  const startTimeTracking = (playerInstance: any) => {
-    const trackTime = () => {
-      if (playerInstance && playerInstance.getCurrentTime) {
-        const time = playerInstance.getCurrentTime();
-        setCurrentTime(time);
-        
-        // Find active segment based on current time
-        const activeIndex = segments.findIndex((segment, index) => {
-          const segmentTime = parseTimeToSeconds(segment.time);
-          const nextSegmentTime = index < segments.length - 1 
-            ? parseTimeToSeconds(segments[index + 1].time) 
-            : Infinity;
-          return time >= segmentTime && time < nextSegmentTime;
-        });
-        
-        if (activeIndex !== -1 && activeIndex !== activeSegmentIndex) {
-          setActiveSegmentIndex(activeIndex);
+  // Track current time and update active segment  
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    
+    if (player && segments.length > 0) {
+      const trackTime = () => {
+        if (player.getCurrentTime) {
+          const time = player.getCurrentTime();
+          setCurrentTime(time);
+          
+          // Find active segment based on current time
+          const activeIndex = segments.findIndex((segment, index) => {
+            const segmentTime = parseTimeToSeconds(segment.time);
+            const nextSegmentTime = index < segments.length - 1 
+              ? parseTimeToSeconds(segments[index + 1].time) 
+              : Infinity;
+            return time >= segmentTime && time < nextSegmentTime;
+          });
+          
+          if (activeIndex !== -1 && activeIndex !== activeSegmentIndex) {
+            setActiveSegmentIndex(activeIndex);
+          }
         }
-      }
+      };
+
+      interval = setInterval(trackTime, 1000);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
     };
+  }, [player, segments, activeSegmentIndex]);
 
-    const interval = setInterval(trackTime, 1000);
-    return () => clearInterval(interval);
+  const startTimeTracking = (playerInstance: any) => {
+    // This function can be empty now since we handle tracking in the useEffect above
+    console.log('Starting time tracking for player');
   };
-
-  const currentTranscript = Array.isArray(videoTranscripts) ? videoTranscripts.find((t: any) => t.language === selectedLanguage) : null;
-  const segments: TranscriptSegment[] = currentTranscript?.content || [];
-
-  const availableLanguages = Array.isArray(videoTranscripts) ? videoTranscripts.map((t: any) => ({
-    code: t.language,
-    name: t.language === "en" ? "English" : t.language === "ar" ? "Arabic" : t.language.toUpperCase()
-  })) : [];
 
   const handleSegmentClick = (index: number, time: string) => {
     setActiveSegmentIndex(index);
-    // Note: Time seeking would need YouTube iframe API integration
+    if (player && player.seekTo) {
+      const seconds = parseTimeToSeconds(time);
+      player.seekTo(seconds, true);
+    }
   };
 
   useEffect(() => {
@@ -161,6 +184,19 @@ export default function Landing() {
       setSelectedVideo(playlistVideos[0]);
     }
   }, [playlistVideos, selectedVideo]);
+
+  // Auto-scroll to active segment
+  useEffect(() => {
+    if (transcriptRef.current && activeSegmentIndex >= 0) {
+      const activeElement = transcriptRef.current.children[activeSegmentIndex] as HTMLElement;
+      if (activeElement) {
+        activeElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        });
+      }
+    }
+  }, [activeSegmentIndex]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -274,14 +310,7 @@ export default function Landing() {
                 <Card>
                   <CardContent className="p-0">
                     <div className="aspect-video bg-slate-900 rounded-t-lg overflow-hidden">
-                      <iframe
-                        src={`https://www.youtube.com/embed/${selectedVideo.youtubeId}?enablejsapi=1&origin=${window.location.origin}`}
-                        title={selectedVideo.title}
-                        className="w-full h-full"
-                        frameBorder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                      />
+                      <div ref={playerRef} className="w-full h-full" />
                     </div>
                     <div className="p-4">
                       <h2 className="text-lg font-semibold text-slate-900 mb-2">
@@ -328,7 +357,7 @@ export default function Landing() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                    <div ref={transcriptRef} className="space-y-3 max-h-96 overflow-y-auto">
                       {segments.map((segment, index) => (
                         <div
                           key={index}
