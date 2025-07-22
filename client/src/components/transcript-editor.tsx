@@ -23,7 +23,8 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
-import { Save, Upload, FileText } from "lucide-react";
+import { Save, Upload, FileText, Clock } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 interface TranscriptSegment {
   time: string;
@@ -39,7 +40,7 @@ interface TranscriptEditorProps {
 export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedLanguage, setSelectedLanguage] = useState("en");
+  const [selectedLanguage, setSelectedLanguage] = useState("ar");
 
   const [segments, setSegments] = useState<TranscriptSegment[]>([]);
   const [activeSegmentIndex, setActiveSegmentIndex] = useState(0);
@@ -173,6 +174,36 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
     const newSegments = [...segments];
     newSegments[index] = { ...newSegments[index], text: newText };
     setSegments(newSegments);
+  };
+
+  const handleTimeEdit = (index: number, newTime: string) => {
+    // Format the time input (allow formats like 1:23, 01:23, 1:23:45)
+    const formattedTime = formatTimeInput(newTime);
+    const newSegments = [...segments];
+    newSegments[index] = { ...newSegments[index], time: formattedTime };
+    setSegments(newSegments);
+  };
+
+  const formatTimeInput = (time: string): string => {
+    // Remove any non-digit and non-colon characters
+    const cleanTime = time.replace(/[^\d:]/g, '');
+    
+    // If it's already in a good format, return it
+    if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(cleanTime)) {
+      return cleanTime;
+    }
+    
+    // Try to parse and format common inputs
+    const parts = cleanTime.split(':');
+    if (parts.length === 2) {
+      const [minutes, seconds] = parts;
+      return `${minutes}:${seconds.padStart(2, '0')}`;
+    } else if (parts.length === 3) {
+      const [hours, minutes, seconds] = parts;
+      return `${hours}:${minutes.padStart(2, '0')}:${seconds.padStart(2, '0')}`;
+    }
+    
+    return time; // Return original if can't format
   };
 
   const addNewSegment = () => {
@@ -319,17 +350,37 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
                 segments.map((segment, index) => (
                   <div
                     key={index}
-                    className={`flex space-x-3 p-3 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors ${
+                    className={`flex space-x-3 p-3 hover:bg-slate-50 rounded-lg transition-colors ${
                       index === activeSegmentIndex ? "bg-blue-50 border-l-4 border-primary" : ""
                     }`}
-                    onClick={() => handleSegmentClick(index, segment.time)}
                   >
-                    <div className="text-sm text-muted-foreground w-16 flex-shrink-0 pt-1">
-                      {segment.time}
+                    <div className="flex flex-col space-y-2 w-20 flex-shrink-0">
+                      <div className="flex items-center space-x-1">
+                        <Clock size={12} className="text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">Time</span>
+                      </div>
+                      <Input
+                        value={segment.time}
+                        onChange={(e) => handleTimeEdit(index, e.target.value)}
+                        onFocus={(e) => e.target.select()}
+                        className="text-xs h-8 text-center font-mono"
+                        placeholder="0:00"
+                      />
+                      <button
+                        onClick={() => handleSegmentClick(index, segment.time)}
+                        className="text-xs text-blue-600 hover:text-blue-800 transition-colors"
+                      >
+                        Jump to
+                      </button>
                     </div>
                     <div className="flex-1">
+                      <div className="flex items-center space-x-1 mb-2">
+                        <span className="text-xs text-muted-foreground">Transcript Text</span>
+                      </div>
                       <div
-                        className="text-sm text-foreground editable-content p-2 rounded border-transparent border hover:border-border focus:border-primary"
+                        className={`text-sm text-foreground editable-content p-3 rounded border-transparent border hover:border-border focus:border-primary min-h-[60px] ${
+                          selectedLanguage === 'ar' ? 'text-right' : 'text-left'
+                        }`}
                         contentEditable
                         suppressContentEditableWarning
                         onBlur={(e) => handleTextEdit(index, e.currentTarget.textContent || "")}
