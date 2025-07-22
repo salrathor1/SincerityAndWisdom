@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,11 +17,22 @@ interface TranscriptSegment {
   text: string;
 }
 
+// Declare YouTube iframe API types
+declare global {
+  interface Window {
+    YT: any;
+    onYouTubeIframeAPIReady: () => void;
+  }
+}
+
 export default function Landing() {
   const [selectedPlaylist, setSelectedPlaylist] = useState<number | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<any | null>(null);
   const [selectedLanguage, setSelectedLanguage] = useState("en");
   const [activeSegmentIndex, setActiveSegmentIndex] = useState(0);
+  const [player, setPlayer] = useState<any>(null);
+  const [currentTime, setCurrentTime] = useState(0);
+  const playerRef = useRef<HTMLDivElement>(null);
 
   // Fetch playlists for public viewing
   const { data: playlists } = useQuery({
@@ -42,6 +53,88 @@ export default function Landing() {
 
   const handleLogin = () => {
     window.location.href = "/api/login";
+  };
+
+  // Helper function to parse time string to seconds
+  const parseTimeToSeconds = (timeString: string): number => {
+    const parts = timeString.split(':');
+    if (parts.length === 2) {
+      const [minutes, seconds] = parts;
+      return parseInt(minutes) * 60 + parseFloat(seconds);
+    } else if (parts.length === 3) {
+      const [hours, minutes, seconds] = parts;
+      return parseInt(hours) * 3600 + parseInt(minutes) * 60 + parseFloat(seconds);
+    }
+    return 0;
+  };
+
+  // Load YouTube iframe API
+  useEffect(() => {
+    if (!window.YT) {
+      const tag = document.createElement('script');
+      tag.src = 'https://www.youtube.com/iframe_api';
+      document.head.appendChild(tag);
+
+      window.onYouTubeIframeAPIReady = () => {
+        console.log('YouTube iframe API ready');
+      };
+    }
+  }, []);
+
+  // Create YouTube player when video changes
+  useEffect(() => {
+    if (selectedVideo && window.YT && window.YT.Player && playerRef.current) {
+      if (player) {
+        player.destroy();
+      }
+
+      const newPlayer = new window.YT.Player(playerRef.current, {
+        height: '100%',
+        width: '100%',
+        videoId: selectedVideo.youtubeId,
+        playerVars: {
+          enablejsapi: 1,
+          origin: window.location.origin,
+        },
+        events: {
+          onReady: (event: any) => {
+            console.log('Player ready');
+            setPlayer(event.target);
+          },
+          onStateChange: (event: any) => {
+            if (event.data === window.YT.PlayerState.PLAYING) {
+              startTimeTracking(event.target);
+            }
+          },
+        },
+      });
+    }
+  }, [selectedVideo, window.YT]);
+
+  // Track current time and update active segment
+  const startTimeTracking = (playerInstance: any) => {
+    const trackTime = () => {
+      if (playerInstance && playerInstance.getCurrentTime) {
+        const time = playerInstance.getCurrentTime();
+        setCurrentTime(time);
+        
+        // Find active segment based on current time
+        const activeIndex = segments.findIndex((segment, index) => {
+          const segmentTime = parseTimeToSeconds(segment.time);
+          const nextSegmentTime = index < segments.length - 1 
+            ? parseTimeToSeconds(segments[index + 1].time) 
+            : Infinity;
+          return time >= segmentTime && time < nextSegmentTime;
+        });
+        
+        if (activeIndex !== -1 && activeIndex !== activeSegmentIndex) {
+          setActiveSegmentIndex(activeIndex);
+        }
+      }
+    };
+
+    const interval = setInterval(trackTime, 1000);
+    return () => clearInterval(interval);
   };
 
   const currentTranscript = Array.isArray(videoTranscripts) ? videoTranscripts.find((t: any) => t.language === selectedLanguage) : null;
