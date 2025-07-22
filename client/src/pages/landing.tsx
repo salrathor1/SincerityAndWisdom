@@ -34,7 +34,7 @@ export default function Landing() {
   const [activeSegmentIndex, setActiveSegmentIndex] = useState(0);
   const [player, setPlayer] = useState<any>(null);
   const [currentTime, setCurrentTime] = useState(0);
-  const [showPlaylistPanel, setShowPlaylistPanel] = useState(true);
+  const [showPlaylistPanel] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<number[]>([]);
   const [currentSearchIndex, setCurrentSearchIndex] = useState(-1);
@@ -308,7 +308,7 @@ export default function Landing() {
           </Button>
         </div>
 
-        {/* Playlist Selector */}
+        {/* Playlist and Video Selectors */}
         <div className="mb-4">
           <div className="flex items-center space-x-4">
             <label className="text-sm font-medium text-slate-700">Select Playlist:</label>
@@ -330,27 +330,46 @@ export default function Landing() {
                 ))}
               </SelectContent>
             </Select>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowPlaylistPanel(!showPlaylistPanel)}
-            >
-              {showPlaylistPanel ? (
-                <>
-                  <ChevronLeft size={16} className="mr-2" />
-                  Hide Playlist Videos
-                </>
-              ) : (
-                <>
-                  <ChevronRight size={16} className="mr-2" />
-                  Show Playlist Videos
-                </>
-              )}
-            </Button>
-            {selectedPlaylist && Array.isArray(playlistVideos) && (
-              <Badge variant="secondary">
-                {playlistVideos.length} videos
-              </Badge>
+            
+            {selectedPlaylist && Array.isArray(playlistVideos) && playlistVideos.length > 0 && (
+              <>
+                <label className="text-sm font-medium text-slate-700">Select Video:</label>
+                <Select 
+                  value={selectedVideo?.id?.toString() || ""} 
+                  onValueChange={(value) => {
+                    const video = playlistVideos.find((v: any) => v.id.toString() === value);
+                    setSelectedVideo(video);
+                  }}
+                >
+                  <SelectTrigger className="w-80">
+                    <SelectValue placeholder="Choose a video" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {playlistVideos.map((video: any) => (
+                      <SelectItem key={video.id} value={video.id.toString()}>
+                        <div className="flex items-center space-x-3">
+                          <img 
+                            src={video.thumbnailUrl} 
+                            alt={video.title}
+                            className="w-12 h-8 rounded object-cover flex-shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-sm truncate">
+                              {video.title}
+                            </div>
+                            <div className="text-xs text-slate-500">
+                              {video.duration}
+                            </div>
+                          </div>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Badge variant="secondary">
+                  {playlistVideos.length} videos
+                </Badge>
+              </>
             )}
           </div>
         </div>
@@ -564,19 +583,8 @@ export default function Landing() {
               </div>
             </div>
 
-            {/* Toggle Button */}
-            <div className="flex justify-center mb-4">
-              <Button
-                onClick={() => setShowPlaylistPanel(!showPlaylistPanel)}
-                variant="outline"
-                size="sm"
-              >
-                {showPlaylistPanel ? "Hide Playlist Videos" : "Show Playlist Videos"}
-              </Button>
-            </div>
-
             {/* Bottom Row - Playlist Panel */}
-            {showPlaylistPanel && (
+            {selectedPlaylist && Array.isArray(playlistVideos) && playlistVideos.length > 1 && (
               <div>
                 <Card>
                   <CardHeader>
