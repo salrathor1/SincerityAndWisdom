@@ -394,9 +394,9 @@ export default function Landing() {
               {/* Video Player Column */}
               <div className="lg:col-span-2">
                 {selectedVideo ? (
-                  <Card className="shadow-md border bg-white" style={{ height: '480px' }}>
+                  <Card className="shadow-md border bg-white" style={{ height: '490px' }}>
                     <CardContent className="p-0 h-full flex flex-col">
-                      <div className="bg-slate-900 rounded-t-lg overflow-hidden" style={{ height: '320px' }}>
+                      <div className="bg-slate-900 rounded-t-lg overflow-hidden" style={{ height: '330px' }}>
                         <div ref={playerRef} className="w-full h-full" />
                       </div>
                       <div className="p-3 flex-1">
@@ -424,7 +424,7 @@ export default function Landing() {
                     </CardContent>
                   </Card>
                 ) : (
-                  <Card className="shadow-md border bg-gradient-to-br from-slate-50 to-slate-100" style={{ height: '480px' }}>
+                  <Card className="shadow-md border bg-gradient-to-br from-slate-50 to-slate-100" style={{ height: '490px' }}>
                     <CardContent className="p-6 text-center h-full flex flex-col justify-center">
                       <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center mx-auto mb-3">
                         <Video size={24} className="text-white" />
@@ -440,7 +440,7 @@ export default function Landing() {
 
               {/* Transcript Column */}
               <div className="lg:col-span-1 h-full">
-                <Card className="shadow-md border bg-white flex flex-col" style={{ height: '480px' }}>
+                <Card className="shadow-md border bg-white flex flex-col" style={{ height: '490px' }}>
                   <CardHeader className="pb-2 px-4 pt-4">
                     <div className="flex items-center justify-between mb-3">
                       <CardTitle className="text-lg flex items-center font-bold text-slate-900">
@@ -550,7 +550,7 @@ export default function Landing() {
                   </CardHeader>
                   
                   <CardContent className="flex-1 pt-0 px-4 pb-4">
-                    <div ref={transcriptRef} className="space-y-1 h-full overflow-y-auto pr-2" style={{ height: '360px' }}>
+                    <div ref={transcriptRef} className="space-y-1 h-full overflow-y-auto pr-2" style={{ height: '370px' }}>
                   {segments.map((segment, index) => (
                     <div
                       key={index}
@@ -620,7 +620,7 @@ export default function Landing() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 max-h-96 overflow-y-auto">
+                    <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 overflow-y-auto" style={{ maxHeight: '394px' }}>
                       {Array.isArray(playlistVideos) && playlistVideos.map((video: any) => (
                         <div
                           key={video.id}
