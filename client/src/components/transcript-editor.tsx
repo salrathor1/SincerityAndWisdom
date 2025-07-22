@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
@@ -37,6 +37,14 @@ interface TranscriptEditorProps {
   onClose: () => void;
 }
 
+// Declare YouTube iframe API types
+declare global {
+  interface Window {
+    YT: any;
+    onYouTubeIframeAPIReady: () => void;
+  }
+}
+
 export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -46,11 +54,73 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
   const [activeSegmentIndex, setActiveSegmentIndex] = useState(0);
   const [srtContent, setSrtContent] = useState("");
   const [showSrtImport, setShowSrtImport] = useState(false);
+  const [player, setPlayer] = useState<any>(null);
+  const playerRef = useRef<HTMLDivElement>(null);
 
   const { data: transcripts } = useQuery({
     queryKey: ["/api/videos", video?.id, "transcripts"],
     enabled: isOpen && !!video?.id,
   });
+
+  // Initialize YouTube iframe API
+  useEffect(() => {
+    if (!isOpen || !video?.youtubeId) return;
+
+    const initializeYouTubeAPI = () => {
+      // Load YouTube iframe API if not already loaded
+      if (!window.YT) {
+        const script = document.createElement('script');
+        script.src = 'https://www.youtube.com/iframe_api';
+        script.async = true;
+        document.head.appendChild(script);
+
+        window.onYouTubeIframeAPIReady = () => {
+          console.log('YouTube iframe API ready');
+          createPlayer();
+        };
+      } else if (window.YT.loaded) {
+        createPlayer();
+      } else {
+        window.onYouTubeIframeAPIReady = createPlayer;
+      }
+    };
+
+    const createPlayer = () => {
+      if (playerRef.current && video?.youtubeId) {
+        const newPlayer = new window.YT.Player(playerRef.current, {
+          videoId: video.youtubeId,
+          width: '100%',
+          height: '100%',
+          playerVars: {
+            enablejsapi: 1,
+            origin: window.location.origin
+          },
+          events: {
+            onReady: (event: any) => {
+              console.log('Player ready for:', video.title);
+              setPlayer(event.target);
+            },
+          },
+        });
+      }
+    };
+
+    // Small delay to ensure modal is fully rendered
+    const timer = setTimeout(initializeYouTubeAPI, 100);
+    return () => clearTimeout(timer);
+  }, [isOpen, video?.youtubeId, video?.title]);
+
+  // Cleanup player when modal closes
+  useEffect(() => {
+    if (!isOpen && player) {
+      try {
+        player.destroy();
+      } catch (error) {
+        console.log('Player cleanup error:', error);
+      }
+      setPlayer(null);
+    }
+  }, [isOpen, player]);
 
   useEffect(() => {
     if (transcripts && Array.isArray(transcripts) && transcripts.length > 0) {
@@ -162,12 +232,34 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
     importSrtMutation.mutate(srtContent);
   };
 
+  // Helper function to parse time string to seconds
+  const parseTimeToSeconds = (timeString: string): number => {
+    const parts = timeString.split(':');
+    if (parts.length === 2) {
+      const [minutes, seconds] = parts;
+      return parseInt(minutes) * 60 + parseFloat(seconds);
+    } else if (parts.length === 3) {
+      const [hours, minutes, seconds] = parts;
+      return parseInt(hours) * 3600 + parseInt(minutes) * 60 + parseFloat(seconds);
+    }
+    return 0;
+  };
+
   const handleSegmentClick = (index: number, time: string) => {
     setActiveSegmentIndex(index);
-    // Here you would seek the video player to this time
-    toast({
-      description: `Jumped to ${time}`,
-    });
+    
+    if (player && typeof player.seekTo === 'function') {
+      const seconds = parseTimeToSeconds(time);
+      player.seekTo(seconds, true);
+      toast({
+        description: `Jumped to ${time}`,
+      });
+    } else {
+      toast({
+        description: "Player not ready. Please wait for the video to load.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleTextEdit = (index: number, newText: string) => {
@@ -257,13 +349,9 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
           {/* Video Player */}
           <div className="w-1/2 p-6 border-r">
             <div className="aspect-video bg-slate-900 rounded-lg mb-4 relative overflow-hidden">
-              <iframe
-                src={`https://www.youtube.com/embed/${video.youtubeId}?enablejsapi=1&origin=${window.location.origin}`}
-                title={video.title}
+              <div
+                ref={playerRef}
                 className="w-full h-full"
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
               />
             </div>
 
