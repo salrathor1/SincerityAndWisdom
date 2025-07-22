@@ -348,7 +348,7 @@ export default function Landing() {
                           setSelectedVideo(video);
                         }}
                       >
-                        <SelectTrigger className="w-72 h-9">
+                        <SelectTrigger className="w-96 h-9">
                           <SelectValue placeholder="Choose video" />
                         </SelectTrigger>
                         <SelectContent>
