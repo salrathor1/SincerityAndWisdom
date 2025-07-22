@@ -348,10 +348,10 @@ export default function Landing() {
                           setSelectedVideo(video);
                         }}
                       >
-                        <SelectTrigger className="w-[28rem] h-9">
+                        <SelectTrigger className="w-[36rem] h-9">
                           <SelectValue placeholder="Choose video" />
                         </SelectTrigger>
-                        <SelectContent className="w-[28rem]">
+                        <SelectContent className="w-[36rem]">
                           {playlistVideos.map((video: any) => (
                             <SelectItem key={video.id} value={video.id.toString()}>
                               <div className="flex items-center space-x-3 py-1 w-full">
@@ -361,7 +361,7 @@ export default function Landing() {
                                   className="w-12 h-9 rounded object-cover flex-shrink-0"
                                 />
                                 <div className="flex-1 min-w-0">
-                                  <div className="font-medium text-sm truncate max-w-[300px]">
+                                  <div className="font-medium text-sm truncate max-w-[420px]">
                                     {video.title}
                                   </div>
                                   <div className="text-xs text-slate-500">
