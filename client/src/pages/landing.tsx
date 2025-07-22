@@ -11,7 +11,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Video, FileText, Play, Clock, Languages, LogIn, ChevronLeft, ChevronRight, Search, X, Plus, Minus, List } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Video, FileText, Play, Clock, Languages, LogIn, ChevronLeft, ChevronRight, Search, X, Plus, Minus, List, Share2, Copy } from "lucide-react";
 import { TranslatedText } from "@/components/TranslatedText";
 
 interface TranscriptSegment {
@@ -39,6 +46,11 @@ export default function Landing() {
   const [searchResults, setSearchResults] = useState<number[]>([]);
   const [currentSearchIndex, setCurrentSearchIndex] = useState(-1);
   const [fontSize, setFontSize] = useState(14); // Base font size in pixels
+  const [selectedSegments, setSelectedSegments] = useState<number[]>([]);
+  const [isSelecting, setIsSelecting] = useState(false);
+  const [shareableLink, setShareableLink] = useState("");
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [sharedSegmentRange, setSharedSegmentRange] = useState<{start: number, end: number} | null>(null);
   const playerRef = useRef<HTMLDivElement>(null);
   const transcriptRef = useRef<HTMLDivElement>(null);
 
@@ -70,6 +82,77 @@ export default function Landing() {
     code: t.language,
     name: t.language === "en" ? "English" : t.language === "ar" ? "Arabic" : t.language.toUpperCase()
   })) : [];
+
+  // Check URL parameters for shared segment on component mount
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const playlistId = urlParams.get('playlist');
+    const videoId = urlParams.get('video');
+    const startTime = urlParams.get('start');
+    const endTime = urlParams.get('end');
+    const lang = urlParams.get('lang');
+    
+    if (playlistId && videoId && startTime && endTime) {
+      setSelectedPlaylist(parseInt(playlistId));
+      setSharedSegmentRange({
+        start: parseFloat(startTime),
+        end: parseFloat(endTime)
+      });
+      
+      // Set language if specified
+      if (lang) {
+        setSelectedLanguage(lang);
+      }
+    }
+  }, []);
+
+  // Auto-select video from URL parameters when playlist videos are loaded
+  useEffect(() => {
+    if (Array.isArray(playlistVideos) && playlistVideos.length > 0 && sharedSegmentRange) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const videoId = urlParams.get('video');
+      
+      if (videoId) {
+        const targetVideo = playlistVideos.find((v: any) => v.id.toString() === videoId);
+        if (targetVideo) {
+          setSelectedVideo(targetVideo);
+        }
+      }
+    }
+  }, [playlistVideos, sharedSegmentRange]);
+
+  // Auto-play shared segment when video and transcripts are loaded
+  useEffect(() => {
+    if (player && sharedSegmentRange && segments.length > 0) {
+      const startSegmentIndex = segments.findIndex(segment => 
+        parseTimeToSeconds(segment.time) >= sharedSegmentRange.start
+      );
+      const endSegmentIndex = segments.findIndex(segment => 
+        parseTimeToSeconds(segment.time) >= sharedSegmentRange.end
+      );
+      
+      if (startSegmentIndex !== -1 && endSegmentIndex !== -1) {
+        // Highlight the shared segment range
+        const highlightedSegments = [];
+        for (let i = startSegmentIndex; i <= endSegmentIndex; i++) {
+          highlightedSegments.push(i);
+        }
+        setSelectedSegments(highlightedSegments);
+        
+        // Play from start time and stop at end time
+        player.seekTo(sharedSegmentRange.start);
+        player.playVideo();
+        
+        // Set up timer to pause at end time
+        const duration = (sharedSegmentRange.end - sharedSegmentRange.start) * 1000;
+        setTimeout(() => {
+          if (player && typeof player.pauseVideo === 'function') {
+            player.pauseVideo();
+          }
+        }, duration);
+      }
+    }
+  }, [player, sharedSegmentRange, segments]);
 
   // Helper function to parse time string to seconds
   const parseTimeToSeconds = (timeString: string): number => {
@@ -172,13 +255,7 @@ export default function Landing() {
     console.log('Starting time tracking for player');
   };
 
-  const handleSegmentClick = (index: number, time: string) => {
-    setActiveSegmentIndex(index);
-    if (player && player.seekTo) {
-      const seconds = parseTimeToSeconds(time);
-      player.seekTo(seconds, true);
-    }
-  };
+
 
   // Search functionality
   const performSearch = (query: string) => {
@@ -261,6 +338,98 @@ export default function Landing() {
 
   const resetFontSize = () => {
     setFontSize(14); // Reset to default
+  };
+
+  // Handle segment selection for sharing
+  const handleSegmentClick = (segmentIndex: number, time?: string, event?: React.MouseEvent) => {
+    // If called with time parameter (backward compatibility)
+    if (typeof time === 'string' && !event) {
+      const seconds = parseTimeToSeconds(time);
+      if (player && player.seekTo) {
+        player.seekTo(seconds, true);
+      }
+      setActiveSegmentIndex(segmentIndex);
+      return;
+    }
+
+    // New enhanced functionality with event handling
+    if (!event) {
+      // Default behavior without event
+      const segmentTime = parseTimeToSeconds(segments[segmentIndex].time);
+      if (player) {
+        player.seekTo(segmentTime);
+        setActiveSegmentIndex(segmentIndex);
+      }
+      return;
+    }
+    if (event.shiftKey && selectedSegments.length > 0) {
+      // Shift-click to extend selection
+      const lastSelected = selectedSegments[selectedSegments.length - 1];
+      const start = Math.min(lastSelected, segmentIndex);
+      const end = Math.max(lastSelected, segmentIndex);
+      const range = [];
+      for (let i = start; i <= end; i++) {
+        range.push(i);
+      }
+      setSelectedSegments(range);
+    } else if (event.ctrlKey || event.metaKey) {
+      // Ctrl/Cmd-click to add/remove from selection
+      if (selectedSegments.includes(segmentIndex)) {
+        setSelectedSegments(prev => prev.filter(i => i !== segmentIndex));
+      } else {
+        setSelectedSegments(prev => [...prev, segmentIndex].sort((a, b) => a - b));
+      }
+    } else if (isSelecting) {
+      // Regular click during selection mode
+      if (selectedSegments.includes(segmentIndex)) {
+        setSelectedSegments(prev => prev.filter(i => i !== segmentIndex));
+      } else {
+        setSelectedSegments(prev => [...prev, segmentIndex].sort((a, b) => a - b));
+      }
+    } else {
+      // Regular click for navigation
+      const segmentTime = parseTimeToSeconds(segments[segmentIndex].time);
+      if (player) {
+        player.seekTo(segmentTime);
+        setActiveSegmentIndex(segmentIndex);
+      }
+    }
+  };
+
+  // Generate shareable link for selected segments
+  const generateShareableLink = () => {
+    if (selectedSegments.length === 0 || !selectedVideo || !selectedPlaylist) return;
+
+    const sortedSegments = [...selectedSegments].sort((a, b) => a - b);
+    const startSegment = sortedSegments[0];
+    const endSegment = sortedSegments[sortedSegments.length - 1];
+    
+    const startTime = parseTimeToSeconds(segments[startSegment].time);
+    const endTime = parseTimeToSeconds(segments[endSegment].time);
+    
+    const baseUrl = window.location.origin + window.location.pathname;
+    const shareUrl = `${baseUrl}?playlist=${selectedPlaylist}&video=${selectedVideo.id}&start=${startTime}&end=${endTime}&lang=${selectedLanguage}`;
+    
+    setShareableLink(shareUrl);
+    setShowShareModal(true);
+  };
+
+  // Copy link to clipboard
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(shareableLink);
+      setShowShareModal(false);
+    } catch (err) {
+      console.error('Failed to copy: ', err);
+    }
+  };
+
+  // Toggle selection mode
+  const toggleSelectionMode = () => {
+    setIsSelecting(!isSelecting);
+    if (isSelecting) {
+      setSelectedSegments([]);
+    }
   };
 
   useEffect(() => {
@@ -494,9 +663,47 @@ export default function Landing() {
                             </Select>
                           </div>
                         )}
+                        
+                        {/* Selection and Share Controls */}
+                        {segments.length > 0 && (
+                          <div className="flex items-center space-x-1">
+                            <Button
+                              variant={isSelecting ? "default" : "outline"}
+                              size="sm"
+                              onClick={toggleSelectionMode}
+                              className="h-6 text-xs px-2"
+                              title={isSelecting ? "Exit selection mode" : "Select segments to share"}
+                            >
+                              <Share2 size={10} className="mr-1" />
+                              {isSelecting ? "Cancel" : "Select"}
+                            </Button>
+                            
+                            {selectedSegments.length > 0 && (
+                              <Button
+                                variant="default"
+                                size="sm"
+                                onClick={generateShareableLink}
+                                className="h-6 text-xs px-2 bg-blue-600 hover:bg-blue-700"
+                                title={`Share ${selectedSegments.length} selected segments`}
+                              >
+                                <Copy size={10} className="mr-1" />
+                                Share ({selectedSegments.length})
+                              </Button>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                     
+                    {/* Selection Instructions */}
+                    {isSelecting && segments.length > 0 && (
+                      <div className="bg-blue-50 border border-blue-200 rounded p-2 mb-2">
+                        <p className="text-xs text-blue-800">
+                          <strong>Selection Mode:</strong> Click segments to select them. Use Ctrl/Cmd+click for multiple selections, Shift+click to extend selection.
+                        </p>
+                      </div>
+                    )}
+
                     {/* Search Interface */}
                     {segments.length > 0 && (
                       <div className="flex items-center space-x-2 mb-2">
@@ -551,56 +758,68 @@ export default function Landing() {
                   
                   <CardContent className="flex-1 pt-0 px-4 pb-4">
                     <div ref={transcriptRef} className="space-y-1 h-full overflow-y-auto pr-2" style={{ height: '480px' }}>
-                  {segments.map((segment, index) => (
-                    <div
-                      key={index}
-                      className={`p-3 rounded-lg cursor-pointer transition-all duration-200 border ${
-                        index === activeSegmentIndex
-                          ? 'bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-300 shadow-sm transform scale-[1.02]'
-                          : 'bg-white hover:bg-slate-50 border-slate-200 hover:border-slate-300 hover:shadow-sm'
-                      }`}
-                      onClick={() => handleSegmentClick(index, segment.time)}
-                    >
-                      <div className="flex items-start space-x-2">
-                        <Badge variant="secondary" className="text-xs flex-shrink-0 mt-0.5">
-                          {segment.time}
-                        </Badge>
-                        {selectedLanguage === 'ar' ? (
-                          <div 
-                            className="leading-relaxed text-right"
-                            style={{ fontSize: `${fontSize}px` }}
+                      {segments.map((segment, index) => {
+                        const isSelected = selectedSegments.includes(index);
+                        const isActive = index === activeSegmentIndex;
+                        const isShared = sharedSegmentRange && index >= 0 && segments.length > 0 && 
+                          parseTimeToSeconds(segment.time) >= sharedSegmentRange.start &&
+                          parseTimeToSeconds(segment.time) <= sharedSegmentRange.end;
+                        
+                        return (
+                          <div
+                            key={index}
+                            className={`p-3 rounded-lg cursor-pointer transition-all duration-200 border ${
+                              isShared
+                                ? 'bg-gradient-to-r from-orange-100 to-yellow-100 border-orange-300 shadow-md ring-2 ring-orange-200'
+                                : isSelected
+                                ? 'bg-gradient-to-r from-blue-100 to-blue-50 border-blue-300 shadow-sm'
+                                : isActive
+                                ? 'bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-300 shadow-sm transform scale-[1.02]'
+                                : 'bg-white hover:bg-slate-50 border-slate-200 hover:border-slate-300 hover:shadow-sm'
+                            } ${isSelecting ? 'ring-2 ring-transparent hover:ring-blue-200' : ''}`}
+                            onClick={(e) => handleSegmentClick(index, segment.time, e)}
                           >
-                            {searchQuery ? (
-                              <span 
-                                dangerouslySetInnerHTML={{ 
-                                  __html: highlightText(segment.text, searchQuery) 
-                                }}
-                              />
-                            ) : (
-                              <TranslatedText 
-                                text={segment.text} 
-                                className=""
-                              />
-                            )}
+                            <div className="flex items-start space-x-2">
+                              <Badge variant="secondary" className="text-xs flex-shrink-0 mt-0.5">
+                                {segment.time}
+                              </Badge>
+                              {selectedLanguage === 'ar' ? (
+                                <div 
+                                  className="leading-relaxed text-right"
+                                  style={{ fontSize: `${fontSize}px` }}
+                                >
+                                  {searchQuery ? (
+                                    <span 
+                                      dangerouslySetInnerHTML={{ 
+                                        __html: highlightText(segment.text, searchQuery) 
+                                      }}
+                                    />
+                                  ) : (
+                                    <TranslatedText 
+                                      text={segment.text} 
+                                      className=""
+                                    />
+                                  )}
+                                </div>
+                              ) : (
+                                <p 
+                                  className="leading-relaxed text-left"
+                                  style={{ fontSize: `${fontSize}px` }}
+                                  dangerouslySetInnerHTML={{ 
+                                    __html: searchQuery ? highlightText(segment.text, searchQuery) : segment.text 
+                                  }}
+                                />
+                              )}
+                            </div>
                           </div>
-                        ) : (
-                          <p 
-                            className="leading-relaxed text-left"
-                            style={{ fontSize: `${fontSize}px` }}
-                            dangerouslySetInnerHTML={{ 
-                              __html: searchQuery ? highlightText(segment.text, searchQuery) : segment.text 
-                            }}
-                          />
-                        )}
-                      </div>
+                        );
+                      }) || (
+                        <div className="text-center py-8 text-slate-500">
+                          <FileText size={32} className="mx-auto mb-3 opacity-50" />
+                          <p>No transcript available for this video in {selectedLanguage === 'ar' ? 'Arabic' : 'English'}</p>
+                        </div>
+                      )}
                     </div>
-                  )) || (
-                    <div className="text-center py-8 text-slate-500">
-                      <FileText size={32} className="mx-auto mb-3 opacity-50" />
-                      <p>No transcript available for this video in {selectedLanguage === 'ar' ? 'Arabic' : 'English'}</p>
-                    </div>
-                  )}
-                </div>
               </CardContent>
             </Card>
               </div>
@@ -662,6 +881,41 @@ export default function Landing() {
           </>
         )}
       </div>
+
+      {/* Share Modal */}
+      <Dialog open={showShareModal} onOpenChange={setShowShareModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Share Video Segment</DialogTitle>
+            <DialogDescription>
+              Copy this link to share the selected transcript segment with others. The video will play from the selected time range and highlight the shared segment.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center space-x-2">
+            <div className="grid flex-1 gap-2">
+              <Input
+                id="link"
+                value={shareableLink}
+                readOnly
+                className="text-sm"
+              />
+            </div>
+            <Button 
+              type="submit" 
+              size="sm" 
+              className="px-3"
+              onClick={copyToClipboard}
+            >
+              <Copy className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="text-xs text-gray-500">
+            Selected segments: {selectedSegments.length > 0 && segments.length > 0 ? 
+              `${segments[Math.min(...selectedSegments)]?.time} - ${segments[Math.max(...selectedSegments)]?.time}` : 
+              'None'}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
