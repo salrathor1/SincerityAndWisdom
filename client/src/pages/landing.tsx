@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Video, FileText, Play, Clock, Languages, LogIn, ChevronLeft, ChevronRight, Search, X } from "lucide-react";
+import { Video, FileText, Play, Clock, Languages, LogIn, ChevronLeft, ChevronRight, Search, X, Plus, Minus } from "lucide-react";
 import { TranslatedText } from "@/components/TranslatedText";
 
 interface TranscriptSegment {
@@ -38,6 +38,7 @@ export default function Landing() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<number[]>([]);
   const [currentSearchIndex, setCurrentSearchIndex] = useState(-1);
+  const [fontSize, setFontSize] = useState(14); // Base font size in pixels
   const playerRef = useRef<HTMLDivElement>(null);
   const transcriptRef = useRef<HTMLDivElement>(null);
 
@@ -250,6 +251,18 @@ export default function Landing() {
     setCurrentSearchIndex(-1);
   };
 
+  const increaseFontSize = () => {
+    setFontSize(prev => Math.min(prev + 2, 24)); // Max 24px
+  };
+
+  const decreaseFontSize = () => {
+    setFontSize(prev => Math.max(prev - 2, 10)); // Min 10px
+  };
+
+  const resetFontSize = () => {
+    setFontSize(14); // Reset to default
+  };
+
   useEffect(() => {
     if (Array.isArray(playlists) && playlists.length > 0 && !selectedPlaylist) {
       setSelectedPlaylist(playlists[0].id);
@@ -383,23 +396,54 @@ export default function Landing() {
                     <FileText size={18} className="mr-2" />
                     Transcript
                   </CardTitle>
-                  {availableLanguages.length > 0 && (
-                    <div className="flex items-center space-x-2">
-                      <Languages size={16} className="text-slate-500" />
-                      <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
-                        <SelectTrigger className="w-32">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availableLanguages.map((lang: any) => (
-                            <SelectItem key={lang.code} value={lang.code}>
-                              {lang.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
+                  <div className="flex items-center space-x-3">
+                    {/* Font Size Controls */}
+                    {segments.length > 0 && (
+                      <div className="flex items-center space-x-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={decreaseFontSize}
+                          disabled={fontSize <= 10}
+                          className="h-7 w-7 p-0"
+                          title="Decrease font size"
+                        >
+                          <Minus size={12} />
+                        </Button>
+                        <span className="text-xs text-slate-600 w-8 text-center">
+                          {fontSize}
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={increaseFontSize}
+                          disabled={fontSize >= 24}
+                          className="h-7 w-7 p-0"
+                          title="Increase font size"
+                        >
+                          <Plus size={12} />
+                        </Button>
+                      </div>
+                    )}
+                    
+                    {availableLanguages.length > 0 && (
+                      <div className="flex items-center space-x-2">
+                        <Languages size={16} className="text-slate-500" />
+                        <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+                          <SelectTrigger className="w-32">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableLanguages.map((lang: any) => (
+                              <SelectItem key={lang.code} value={lang.code}>
+                                {lang.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 
                 {/* Search Interface */}
@@ -477,7 +521,10 @@ export default function Landing() {
                           {segment.time}
                         </Badge>
                         {selectedLanguage === 'ar' ? (
-                          <div className="text-sm leading-relaxed text-right">
+                          <div 
+                            className="leading-relaxed text-right"
+                            style={{ fontSize: `${fontSize}px` }}
+                          >
                             {searchQuery ? (
                               <span 
                                 dangerouslySetInnerHTML={{ 
@@ -493,7 +540,8 @@ export default function Landing() {
                           </div>
                         ) : (
                           <p 
-                            className="text-sm leading-relaxed text-left"
+                            className="leading-relaxed text-left"
+                            style={{ fontSize: `${fontSize}px` }}
                             dangerouslySetInnerHTML={{ 
                               __html: searchQuery ? highlightText(segment.text, searchQuery) : segment.text 
                             }}
