@@ -131,7 +131,7 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
       if (transcript && transcript.content) {
         const content = Array.isArray(transcript.content) ? transcript.content : [];
         setSegments(content);
-        setOpenTextContent(content.map(seg => seg.text).join('\n\n'));
+        setOpenTextContent(content.map((seg: TranscriptSegment) => seg.text).join('\n\n'));
       } else {
         // Create empty transcript structure
         setSegments([
@@ -341,25 +341,79 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
   };
 
   const updateOpenTextFromSegments = (segs: TranscriptSegment[]) => {
-    setOpenTextContent(segs.map(seg => seg.text).join('\n\n'));
+    // Convert segments to SRT format
+    const srtContent = segs.map((seg: TranscriptSegment, index: number) => {
+      const timeString = convertTimeToSrt(seg.time);
+      return `${index + 1}\n${timeString} --> ${timeString}\n${seg.text}\n`;
+    }).join('\n');
+    setOpenTextContent(srtContent);
+  };
+
+  const convertTimeToSrt = (time: string): string => {
+    // Convert "1:23" format to "00:01:23,000" SRT format
+    const parts = time.split(':');
+    if (parts.length === 2) {
+      const [minutes, seconds] = parts;
+      return `00:${minutes.padStart(2, '0')}:${seconds.padStart(2, '0')},000`;
+    } else if (parts.length === 3) {
+      const [hours, minutes, seconds] = parts;
+      return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:${seconds.padStart(2, '0')},000`;
+    }
+    return "00:00:00,000";
+  };
+
+  const convertSrtToTime = (srtTime: string): string => {
+    // Convert "00:01:23,000" SRT format to "1:23" format
+    const timePart = srtTime.split(',')[0]; // Remove milliseconds
+    const [hours, minutes, seconds] = timePart.split(':');
+    
+    // If hours is 00, return minutes:seconds format
+    if (hours === '00') {
+      return `${parseInt(minutes)}:${seconds}`;
+    }
+    return `${parseInt(hours)}:${minutes}:${seconds}`;
   };
 
   const updateSegmentsFromOpenText = (text: string) => {
-    // Split by double newlines to create segments
-    const textSegments = text.split('\n\n').filter(t => t.trim());
+    // Parse SRT format
+    const srtBlocks = text.split('\n\n').filter(block => block.trim());
     
-    if (textSegments.length === 0) {
+    if (srtBlocks.length === 0) {
       setSegments([{ time: "0:00", text: "Empty transcript..." }]);
       return;
     }
     
-    // Create new segments preserving existing timestamps where possible
-    const newSegments = textSegments.map((text, index) => ({
-      time: segments[index]?.time || "0:00",
-      text: text.trim(),
-    }));
+    const newSegments: TranscriptSegment[] = [];
     
-    setSegments(newSegments);
+    for (const block of srtBlocks) {
+      const lines = block.trim().split('\n');
+      if (lines.length >= 3) {
+        // Standard SRT format: sequence number, timestamp, text
+        const sequenceNum = lines[0];
+        const timeLine = lines[1];
+        const textLines = lines.slice(2);
+        
+        // Parse the timestamp line (e.g., "00:01:23,000 --> 00:01:26,000")
+        const timeMatch = timeLine.match(/^(\d{2}:\d{2}:\d{2},\d{3})\s*-->\s*(\d{2}:\d{2}:\d{2},\d{3})$/);
+        if (timeMatch) {
+          const startTime = convertSrtToTime(timeMatch[1]);
+          const text = textLines.join('\n');
+          newSegments.push({ time: startTime, text });
+        }
+      } else if (lines.length === 1) {
+        // Simple text line - use existing timestamp or default
+        newSegments.push({
+          time: segments[newSegments.length]?.time || "0:00",
+          text: lines[0],
+        });
+      }
+    }
+    
+    if (newSegments.length === 0) {
+      setSegments([{ time: "0:00", text: "Empty transcript..." }]);
+    } else {
+      setSegments(newSegments);
+    }
   };
 
   const handleOpenTextChange = (text: string) => {
@@ -438,8 +492,8 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
                     onCheckedChange={setIsOpenTextView}
                   />
                   <label htmlFor="text-view" className="text-sm text-muted-foreground cursor-pointer">
-                    <AlignLeft size={14} className="inline mr-1" />
-                    Open Text View
+                    <FileText size={14} className="inline mr-1" />
+                    SRT Format
                   </label>
                 </div>
               </div>
@@ -512,18 +566,18 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
                 <div className="h-full">
                   <div className="mb-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
                     <p className="text-sm text-blue-800 flex items-start space-x-2">
-                      <AlignLeft size={16} className="mt-0.5 flex-shrink-0" />
+                      <FileText size={16} className="mt-0.5 flex-shrink-0" />
                       <span>
-                        <strong>Open Text Mode:</strong> Edit your transcript as continuous text. 
-                        Separate segments with double line breaks (Enter twice). Switch back to segment view to adjust timestamps.
+                        <strong>SRT Format View:</strong> Edit your transcript in standard SubRip (.srt) format. 
+                        Each segment shows: sequence number, timestamp range, and text. Modify timestamps and text directly.
                       </span>
                     </p>
                   </div>
                   <Textarea
                     value={openTextContent}
                     onChange={(e) => handleOpenTextChange(e.target.value)}
-                    placeholder="Enter your transcript text here. Use double line breaks to separate segments..."
-                    className={`resize-none h-full min-h-[400px] ${
+                    placeholder="1&#10;00:00:01,000 --> 00:00:04,000&#10;Welcome to this video...&#10;&#10;2&#10;00:00:05,000 --> 00:00:08,000&#10;Today we will discuss..."
+                    className={`resize-none h-full min-h-[400px] font-mono text-sm ${
                       selectedLanguage === 'ar' ? 'text-right' : 'text-left'
                     }`}
                   />

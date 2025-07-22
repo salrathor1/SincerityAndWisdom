@@ -45,9 +45,9 @@ export default function Videos() {
     );
   }
 
-  const filteredVideos = videos?.filter((video: any) =>
+  const filteredVideos = Array.isArray(videos) ? videos.filter((video: any) =>
     video.title.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
+  ) : [];
 
   const handleEditVideo = (video: any) => {
     setSelectedVideo(video);
