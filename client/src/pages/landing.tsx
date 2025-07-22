@@ -202,9 +202,9 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-2 py-4">
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex justify-between items-center mb-4">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
               <Video className="text-white" size={20} />
@@ -240,7 +240,7 @@ export default function Landing() {
         </div>
 
         {/* Playlist Selector */}
-        <div className="mb-6">
+        <div className="mb-4">
           <div className="flex items-center space-x-4">
             <label className="text-sm font-medium text-slate-700">Select Playlist:</label>
             <Select 
@@ -269,7 +269,7 @@ export default function Landing() {
           </div>
         </div>
 
-        <div className={`grid gap-6 ${showPlaylistPanel ? 'lg:grid-cols-12' : 'lg:grid-cols-8'}`}>
+        <div className={`grid gap-4 ${showPlaylistPanel ? 'lg:grid-cols-12' : 'lg:grid-cols-8'}`}>
           {/* Video Player Column */}
           <div className={showPlaylistPanel ? 'lg:col-span-5' : 'lg:col-span-4'}>
             {selectedVideo ? (
@@ -278,11 +278,11 @@ export default function Landing() {
                   <div className="aspect-video bg-slate-900 rounded-t-lg overflow-hidden">
                     <div ref={playerRef} className="w-full h-full" />
                   </div>
-                  <div className="p-4">
-                    <h2 className="text-lg font-semibold text-slate-900 mb-2">
+                  <div className="p-3">
+                    <h2 className="text-lg font-semibold text-slate-900 mb-1">
                       {selectedVideo.title}
                     </h2>
-                    <p className="text-sm text-slate-600 line-clamp-3">
+                    <p className="text-sm text-slate-600 line-clamp-2">
                       {selectedVideo.description}
                     </p>
                   </div>
@@ -290,7 +290,7 @@ export default function Landing() {
               </Card>
             ) : (
               <Card>
-                <CardContent className="p-16 text-center">
+                <CardContent className="p-8 text-center">
                   <Video size={48} className="mx-auto mb-4 text-slate-400" />
                   <h3 className="text-lg font-medium text-slate-900 mb-2">Select a Video</h3>
                   <p className="text-slate-600">
@@ -336,18 +336,18 @@ export default function Landing() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div ref={transcriptRef} className="space-y-3 max-h-96 overflow-y-auto">
+                <div ref={transcriptRef} className="space-y-2 max-h-96 overflow-y-auto">
                   {segments.map((segment, index) => (
                     <div
                       key={index}
-                      className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                      className={`p-2 rounded-lg cursor-pointer transition-colors ${
                         index === activeSegmentIndex
                           ? 'bg-primary/10 border border-primary/20'
                           : 'bg-slate-50 hover:bg-slate-100'
                       }`}
                       onClick={() => handleSegmentClick(index, segment.time)}
                     >
-                      <div className="flex items-start space-x-3">
+                      <div className="flex items-start space-x-2">
                         <Badge variant="secondary" className="text-xs flex-shrink-0 mt-0.5">
                           {segment.time}
                         </Badge>
@@ -388,22 +388,22 @@ export default function Landing() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-0">
-                <div className="space-y-2 max-h-96 overflow-y-auto">
+                <div className="space-y-1 max-h-96 overflow-y-auto">
                   {Array.isArray(playlistVideos) && playlistVideos.map((video: any) => (
                     <div
                       key={video.id}
-                      className={`p-3 cursor-pointer hover:bg-slate-50 border-l-4 transition-colors ${
+                      className={`p-2 cursor-pointer hover:bg-slate-50 border-l-4 transition-colors ${
                         selectedVideo?.id === video.id 
                           ? 'border-primary bg-blue-50' 
                           : 'border-transparent'
                       }`}
                       onClick={() => setSelectedVideo(video)}
                     >
-                      <div className="flex space-x-3">
+                      <div className="flex space-x-2">
                         <img
                           src={video.thumbnailUrl}
                           alt={video.title}
-                          className="w-16 h-12 object-cover rounded flex-shrink-0"
+                          className="w-14 h-10 object-cover rounded flex-shrink-0"
                         />
                         <div className="flex-1 min-w-0">
                           <h4 className="font-medium text-sm text-slate-900 line-clamp-2">
@@ -419,7 +419,7 @@ export default function Landing() {
                       </div>
                     </div>
                   )) || (
-                    <div className="p-8 text-center text-slate-500">
+                    <div className="p-4 text-center text-slate-500">
                       {selectedPlaylist ? 'No videos in this playlist' : 'Select a playlist to see videos'}
                     </div>
                   )}
