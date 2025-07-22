@@ -358,9 +358,9 @@ export default function Landing() {
         {/* Main Content - Top Row: Video and Transcript */}
         {selectedPlaylist && (
           <>
-            <div className="grid gap-4 lg:grid-cols-2 mb-4">
+            <div className="grid gap-4 lg:grid-cols-3 mb-4">
               {/* Video Player Column */}
-              <div>
+              <div className="lg:col-span-2">
                 {selectedVideo ? (
                   <Card>
                     <CardContent className="p-0">
@@ -391,7 +391,7 @@ export default function Landing() {
               </div>
 
               {/* Transcript Column */}
-              <div>
+              <div className="lg:col-span-1">
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
