@@ -34,12 +34,14 @@ export interface IStorage {
   getVideos(limit?: number): Promise<VideoWithRelations[]>;
   getVideo(id: number): Promise<VideoWithRelations | undefined>;
   getVideoByYoutubeId(youtubeId: string): Promise<VideoWithRelations | undefined>;
+  getVideosByPlaylist(playlistId: number): Promise<VideoWithRelations[]>;
   updateVideo(id: number, video: Partial<InsertVideo>): Promise<Video>;
   deleteVideo(id: number): Promise<void>;
   
   // Transcript operations
   createTranscript(transcript: InsertTranscript): Promise<Transcript>;
   getTranscripts(videoId: number): Promise<Transcript[]>;
+  getTranscriptsByVideo(videoId: number): Promise<Transcript[]>;
   getTranscript(id: number): Promise<Transcript | undefined>;
   updateTranscript(id: number, transcript: Partial<InsertTranscript>): Promise<Transcript>;
   deleteTranscript(id: number): Promise<void>;
@@ -158,6 +160,17 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
+  async getVideosByPlaylist(playlistId: number): Promise<VideoWithRelations[]> {
+    return await db.query.videos.findMany({
+      where: eq(videos.playlistId, playlistId),
+      with: {
+        playlist: true,
+        transcripts: true,
+      },
+      orderBy: [desc(videos.createdAt)],
+    });
+  }
+
   async deleteVideo(id: number): Promise<void> {
     await db.delete(videos).where(eq(videos.id, id));
   }
@@ -169,6 +182,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTranscripts(videoId: number): Promise<Transcript[]> {
+    return await db
+      .select()
+      .from(transcripts)
+      .where(eq(transcripts.videoId, videoId))
+      .orderBy(transcripts.language);
+  }
+
+  async getTranscriptsByVideo(videoId: number): Promise<Transcript[]> {
     return await db
       .select()
       .from(transcripts)

@@ -44,13 +44,13 @@ export default function Landing() {
     window.location.href = "/api/login";
   };
 
-  const currentTranscript = videoTranscripts?.find((t: any) => t.language === selectedLanguage);
+  const currentTranscript = Array.isArray(videoTranscripts) ? videoTranscripts.find((t: any) => t.language === selectedLanguage) : null;
   const segments: TranscriptSegment[] = currentTranscript?.content || [];
 
-  const availableLanguages = videoTranscripts?.map((t: any) => ({
+  const availableLanguages = Array.isArray(videoTranscripts) ? videoTranscripts.map((t: any) => ({
     code: t.language,
     name: t.language === "en" ? "English" : t.language === "ar" ? "Arabic" : t.language.toUpperCase()
-  })) || [];
+  })) : [];
 
   const handleSegmentClick = (index: number, time: string) => {
     setActiveSegmentIndex(index);
@@ -58,13 +58,13 @@ export default function Landing() {
   };
 
   useEffect(() => {
-    if (playlists && playlists.length > 0 && !selectedPlaylist) {
+    if (Array.isArray(playlists) && playlists.length > 0 && !selectedPlaylist) {
       setSelectedPlaylist(playlists[0].id);
     }
   }, [playlists, selectedPlaylist]);
 
   useEffect(() => {
-    if (playlistVideos && playlistVideos.length > 0 && !selectedVideo) {
+    if (Array.isArray(playlistVideos) && playlistVideos.length > 0 && !selectedVideo) {
       setSelectedVideo(playlistVideos[0]);
     }
   }, [playlistVideos, selectedVideo]);
@@ -104,14 +104,14 @@ export default function Landing() {
                 <SelectValue placeholder="Choose a playlist" />
               </SelectTrigger>
               <SelectContent>
-                {playlists?.map((playlist: any) => (
+                {Array.isArray(playlists) && playlists.map((playlist: any) => (
                   <SelectItem key={playlist.id} value={playlist.id.toString()}>
                     {playlist.name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            {selectedPlaylist && playlistVideos && (
+            {selectedPlaylist && Array.isArray(playlistVideos) && (
               <Badge variant="secondary">
                 {playlistVideos.length} videos
               </Badge>
@@ -134,7 +134,7 @@ export default function Landing() {
               </CardHeader>
               <CardContent className="p-0">
                 <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {playlistVideos?.map((video: any) => (
+                  {Array.isArray(playlistVideos) && playlistVideos.map((video: any) => (
                     <div
                       key={video.id}
                       className={`p-3 cursor-pointer hover:bg-slate-50 border-l-4 transition-colors ${
