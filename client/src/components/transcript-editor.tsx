@@ -23,7 +23,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
-import { Play, Pause, SkipBack, SkipForward, Volume2, Save, Upload, FileText } from "lucide-react";
+import { Save, Upload, FileText } from "lucide-react";
 
 interface TranscriptSegment {
   time: string;
@@ -40,9 +40,7 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedLanguage, setSelectedLanguage] = useState("en");
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState("0:00");
-  const [duration] = useState(video?.duration || "15:42");
+
   const [segments, setSegments] = useState<TranscriptSegment[]>([]);
   const [activeSegmentIndex, setActiveSegmentIndex] = useState(0);
   const [srtContent, setSrtContent] = useState("");
@@ -54,7 +52,7 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
   });
 
   useEffect(() => {
-    if (transcripts && transcripts.length > 0) {
+    if (transcripts && Array.isArray(transcripts) && transcripts.length > 0) {
       const transcript = transcripts.find((t: any) => t.language === selectedLanguage);
       if (transcript && transcript.content) {
         setSegments(Array.isArray(transcript.content) ? transcript.content : []);
@@ -69,7 +67,7 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
 
   const updateTranscriptMutation = useMutation({
     mutationFn: async (content: TranscriptSegment[]) => {
-      const transcript = transcripts?.find((t: any) => t.language === selectedLanguage);
+      const transcript = Array.isArray(transcripts) ? transcripts.find((t: any) => t.language === selectedLanguage) : null;
       if (transcript) {
         await apiRequest("PUT", `/api/transcripts/${transcript.id}`, {
           content,
@@ -110,7 +108,7 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
 
   const importSrtMutation = useMutation({
     mutationFn: async (srtContent: string) => {
-      const transcript = transcripts?.find((t: any) => t.language === selectedLanguage);
+      const transcript = Array.isArray(transcripts) ? transcripts.find((t: any) => t.language === selectedLanguage) : null;
       if (!transcript) {
         throw new Error("No transcript found for the selected language. Create a transcript first.");
       }
@@ -163,28 +161,8 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
     importSrtMutation.mutate(srtContent);
   };
 
-  const handlePlayPause = () => {
-    setIsPlaying(!isPlaying);
-    // Here you would integrate with a video player library like ReactPlayer
-  };
-
-  const handleSeekBack = () => {
-    // Implement seek back 10 seconds
-    toast({
-      description: "Seeked back 10 seconds",
-    });
-  };
-
-  const handleSeekForward = () => {
-    // Implement seek forward 10 seconds
-    toast({
-      description: "Seeked forward 10 seconds",
-    });
-  };
-
   const handleSegmentClick = (index: number, time: string) => {
     setActiveSegmentIndex(index);
-    setCurrentTime(time);
     // Here you would seek the video player to this time
     toast({
       description: `Jumped to ${time}`,
@@ -200,7 +178,7 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
   const addNewSegment = () => {
     const newSegments = [...segments];
     newSegments.push({
-      time: currentTime,
+      time: "0:00",
       text: "New transcript segment...",
     });
     setSegments(newSegments);
@@ -248,52 +226,24 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
           {/* Video Player */}
           <div className="w-1/2 p-6 border-r">
             <div className="aspect-video bg-slate-900 rounded-lg mb-4 relative overflow-hidden">
-              <img
-                src={video.thumbnailUrl || "/placeholder-video.jpg"}
-                alt={video.title}
-                className="w-full h-full object-cover"
+              <iframe
+                src={`https://www.youtube.com/embed/${video.youtubeId}?enablejsapi=1&origin=${window.location.origin}`}
+                title={video.title}
+                className="w-full h-full"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
               />
-              <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
-                <Button
-                  size="lg"
-                  className="w-16 h-16 rounded-full"
-                  onClick={handlePlayPause}
-                >
-                  {isPlaying ? <Pause size={24} /> : <Play size={24} />}
-                </Button>
-              </div>
             </div>
 
-            {/* Video Controls */}
-            <div className="space-y-3">
-              <div className="flex items-center space-x-3">
-                <Button variant="ghost" size="sm" onClick={handlePlayPause}>
-                  {isPlaying ? <Pause size={16} /> : <Play size={16} />}
-                </Button>
-                <div className="flex-1 bg-slate-200 rounded-full h-2">
-                  <div className="bg-primary rounded-full h-2" style={{ width: "35%" }}></div>
-                </div>
-                <span className="text-sm text-muted-foreground">
-                  {currentTime} / {duration}
-                </span>
-              </div>
-
-              <div className="flex items-center space-x-3">
-                <Button variant="outline" size="sm" onClick={handleSeekBack}>
-                  <SkipBack size={16} className="mr-1" />
-                  10s
-                </Button>
-                <Button variant="outline" size="sm" onClick={handleSeekForward}>
-                  10s
-                  <SkipForward size={16} className="ml-1" />
-                </Button>
-                <div className="flex items-center space-x-2 ml-auto">
-                  <Volume2 size={16} className="text-muted-foreground" />
-                  <div className="w-20 bg-slate-200 rounded-full h-2">
-                    <div className="bg-slate-600 rounded-full h-2" style={{ width: "70%" }}></div>
-                  </div>
-                </div>
-              </div>
+            {/* Video Info */}
+            <div className="text-sm text-muted-foreground">
+              <p className="font-medium">{video.title}</p>
+              <p>Duration: {video.duration}</p>
+              <p className="mt-2 text-xs">
+                Use the YouTube player controls above to play, pause, and seek through the video. 
+                Click on transcript segments to note timing for synchronization.
+              </p>
             </div>
           </div>
 
