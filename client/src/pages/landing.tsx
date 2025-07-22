@@ -355,40 +355,43 @@ export default function Landing() {
           </div>
         </div>
 
-        <div className={`grid gap-4 ${showPlaylistPanel ? 'lg:grid-cols-12' : 'lg:grid-cols-8'}`}>
-          {/* Video Player Column */}
-          <div className={showPlaylistPanel ? 'lg:col-span-6' : 'lg:col-span-5'}>
-            {selectedVideo ? (
-              <Card>
-                <CardContent className="p-0">
-                  <div className="aspect-video bg-slate-900 rounded-t-lg overflow-hidden">
-                    <div ref={playerRef} className="w-full h-full" />
-                  </div>
-                  <div className="p-3">
-                    <h2 className="text-lg font-semibold text-slate-900 mb-1">
-                      {selectedVideo.title}
-                    </h2>
-                    <p className="text-sm text-slate-600 line-clamp-2">
-                      {selectedVideo.description}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card>
-                <CardContent className="p-8 text-center">
-                  <Video size={48} className="mx-auto mb-4 text-slate-400" />
-                  <h3 className="text-lg font-medium text-slate-900 mb-2">Select a Video</h3>
-                  <p className="text-slate-600">
-                    Choose a playlist and video to start watching
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+        {/* Main Content - Top Row: Video and Transcript */}
+        {selectedPlaylist && (
+          <>
+            <div className="grid gap-4 lg:grid-cols-2 mb-4">
+              {/* Video Player Column */}
+              <div>
+                {selectedVideo ? (
+                  <Card>
+                    <CardContent className="p-0">
+                      <div className="aspect-video bg-slate-900 rounded-t-lg overflow-hidden">
+                        <div ref={playerRef} className="w-full h-full" />
+                      </div>
+                      <div className="p-3">
+                        <h2 className="text-lg font-semibold text-slate-900 mb-1">
+                          {selectedVideo.title}
+                        </h2>
+                        <p className="text-sm text-slate-600 line-clamp-2">
+                          {selectedVideo.description}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <Card>
+                    <CardContent className="p-8 text-center">
+                      <Video size={48} className="mx-auto mb-4 text-slate-400" />
+                      <h3 className="text-lg font-medium text-slate-900 mb-2">Select a Video</h3>
+                      <p className="text-slate-600">
+                        Choose a playlist and video to start watching
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
 
-          {/* Transcript Column */}
-          <div className={showPlaylistPanel ? 'lg:col-span-3' : 'lg:col-span-3'}>
+              {/* Transcript Column */}
+              <div>
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -558,63 +561,75 @@ export default function Landing() {
                 </div>
               </CardContent>
             </Card>
-          </div>
+              </div>
+            </div>
 
-          {/* Playlist Panel - Videos List */}
-          {showPlaylistPanel && (
-            <div className="lg:col-span-3">
-              <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center">
-                  <Play size={18} className="mr-2" />
-                  Videos
-                </CardTitle>
-                <CardDescription>
-                  {selectedPlaylist ? `Select a video to watch` : `Choose a playlist first`}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="space-y-1 max-h-96 overflow-y-auto">
-                  {Array.isArray(playlistVideos) && playlistVideos.map((video: any) => (
-                    <div
-                      key={video.id}
-                      className={`p-2 cursor-pointer hover:bg-slate-50 border-l-4 transition-colors ${
-                        selectedVideo?.id === video.id 
-                          ? 'border-primary bg-blue-50' 
-                          : 'border-transparent'
-                      }`}
-                      onClick={() => setSelectedVideo(video)}
-                    >
-                      <div className="flex space-x-2">
-                        <img
-                          src={video.thumbnailUrl}
-                          alt={video.title}
-                          className="w-14 h-10 object-cover rounded flex-shrink-0"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-sm text-slate-900 line-clamp-2">
-                            {video.title}
-                          </h4>
-                          <div className="flex items-center space-x-2 mt-1">
-                            <div className="flex items-center text-xs text-slate-500">
-                              <Clock size={12} className="mr-1" />
-                              {video.duration}
+            {/* Toggle Button */}
+            <div className="flex justify-center mb-4">
+              <Button
+                onClick={() => setShowPlaylistPanel(!showPlaylistPanel)}
+                variant="outline"
+                size="sm"
+              >
+                {showPlaylistPanel ? "Hide Playlist Videos" : "Show Playlist Videos"}
+              </Button>
+            </div>
+
+            {/* Bottom Row - Playlist Panel */}
+            {showPlaylistPanel && (
+              <div>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center">
+                      <Video size={18} className="mr-2" />
+                      Videos ({Array.isArray(playlistVideos) ? playlistVideos.length : 0})
+                    </CardTitle>
+                    <CardDescription>
+                      Click a video to play it
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 max-h-96 overflow-y-auto">
+                      {Array.isArray(playlistVideos) && playlistVideos.map((video: any) => (
+                        <div
+                          key={video.id}
+                          className={`p-3 rounded-lg cursor-pointer transition-colors border ${
+                            selectedVideo?.id === video.id
+                              ? 'bg-blue-50 border-blue-200 shadow-sm'
+                              : 'bg-white hover:bg-slate-50 border-slate-200'
+                          }`}
+                          onClick={() => setSelectedVideo(video)}
+                        >
+                          <div className="flex flex-col space-y-2">
+                            <img 
+                              src={video.thumbnailUrl} 
+                              alt={video.title}
+                              className="w-full aspect-video rounded object-cover"
+                            />
+                            <div>
+                              <h4 className="font-medium text-sm text-slate-900 line-clamp-2 mb-1">
+                                {video.title}
+                              </h4>
+                              <Badge variant="secondary" className="text-xs">
+                                <Clock size={10} className="mr-1" />
+                                {video.duration}
+                              </Badge>
                             </div>
                           </div>
                         </div>
-                      </div>
+                      )) || (
+                        <div className="col-span-full text-center py-6 text-slate-500">
+                          <Video size={32} className="mx-auto mb-2 opacity-50" />
+                          <p className="text-sm">No videos in this playlist</p>
+                        </div>
+                      )}
                     </div>
-                  )) || (
-                    <div className="p-4 text-center text-slate-500">
-                      {selectedPlaylist ? 'No videos in this playlist' : 'Select a playlist to see videos'}
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-            </div>
-          )}
-        </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );
