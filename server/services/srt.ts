@@ -26,10 +26,26 @@ export class SRTService {
       const timestamp = lines[1];
       const text = lines.slice(2).join(' ').trim();
       
-      // Parse timestamp (format: 00:00:20,000 --> 00:00:24,000)
-      const timeMatch = timestamp.match(/(\d{2}:\d{2}:\d{2}),\d{3}/);
-      if (timeMatch) {
-        const startTime = this.formatTime(timeMatch[1]);
+      // Parse timestamp - handle both standard format (00:00:20,000 --> 00:00:24,000) 
+      // and non-standard format (00:00:428,00:11:128)
+      let startTimeStr = "";
+      
+      if (timestamp.includes('-->')) {
+        // Standard SRT format: 00:00:20,000 --> 00:00:24,000
+        const timeMatch = timestamp.match(/(\d{2}:\d{2}:\d{2}),\d{1,3}/);
+        if (timeMatch) {
+          startTimeStr = timeMatch[1];
+        }
+      } else {
+        // Non-standard format: 00:00:428,00:11:128 (start,end)
+        const timeMatch = timestamp.match(/(\d{2}:\d{2}:\d{1,3}),/);
+        if (timeMatch) {
+          startTimeStr = timeMatch[1];
+        }
+      }
+      
+      if (startTimeStr) {
+        const startTime = this.formatTime(startTimeStr);
         
         if (startTime && text) {
           segments.push({
@@ -45,16 +61,34 @@ export class SRTService {
   
   /**
    * Format time from HH:MM:SS to M:SS or MM:SS format
+   * Handles both standard (HH:MM:SS) and non-standard (HH:MM:SSS) formats
    */
   private formatTime(timeString: string): string {
-    const [hours, minutes, seconds] = timeString.split(':').map(Number);
-    const totalMinutes = hours * 60 + minutes;
+    const parts = timeString.split(':');
     
-    if (totalMinutes === 0) {
-      return `0:${seconds.toString().padStart(2, '0')}`;
+    if (parts.length === 3) {
+      const hours = parseInt(parts[0]);
+      const minutes = parseInt(parts[1]);
+      let seconds = parts[2];
+      
+      // Handle non-standard format where seconds might have milliseconds appended (e.g., "428")
+      if (seconds.length > 2) {
+        // Extract just the seconds part (first 2 digits)
+        seconds = seconds.substring(0, 2);
+      }
+      
+      const totalMinutes = hours * 60 + minutes;
+      const secondsNum = parseInt(seconds) || 0;
+      
+      if (totalMinutes === 0) {
+        return `0:${secondsNum.toString().padStart(2, '0')}`;
+      }
+      
+      return `${totalMinutes}:${secondsNum.toString().padStart(2, '0')}`;
     }
     
-    return `${totalMinutes}:${seconds.toString().padStart(2, '0')}`;
+    // Fallback for unexpected formats
+    return "0:00";
   }
   
   /**
@@ -81,9 +115,11 @@ export class SRTService {
       return { isValid: false, error: "SRT content is empty" };
     }
     
-    // Check if it contains timestamp patterns
-    const timestampPattern = /\d{2}:\d{2}:\d{2},\d{3}\s*-->\s*\d{2}:\d{2}:\d{2},\d{3}/;
-    if (!timestampPattern.test(srtContent)) {
+    // Check if it contains timestamp patterns (standard or non-standard format)
+    const standardTimestampPattern = /\d{2}:\d{2}:\d{2},\d{1,3}\s*-->\s*\d{2}:\d{2}:\d{2},\d{1,3}/;
+    const nonStandardTimestampPattern = /\d{2}:\d{2}:\d{1,3},\d{2}:\d{2}:\d{1,3}/;
+    
+    if (!standardTimestampPattern.test(srtContent) && !nonStandardTimestampPattern.test(srtContent)) {
       return { isValid: false, error: "Invalid SRT format - no valid timestamps found" };
     }
     
