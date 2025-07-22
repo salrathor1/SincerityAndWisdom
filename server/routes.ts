@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { youtubeService } from "./services/youtube";
+import { srtService } from "./services/srt";
 import { insertVideoSchema, insertPlaylistSchema, insertTranscriptSchema } from "@shared/schema";
 import { z } from "zod";
 
@@ -277,6 +278,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting transcript:", error);
       res.status(500).json({ message: "Failed to delete transcript" });
+    }
+  });
+
+  // SRT Import route
+  app.post('/api/transcripts/:id/import-srt', isAuthenticated, async (req, res) => {
+    try {
+      const transcriptId = parseInt(req.params.id);
+      const { srtContent } = req.body;
+      
+      if (!srtContent) {
+        return res.status(400).json({ message: "SRT content is required" });
+      }
+
+      // Validate SRT format
+      const validation = srtService.validateSRT(srtContent);
+      if (!validation.isValid) {
+        return res.status(400).json({ message: validation.error });
+      }
+
+      // Parse SRT content
+      const segments = srtService.parseSRT(srtContent);
+      if (segments.length === 0) {
+        return res.status(400).json({ message: "No valid subtitle segments found in SRT file" });
+      }
+
+      // Update transcript with parsed content
+      const transcript = await storage.updateTranscript(transcriptId, {
+        content: segments,
+      });
+
+      res.json({ 
+        message: "SRT file imported successfully",
+        segmentsCount: segments.length,
+        transcript 
+      });
+    } catch (error) {
+      console.error("Error importing SRT:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid transcript data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to import SRT file" });
     }
   });
 

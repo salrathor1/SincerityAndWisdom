@@ -7,6 +7,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -14,10 +15,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
-import { Play, Pause, SkipBack, SkipForward, Volume2, Save } from "lucide-react";
+import { Play, Pause, SkipBack, SkipForward, Volume2, Save, Upload, FileText } from "lucide-react";
 
 interface TranscriptSegment {
   time: string;
@@ -39,6 +45,8 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
   const [duration] = useState(video?.duration || "15:42");
   const [segments, setSegments] = useState<TranscriptSegment[]>([]);
   const [activeSegmentIndex, setActiveSegmentIndex] = useState(0);
+  const [srtContent, setSrtContent] = useState("");
+  const [showSrtImport, setShowSrtImport] = useState(false);
 
   const { data: transcripts } = useQuery({
     queryKey: ["/api/videos", video?.id, "transcripts"],
@@ -100,8 +108,59 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
     },
   });
 
+  const importSrtMutation = useMutation({
+    mutationFn: async (srtContent: string) => {
+      const transcript = transcripts?.find((t: any) => t.language === selectedLanguage);
+      if (!transcript) {
+        throw new Error("No transcript found for the selected language. Create a transcript first.");
+      }
+      await apiRequest("POST", `/api/transcripts/${transcript.id}/import-srt`, {
+        srtContent,
+      });
+    },
+    onSuccess: (data: any) => {
+      toast({
+        title: "Success",
+        description: `SRT file imported successfully! ${data.segmentsCount} segments added.`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/videos", video?.id, "transcripts"] });
+      setSrtContent("");
+      setShowSrtImport(false);
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: error.message || "Failed to import SRT file",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleSave = () => {
     updateTranscriptMutation.mutate(segments);
+  };
+
+  const handleImportSrt = () => {
+    if (!srtContent.trim()) {
+      toast({
+        title: "Error",
+        description: "Please paste SRT content first",
+        variant: "destructive",
+      });
+      return;
+    }
+    importSrtMutation.mutate(srtContent);
   };
 
   const handlePlayPause = () => {
@@ -243,6 +302,54 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
             <div className="flex items-center justify-between mb-4">
               <h4 className="font-medium text-foreground">Transcript</h4>
               <div className="flex items-center space-x-2">
+                <Popover open={showSrtImport} onOpenChange={setShowSrtImport}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Upload size={16} className="mr-1" />
+                      Import SRT
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-96 p-4">
+                    <div className="space-y-4">
+                      <div className="flex items-center space-x-2">
+                        <FileText size={16} className="text-muted-foreground" />
+                        <h5 className="font-medium">Import SRT File</h5>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Paste your SRT subtitle content below. It will be converted to timed transcript segments.
+                      </p>
+                      <Textarea
+                        placeholder="1&#10;00:00:01,000 --> 00:00:04,000&#10;Hello and welcome to this video...&#10;&#10;2&#10;00:00:05,000 --> 00:00:08,000&#10;Today we will be discussing..."
+                        value={srtContent}
+                        onChange={(e) => setSrtContent(e.target.value)}
+                        rows={8}
+                        className="resize-none"
+                      />
+                      <div className="flex items-center space-x-2">
+                        <Button 
+                          size="sm" 
+                          onClick={handleImportSrt}
+                          disabled={importSrtMutation.isPending || !srtContent.trim()}
+                          className="flex-1"
+                        >
+                          <Upload size={14} className="mr-1" />
+                          {importSrtMutation.isPending ? "Importing..." : "Import SRT"}
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => {
+                            setSrtContent("");
+                            setShowSrtImport(false);
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                
                 <Button variant="outline" size="sm" onClick={addNewSegment}>
                   Add Segment
                 </Button>

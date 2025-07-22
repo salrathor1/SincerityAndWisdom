@@ -50,9 +50,9 @@ The application follows a modern full-stack architecture with clear separation b
 
 ### Frontend Components
 - **Layout Components**: Sidebar navigation, responsive design
-- **Modal System**: Add video modal, transcript editor
+- **Modal System**: Add video modal, transcript editor with SRT import
 - **Data Tables**: Videos, playlists, and transcripts listings
-- **Form Components**: Video import, playlist creation, transcript editing
+- **Form Components**: Video import, playlist creation, transcript editing, SRT file import
 
 ## Data Flow
 
