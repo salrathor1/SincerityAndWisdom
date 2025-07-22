@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Video, FileText, Play, Clock, Languages, LogIn } from "lucide-react";
+import { TranslatedText } from "@/components/TranslatedText";
 
 interface TranscriptSegment {
   time: string;
@@ -372,11 +373,16 @@ export default function Landing() {
                             <Badge variant="secondary" className="text-xs flex-shrink-0 mt-0.5">
                               {segment.time}
                             </Badge>
-                            <p className={`text-sm leading-relaxed ${
-                              selectedLanguage === 'ar' ? 'text-right' : 'text-left'
-                            }`}>
-                              {segment.text}
-                            </p>
+                            {selectedLanguage === 'ar' ? (
+                              <TranslatedText 
+                                text={segment.text} 
+                                className={`text-sm leading-relaxed text-right`}
+                              />
+                            ) : (
+                              <p className="text-sm leading-relaxed text-left">
+                                {segment.text}
+                              </p>
+                            )}
                           </div>
                         </div>
                       )) || (
