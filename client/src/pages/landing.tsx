@@ -28,7 +28,7 @@ declare global {
 export default function Landing() {
   const [selectedPlaylist, setSelectedPlaylist] = useState<number | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<any | null>(null);
-  const [selectedLanguage, setSelectedLanguage] = useState("en");
+  const [selectedLanguage, setSelectedLanguage] = useState("ar");
   const [activeSegmentIndex, setActiveSegmentIndex] = useState(0);
   const [player, setPlayer] = useState<any>(null);
   const [currentTime, setCurrentTime] = useState(0);
