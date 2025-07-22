@@ -1,0 +1,285 @@
+import type { Express } from "express";
+import { createServer, type Server } from "http";
+import { storage } from "./storage";
+import { setupAuth, isAuthenticated } from "./replitAuth";
+import { youtubeService } from "./services/youtube";
+import { insertVideoSchema, insertPlaylistSchema, insertTranscriptSchema } from "@shared/schema";
+import { z } from "zod";
+
+export async function registerRoutes(app: Express): Promise<Server> {
+  // Auth middleware
+  await setupAuth(app);
+
+  // Auth routes
+  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
+  // Dashboard stats
+  app.get('/api/dashboard/stats', isAuthenticated, async (req, res) => {
+    try {
+      const stats = await storage.getDashboardStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching dashboard stats:", error);
+      res.status(500).json({ message: "Failed to fetch dashboard stats" });
+    }
+  });
+
+  // Playlist routes
+  app.get('/api/playlists', isAuthenticated, async (req, res) => {
+    try {
+      const playlists = await storage.getPlaylists();
+      res.json(playlists);
+    } catch (error) {
+      console.error("Error fetching playlists:", error);
+      res.status(500).json({ message: "Failed to fetch playlists" });
+    }
+  });
+
+  app.post('/api/playlists', isAuthenticated, async (req, res) => {
+    try {
+      const playlistData = insertPlaylistSchema.parse(req.body);
+      const playlist = await storage.createPlaylist(playlistData);
+      res.json(playlist);
+    } catch (error) {
+      console.error("Error creating playlist:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid playlist data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create playlist" });
+    }
+  });
+
+  app.get('/api/playlists/:id', isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const playlist = await storage.getPlaylist(id);
+      if (!playlist) {
+        return res.status(404).json({ message: "Playlist not found" });
+      }
+      res.json(playlist);
+    } catch (error) {
+      console.error("Error fetching playlist:", error);
+      res.status(500).json({ message: "Failed to fetch playlist" });
+    }
+  });
+
+  app.put('/api/playlists/:id', isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const playlistData = insertPlaylistSchema.partial().parse(req.body);
+      const playlist = await storage.updatePlaylist(id, playlistData);
+      res.json(playlist);
+    } catch (error) {
+      console.error("Error updating playlist:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid playlist data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to update playlist" });
+    }
+  });
+
+  app.delete('/api/playlists/:id', isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deletePlaylist(id);
+      res.json({ message: "Playlist deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting playlist:", error);
+      res.status(500).json({ message: "Failed to delete playlist" });
+    }
+  });
+
+  // Video routes
+  app.get('/api/videos', isAuthenticated, async (req, res) => {
+    try {
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
+      const videos = await storage.getVideos(limit);
+      res.json(videos);
+    } catch (error) {
+      console.error("Error fetching videos:", error);
+      res.status(500).json({ message: "Failed to fetch videos" });
+    }
+  });
+
+  app.post('/api/videos', isAuthenticated, async (req, res) => {
+    try {
+      const { youtubeUrl, playlistId, languages } = req.body;
+      
+      if (!youtubeUrl) {
+        return res.status(400).json({ message: "YouTube URL is required" });
+      }
+
+      const youtubeId = youtubeService.extractVideoId(youtubeUrl);
+      if (!youtubeId) {
+        return res.status(400).json({ message: "Invalid YouTube URL" });
+      }
+
+      // Check if video already exists
+      const existingVideo = await storage.getVideoByYoutubeId(youtubeId);
+      if (existingVideo) {
+        return res.status(409).json({ message: "Video already exists" });
+      }
+
+      // Fetch video details from YouTube API
+      const videoDetails = await youtubeService.getVideoDetails(youtubeId);
+      if (!videoDetails) {
+        return res.status(404).json({ message: "Video not found on YouTube" });
+      }
+
+      const videoData = insertVideoSchema.parse({
+        youtubeId,
+        title: videoDetails.title,
+        description: videoDetails.description,
+        duration: videoDetails.duration,
+        thumbnailUrl: videoDetails.thumbnailUrl,
+        youtubeUrl,
+        playlistId: playlistId || null,
+        status: "complete",
+      });
+
+      const video = await storage.createVideo(videoData);
+
+      // Create empty transcripts for requested languages
+      if (languages && Array.isArray(languages)) {
+        for (const language of languages) {
+          await storage.createTranscript({
+            videoId: video.id,
+            language,
+            content: [],
+            isAutoGenerated: false,
+          });
+        }
+      }
+
+      res.json(video);
+    } catch (error) {
+      console.error("Error creating video:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid video data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create video" });
+    }
+  });
+
+  app.get('/api/videos/:id', isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const video = await storage.getVideo(id);
+      if (!video) {
+        return res.status(404).json({ message: "Video not found" });
+      }
+      res.json(video);
+    } catch (error) {
+      console.error("Error fetching video:", error);
+      res.status(500).json({ message: "Failed to fetch video" });
+    }
+  });
+
+  app.put('/api/videos/:id', isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const videoData = insertVideoSchema.partial().parse(req.body);
+      const video = await storage.updateVideo(id, videoData);
+      res.json(video);
+    } catch (error) {
+      console.error("Error updating video:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid video data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to update video" });
+    }
+  });
+
+  app.delete('/api/videos/:id', isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteVideo(id);
+      res.json({ message: "Video deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting video:", error);
+      res.status(500).json({ message: "Failed to delete video" });
+    }
+  });
+
+  // Transcript routes
+  app.get('/api/videos/:videoId/transcripts', isAuthenticated, async (req, res) => {
+    try {
+      const videoId = parseInt(req.params.videoId);
+      const transcripts = await storage.getTranscripts(videoId);
+      res.json(transcripts);
+    } catch (error) {
+      console.error("Error fetching transcripts:", error);
+      res.status(500).json({ message: "Failed to fetch transcripts" });
+    }
+  });
+
+  app.post('/api/videos/:videoId/transcripts', isAuthenticated, async (req, res) => {
+    try {
+      const videoId = parseInt(req.params.videoId);
+      const transcriptData = insertTranscriptSchema.parse({
+        ...req.body,
+        videoId,
+      });
+      const transcript = await storage.createTranscript(transcriptData);
+      res.json(transcript);
+    } catch (error) {
+      console.error("Error creating transcript:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid transcript data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create transcript" });
+    }
+  });
+
+  app.get('/api/transcripts/:id', isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const transcript = await storage.getTranscript(id);
+      if (!transcript) {
+        return res.status(404).json({ message: "Transcript not found" });
+      }
+      res.json(transcript);
+    } catch (error) {
+      console.error("Error fetching transcript:", error);
+      res.status(500).json({ message: "Failed to fetch transcript" });
+    }
+  });
+
+  app.put('/api/transcripts/:id', isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const transcriptData = insertTranscriptSchema.partial().parse(req.body);
+      const transcript = await storage.updateTranscript(id, transcriptData);
+      res.json(transcript);
+    } catch (error) {
+      console.error("Error updating transcript:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid transcript data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to update transcript" });
+    }
+  });
+
+  app.delete('/api/transcripts/:id', isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteTranscript(id);
+      res.json({ message: "Transcript deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting transcript:", error);
+      res.status(500).json({ message: "Failed to delete transcript" });
+    }
+  });
+
+  const httpServer = createServer(app);
+  return httpServer;
+}
