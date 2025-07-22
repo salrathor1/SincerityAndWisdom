@@ -34,14 +34,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Playlist routes
-  app.get('/api/playlists', isAuthenticated, async (req, res) => {
+  // Public playlist routes (for landing page)
+  app.get('/api/playlists', async (req, res) => {
     try {
       const playlists = await storage.getPlaylists();
       res.json(playlists);
     } catch (error) {
       console.error("Error fetching playlists:", error);
       res.status(500).json({ message: "Failed to fetch playlists" });
+    }
+  });
+
+  // Get videos in a playlist (public endpoint)
+  app.get('/api/playlists/:id/videos', async (req, res) => {
+    try {
+      const playlistId = parseInt(req.params.id);
+      const videos = await storage.getVideosByPlaylist(playlistId);
+      res.json(videos);
+    } catch (error) {
+      console.error("Error fetching playlist videos:", error);
+      res.status(500).json({ message: "Failed to fetch playlist videos" });
+    }
+  });
+
+  // Public video transcripts endpoint
+  app.get('/api/videos/:id/transcripts', async (req, res) => {
+    try {
+      const videoId = parseInt(req.params.id);
+      const transcripts = await storage.getTranscriptsByVideo(videoId);
+      res.json(transcripts);
+    } catch (error) {
+      console.error("Error fetching transcripts:", error);
+      res.status(500).json({ message: "Failed to fetch transcripts" });
     }
   });
 
