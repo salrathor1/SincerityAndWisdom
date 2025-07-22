@@ -271,7 +271,7 @@ export default function Landing() {
 
         <div className={`grid gap-4 ${showPlaylistPanel ? 'lg:grid-cols-12' : 'lg:grid-cols-8'}`}>
           {/* Video Player Column */}
-          <div className={showPlaylistPanel ? 'lg:col-span-5' : 'lg:col-span-4'}>
+          <div className={showPlaylistPanel ? 'lg:col-span-6' : 'lg:col-span-5'}>
             {selectedVideo ? (
               <Card>
                 <CardContent className="p-0">
@@ -302,7 +302,7 @@ export default function Landing() {
           </div>
 
           {/* Transcript Column */}
-          <div className={showPlaylistPanel ? 'lg:col-span-4' : 'lg:col-span-4'}>
+          <div className={showPlaylistPanel ? 'lg:col-span-3' : 'lg:col-span-3'}>
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -342,7 +342,7 @@ export default function Landing() {
                       key={index}
                       className={`p-2 rounded-lg cursor-pointer transition-colors ${
                         index === activeSegmentIndex
-                          ? 'bg-primary/10 border border-primary/20'
+                          ? 'bg-blue-100 dark:bg-blue-900/50 border-2 border-blue-500 shadow-md'
                           : 'bg-slate-50 hover:bg-slate-100'
                       }`}
                       onClick={() => handleSegmentClick(index, segment.time)}
