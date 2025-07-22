@@ -23,8 +23,9 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
-import { Save, Upload, FileText, Clock } from "lucide-react";
+import { Save, Upload, FileText, Clock, Trash2, Plus, Edit, AlignLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 
 interface TranscriptSegment {
   time: string;
@@ -55,6 +56,8 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
   const [srtContent, setSrtContent] = useState("");
   const [showSrtImport, setShowSrtImport] = useState(false);
   const [player, setPlayer] = useState<any>(null);
+  const [isOpenTextView, setIsOpenTextView] = useState(false);
+  const [openTextContent, setOpenTextContent] = useState("");
   const playerRef = useRef<HTMLDivElement>(null);
 
   const { data: transcripts } = useQuery({
@@ -126,12 +129,15 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
     if (transcripts && Array.isArray(transcripts) && transcripts.length > 0) {
       const transcript = transcripts.find((t: any) => t.language === selectedLanguage);
       if (transcript && transcript.content) {
-        setSegments(Array.isArray(transcript.content) ? transcript.content : []);
+        const content = Array.isArray(transcript.content) ? transcript.content : [];
+        setSegments(content);
+        setOpenTextContent(content.map(seg => seg.text).join('\n\n'));
       } else {
         // Create empty transcript structure
         setSegments([
           { time: "0:00", text: "Click here to add your first transcript segment..." },
         ]);
+        setOpenTextContent("Click here to add your first transcript segment...");
       }
     }
   }, [transcripts, selectedLanguage]);
@@ -298,13 +304,67 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
     return time; // Return original if can't format
   };
 
-  const addNewSegment = () => {
+  const addNewSegment = (insertIndex?: number) => {
     const newSegments = [...segments];
-    newSegments.push({
+    const newSegment = {
       time: "0:00",
       text: "New transcript segment...",
-    });
+    };
+    
+    if (insertIndex !== undefined) {
+      newSegments.splice(insertIndex + 1, 0, newSegment);
+    } else {
+      newSegments.push(newSegment);
+    }
+    
     setSegments(newSegments);
+    updateOpenTextFromSegments(newSegments);
+  };
+
+  const deleteSegment = (index: number) => {
+    if (segments.length <= 1) {
+      toast({
+        description: "Cannot delete the last segment",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const newSegments = segments.filter((_, i) => i !== index);
+    setSegments(newSegments);
+    updateOpenTextFromSegments(newSegments);
+    
+    // Adjust active segment index if needed
+    if (activeSegmentIndex >= newSegments.length) {
+      setActiveSegmentIndex(Math.max(0, newSegments.length - 1));
+    }
+  };
+
+  const updateOpenTextFromSegments = (segs: TranscriptSegment[]) => {
+    setOpenTextContent(segs.map(seg => seg.text).join('\n\n'));
+  };
+
+  const updateSegmentsFromOpenText = (text: string) => {
+    // Split by double newlines to create segments
+    const textSegments = text.split('\n\n').filter(t => t.trim());
+    
+    if (textSegments.length === 0) {
+      setSegments([{ time: "0:00", text: "Empty transcript..." }]);
+      return;
+    }
+    
+    // Create new segments preserving existing timestamps where possible
+    const newSegments = textSegments.map((text, index) => ({
+      time: segments[index]?.time || "0:00",
+      text: text.trim(),
+    }));
+    
+    setSegments(newSegments);
+  };
+
+  const handleOpenTextChange = (text: string) => {
+    setOpenTextContent(text);
+    updateSegmentsFromOpenText(text);
   };
 
   const availableLanguages = [
@@ -369,7 +429,20 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
           {/* Transcript Editor */}
           <div className="w-1/2 p-6 flex flex-col">
             <div className="flex items-center justify-between mb-4">
-              <h4 className="font-medium text-foreground">Transcript</h4>
+              <div className="flex items-center space-x-4">
+                <h4 className="font-medium text-foreground">Transcript</h4>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="text-view"
+                    checked={isOpenTextView}
+                    onCheckedChange={setIsOpenTextView}
+                  />
+                  <label htmlFor="text-view" className="text-sm text-muted-foreground cursor-pointer">
+                    <AlignLeft size={14} className="inline mr-1" />
+                    Open Text View
+                  </label>
+                </div>
+              </div>
               <div className="flex items-center space-x-2">
                 <Popover open={showSrtImport} onOpenChange={setShowSrtImport}>
                   <PopoverTrigger asChild>
@@ -419,7 +492,8 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
                   </PopoverContent>
                 </Popover>
                 
-                <Button variant="outline" size="sm" onClick={addNewSegment}>
+                <Button variant="outline" size="sm" onClick={() => addNewSegment()}>
+                  <Plus size={16} className="mr-1" />
                   Add Segment
                 </Button>
                 <Button 
@@ -433,56 +507,103 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto space-y-3">
-              {segments.length > 0 ? (
-                segments.map((segment, index) => (
-                  <div
-                    key={index}
-                    className={`flex space-x-3 p-3 hover:bg-slate-50 rounded-lg transition-colors ${
-                      index === activeSegmentIndex ? "bg-blue-50 border-l-4 border-primary" : ""
-                    }`}
-                  >
-                    <div className="flex flex-col space-y-2 w-20 flex-shrink-0">
-                      <div className="flex items-center space-x-1">
-                        <Clock size={12} className="text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground">Time</span>
-                      </div>
-                      <Input
-                        value={segment.time}
-                        onChange={(e) => handleTimeEdit(index, e.target.value)}
-                        onFocus={(e) => e.target.select()}
-                        className="text-xs h-8 text-center font-mono"
-                        placeholder="0:00"
-                      />
-                      <button
-                        onClick={() => handleSegmentClick(index, segment.time)}
-                        className="text-xs text-blue-600 hover:text-blue-800 transition-colors"
-                      >
-                        Jump to
-                      </button>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-1 mb-2">
-                        <span className="text-xs text-muted-foreground">Transcript Text</span>
-                      </div>
-                      <div
-                        className={`text-sm text-foreground editable-content p-3 rounded border-transparent border hover:border-border focus:border-primary min-h-[60px] ${
-                          selectedLanguage === 'ar' ? 'text-right' : 'text-left'
-                        }`}
-                        contentEditable
-                        suppressContentEditableWarning
-                        onBlur={(e) => handleTextEdit(index, e.currentTarget.textContent || "")}
-                        dangerouslySetInnerHTML={{ __html: segment.text }}
-                      />
-                    </div>
+            <div className="flex-1 overflow-y-auto">
+              {isOpenTextView ? (
+                <div className="h-full">
+                  <div className="mb-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <p className="text-sm text-blue-800 flex items-start space-x-2">
+                      <AlignLeft size={16} className="mt-0.5 flex-shrink-0" />
+                      <span>
+                        <strong>Open Text Mode:</strong> Edit your transcript as continuous text. 
+                        Separate segments with double line breaks (Enter twice). Switch back to segment view to adjust timestamps.
+                      </span>
+                    </p>
                   </div>
-                ))
+                  <Textarea
+                    value={openTextContent}
+                    onChange={(e) => handleOpenTextChange(e.target.value)}
+                    placeholder="Enter your transcript text here. Use double line breaks to separate segments..."
+                    className={`resize-none h-full min-h-[400px] ${
+                      selectedLanguage === 'ar' ? 'text-right' : 'text-left'
+                    }`}
+                  />
+                </div>
               ) : (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground">No transcript segments yet.</p>
-                  <Button className="mt-4" onClick={addNewSegment}>
-                    Add First Segment
-                  </Button>
+                <div className="space-y-3">
+                  {segments.length > 0 ? (
+                    segments.map((segment, index) => (
+                      <div
+                        key={index}
+                        className={`flex space-x-3 p-3 hover:bg-slate-50 rounded-lg transition-colors ${
+                          index === activeSegmentIndex ? "bg-blue-50 border-l-4 border-primary" : ""
+                        }`}
+                      >
+                        <div className="flex flex-col space-y-2 w-20 flex-shrink-0">
+                          <div className="flex items-center space-x-1">
+                            <Clock size={12} className="text-muted-foreground" />
+                            <span className="text-xs text-muted-foreground">Time</span>
+                          </div>
+                          <Input
+                            value={segment.time}
+                            onChange={(e) => handleTimeEdit(index, e.target.value)}
+                            onFocus={(e) => e.target.select()}
+                            className="text-xs h-8 text-center font-mono"
+                            placeholder="0:00"
+                          />
+                          <button
+                            onClick={() => handleSegmentClick(index, segment.time)}
+                            className="text-xs text-blue-600 hover:text-blue-800 transition-colors"
+                          >
+                            Jump to
+                          </button>
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs text-muted-foreground">Transcript Text</span>
+                            <div className="flex items-center space-x-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => addNewSegment(index)}
+                                className="h-6 px-2"
+                              >
+                                <Plus size={12} className="text-green-600" />
+                              </Button>
+                              {segments.length > 1 && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => deleteSegment(index)}
+                                  className="h-6 px-2"
+                                >
+                                  <Trash2 size={12} className="text-red-600" />
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                          <div
+                            className={`text-sm text-foreground editable-content p-3 rounded border-transparent border hover:border-border focus:border-primary min-h-[60px] ${
+                              selectedLanguage === 'ar' ? 'text-right' : 'text-left'
+                            }`}
+                            contentEditable
+                            suppressContentEditableWarning
+                            onBlur={(e) => {
+                              handleTextEdit(index, e.currentTarget.textContent || "");
+                              updateOpenTextFromSegments(segments);
+                            }}
+                            dangerouslySetInnerHTML={{ __html: segment.text }}
+                          />
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground">No transcript segments yet.</p>
+                      <Button className="mt-4" onClick={() => addNewSegment()}>
+                        Add First Segment
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
