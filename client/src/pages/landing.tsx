@@ -214,29 +214,10 @@ export default function Landing() {
               <p className="text-sm text-slate-600">Watch videos with synchronized transcripts</p>
             </div>
           </div>
-          <div className="flex items-center space-x-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowPlaylistPanel(!showPlaylistPanel)}
-            >
-              {showPlaylistPanel ? (
-                <>
-                  <ChevronLeft size={16} className="mr-2" />
-                  Hide Playlist
-                </>
-              ) : (
-                <>
-                  <ChevronRight size={16} className="mr-2" />
-                  Show Playlist
-                </>
-              )}
-            </Button>
-            <Button onClick={handleLogin} variant="outline" size="sm">
-              <LogIn size={16} className="mr-2" />
-              Admin Login
-            </Button>
-          </div>
+          <Button onClick={handleLogin} variant="outline" size="sm">
+            <LogIn size={16} className="mr-2" />
+            Admin Login
+          </Button>
         </div>
 
         {/* Playlist Selector */}
@@ -261,6 +242,23 @@ export default function Landing() {
                 ))}
               </SelectContent>
             </Select>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowPlaylistPanel(!showPlaylistPanel)}
+            >
+              {showPlaylistPanel ? (
+                <>
+                  <ChevronLeft size={16} className="mr-2" />
+                  Hide Playlist Videos
+                </>
+              ) : (
+                <>
+                  <ChevronRight size={16} className="mr-2" />
+                  Show Playlist Videos
+                </>
+              )}
+            </Button>
             {selectedPlaylist && Array.isArray(playlistVideos) && (
               <Badge variant="secondary">
                 {playlistVideos.length} videos
