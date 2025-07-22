@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -10,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Video, FileText, Play, Clock, Languages, LogIn, ChevronLeft, ChevronRight } from "lucide-react";
+import { Video, FileText, Play, Clock, Languages, LogIn, ChevronLeft, ChevronRight, Search, X } from "lucide-react";
 import { TranslatedText } from "@/components/TranslatedText";
 
 interface TranscriptSegment {
@@ -34,6 +35,9 @@ export default function Landing() {
   const [player, setPlayer] = useState<any>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [showPlaylistPanel, setShowPlaylistPanel] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<number[]>([]);
+  const [currentSearchIndex, setCurrentSearchIndex] = useState(-1);
   const playerRef = useRef<HTMLDivElement>(null);
   const transcriptRef = useRef<HTMLDivElement>(null);
 
@@ -173,6 +177,77 @@ export default function Landing() {
       const seconds = parseTimeToSeconds(time);
       player.seekTo(seconds, true);
     }
+  };
+
+  // Search functionality
+  const performSearch = (query: string) => {
+    setSearchQuery(query);
+    
+    if (!query.trim() || segments.length === 0) {
+      setSearchResults([]);
+      setCurrentSearchIndex(-1);
+      return;
+    }
+
+    const results: number[] = [];
+    segments.forEach((segment, index) => {
+      if (segment.text.toLowerCase().includes(query.toLowerCase())) {
+        results.push(index);
+      }
+    });
+
+    setSearchResults(results);
+    setCurrentSearchIndex(results.length > 0 ? 0 : -1);
+
+    // Auto-scroll to first result
+    if (results.length > 0) {
+      setActiveSegmentIndex(results[0]);
+      scrollToSegment(results[0]);
+    }
+  };
+
+  const navigateSearch = (direction: 'next' | 'prev') => {
+    if (searchResults.length === 0) return;
+
+    let newIndex: number;
+    if (direction === 'next') {
+      newIndex = currentSearchIndex < searchResults.length - 1 ? currentSearchIndex + 1 : 0;
+    } else {
+      newIndex = currentSearchIndex > 0 ? currentSearchIndex - 1 : searchResults.length - 1;
+    }
+
+    setCurrentSearchIndex(newIndex);
+    const segmentIndex = searchResults[newIndex];
+    setActiveSegmentIndex(segmentIndex);
+    scrollToSegment(segmentIndex);
+  };
+
+  const scrollToSegment = (index: number) => {
+    if (transcriptRef.current) {
+      const segmentElement = transcriptRef.current.children[index] as HTMLElement;
+      if (segmentElement) {
+        segmentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  };
+
+  const highlightText = (text: string, query: string) => {
+    if (!query.trim()) return text;
+    
+    const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    const parts = text.split(regex);
+    
+    return parts.map((part, index) => 
+      regex.test(part) ? 
+        `<mark class="bg-yellow-200 dark:bg-yellow-800 px-1 rounded">${part}</mark>` : 
+        part
+    ).join('');
+  };
+
+  const clearSearch = () => {
+    setSearchQuery("");
+    setSearchResults([]);
+    setCurrentSearchIndex(-1);
   };
 
   useEffect(() => {
@@ -326,9 +401,61 @@ export default function Landing() {
                     </div>
                   )}
                 </div>
-                <CardDescription>
+                
+                {/* Search Interface */}
+                {segments.length > 0 && (
+                  <div className="flex items-center space-x-2 mt-3">
+                    <div className="relative flex-1">
+                      <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
+                      <Input
+                        placeholder="Search transcript..."
+                        value={searchQuery}
+                        onChange={(e) => performSearch(e.target.value)}
+                        className="pl-10 pr-10"
+                      />
+                      {searchQuery && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={clearSearch}
+                          className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+                        >
+                          <X size={14} />
+                        </Button>
+                      )}
+                    </div>
+                    
+                    {searchResults.length > 0 && (
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm text-slate-600">
+                          {currentSearchIndex + 1} of {searchResults.length}
+                        </span>
+                        <div className="flex space-x-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => navigateSearch('prev')}
+                            className="h-8 w-8 p-0"
+                          >
+                            <ChevronLeft size={14} />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => navigateSearch('next')}
+                            className="h-8 w-8 p-0"
+                          >
+                            <ChevronRight size={14} />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                <CardDescription className="mt-2">
                   {segments.length > 0 
-                    ? `${segments.length} segments available in ${selectedLanguage === 'ar' ? 'Arabic' : 'English'}`
+                    ? `${segments.length} segments available in ${selectedLanguage === 'ar' ? 'Arabic' : 'English'}${searchResults.length > 0 ? ` • ${searchResults.length} matches found` : ''}`
                     : 'No transcript available for this language'
                   }
                 </CardDescription>
@@ -350,14 +477,27 @@ export default function Landing() {
                           {segment.time}
                         </Badge>
                         {selectedLanguage === 'ar' ? (
-                          <TranslatedText 
-                            text={segment.text} 
-                            className={`text-sm leading-relaxed text-right`}
-                          />
+                          <div className="text-sm leading-relaxed text-right">
+                            {searchQuery ? (
+                              <span 
+                                dangerouslySetInnerHTML={{ 
+                                  __html: highlightText(segment.text, searchQuery) 
+                                }}
+                              />
+                            ) : (
+                              <TranslatedText 
+                                text={segment.text} 
+                                className=""
+                              />
+                            )}
+                          </div>
                         ) : (
-                          <p className="text-sm leading-relaxed text-left">
-                            {segment.text}
-                          </p>
+                          <p 
+                            className="text-sm leading-relaxed text-left"
+                            dangerouslySetInnerHTML={{ 
+                              __html: searchQuery ? highlightText(segment.text, searchQuery) : segment.text 
+                            }}
+                          />
                         )}
                       </div>
                     </div>
