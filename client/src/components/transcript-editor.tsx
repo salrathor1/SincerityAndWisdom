@@ -67,6 +67,8 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
   const [isOpenTextView, setIsOpenTextView] = useState(false);
   const [openTextContent, setOpenTextContent] = useState("");
   const [timeInputs, setTimeInputs] = useState<string[]>([]);
+  const [videoUrl, setVideoUrl] = useState("");
+  const [isEditingUrl, setIsEditingUrl] = useState(false);
   const playerRef = useRef<HTMLDivElement>(null);
 
   const { data: transcripts } = useQuery({
@@ -133,6 +135,13 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
       setPlayer(null);
     }
   }, [isOpen, player]);
+
+  // Initialize video URL when video changes
+  useEffect(() => {
+    if (video?.youtubeId) {
+      setVideoUrl(`https://www.youtube.com/watch?v=${video.youtubeId}`);
+    }
+  }, [video?.youtubeId]);
 
   useEffect(() => {
     if (transcripts && Array.isArray(transcripts) && transcripts.length > 0) {
@@ -241,8 +250,70 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
     },
   });
 
+  // Helper function to extract YouTube ID from URL
+  const extractYouTubeId = (url: string): string | null => {
+    const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+    const match = url.match(regex);
+    return match ? match[1] : null;
+  };
+
+  const updateVideoUrlMutation = useMutation({
+    mutationFn: async (newUrl: string) => {
+      const youtubeId = extractYouTubeId(newUrl);
+      if (!youtubeId) {
+        throw new Error("Invalid YouTube URL. Please enter a valid YouTube video URL.");
+      }
+      await apiRequest("PUT", `/api/videos/${video.id}`, {
+        youtubeId,
+      });
+      return youtubeId;
+    },
+    onSuccess: (newYoutubeId) => {
+      toast({
+        title: "Success",
+        description: "Video URL updated successfully!",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/videos"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/videos", video?.id, "transcripts"] });
+      setIsEditingUrl(false);
+      // Update the video object to reflect changes
+      if (video) {
+        video.youtubeId = newYoutubeId;
+      }
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update video URL",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleSave = () => {
     updateTranscriptMutation.mutate(segments);
+  };
+
+  const handleUpdateVideoUrl = () => {
+    if (videoUrl.trim()) {
+      updateVideoUrlMutation.mutate(videoUrl);
+    }
+  };
+
+  const handleCancelUrlEdit = () => {
+    setVideoUrl(`https://www.youtube.com/watch?v=${video.youtubeId}`);
+    setIsEditingUrl(false);
   };
 
   const handleImportSrt = () => {
@@ -546,9 +617,63 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
             </div>
 
             {/* Video Info */}
-            <div className="text-sm text-muted-foreground">
+            <div className="text-sm text-muted-foreground space-y-3">
               <p className="font-medium">{video.title}</p>
               <p>Duration: {video.duration}</p>
+              
+              {/* Video URL Editor */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-medium">Video URL:</label>
+                  {canEdit && !isEditingUrl && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsEditingUrl(true)}
+                      className="h-6 px-2 text-xs"
+                    >
+                      <Edit size={12} className="mr-1" />
+                      Edit
+                    </Button>
+                  )}
+                </div>
+                
+                {isEditingUrl ? (
+                  <div className="space-y-2">
+                    <Input
+                      value={videoUrl}
+                      onChange={(e) => setVideoUrl(e.target.value)}
+                      placeholder="https://www.youtube.com/watch?v=..."
+                      className="text-xs"
+                      disabled={updateVideoUrlMutation.isPending}
+                    />
+                    <div className="flex space-x-2">
+                      <Button
+                        size="sm"
+                        onClick={handleUpdateVideoUrl}
+                        disabled={updateVideoUrlMutation.isPending}
+                        className="h-6 px-2 text-xs"
+                      >
+                        {updateVideoUrlMutation.isPending ? "Updating..." : "Update"}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleCancelUrlEdit}
+                        disabled={updateVideoUrlMutation.isPending}
+                        className="h-6 px-2 text-xs"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs break-all font-mono bg-muted p-2 rounded">
+                    {videoUrl}
+                  </p>
+                )}
+              </div>
+              
               <p className="mt-2 text-xs">
                 Use the YouTube player controls above to play, pause, and seek through the video. 
                 Click on transcript segments to note timing for synchronization.

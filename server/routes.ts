@@ -264,10 +264,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/videos/:id', isAuthenticated, async (req, res) => {
+  app.put('/api/videos/:id', isAuthenticated, requireRole(['admin', 'editor']), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const videoData = insertVideoSchema.partial().parse(req.body);
+      const requestData = req.body;
+      
+      // Handle YouTube ID updates
+      if (requestData.youtubeId) {
+        // Check if the new YouTube ID is different and valid
+        const currentVideo = await storage.getVideo(id);
+        if (!currentVideo) {
+          return res.status(404).json({ message: "Video not found" });
+        }
+        
+        if (requestData.youtubeId !== currentVideo.youtubeId) {
+          // Check if another video already uses this YouTube ID
+          const existingVideo = await storage.getVideoByYoutubeId(requestData.youtubeId);
+          if (existingVideo && existingVideo.id !== id) {
+            return res.status(409).json({ message: "Another video already uses this YouTube ID" });
+          }
+          
+          // Fetch updated video details from YouTube API
+          const videoDetails = await youtubeService.getVideoDetails(requestData.youtubeId);
+          if (!videoDetails) {
+            return res.status(404).json({ message: "Video not found on YouTube" });
+          }
+          
+          // Update with new YouTube data
+          const updatedData = {
+            youtubeId: requestData.youtubeId,
+            title: videoDetails.title,
+            description: videoDetails.description,
+            duration: videoDetails.duration,
+            thumbnailUrl: videoDetails.thumbnailUrl,
+            youtubeUrl: `https://www.youtube.com/watch?v=${requestData.youtubeId}`,
+            status: "complete",
+          };
+          
+          const video = await storage.updateVideo(id, updatedData);
+          return res.json(video);
+        }
+      }
+      
+      // Regular update for other fields
+      const videoData = insertVideoSchema.partial().parse(requestData);
       const video = await storage.updateVideo(id, videoData);
       res.json(video);
     } catch (error) {
