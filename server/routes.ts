@@ -7,6 +7,33 @@ import { srtService } from "./services/srt";
 import { insertVideoSchema, insertPlaylistSchema, insertTranscriptSchema } from "@shared/schema";
 import { z } from "zod";
 
+// Role-based authentication middleware
+const requireRole = (roles: string[]) => {
+  return async (req: any, res: any, next: any) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(401).json({ message: "User not found" });
+      }
+
+      if (!roles.includes(user.role || 'viewer')) {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+
+      req.currentUser = user;
+      next();
+    } catch (error) {
+      console.error("Role check error:", error);
+      res.status(500).json({ message: "Authorization error" });
+    }
+  };
+};
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
@@ -69,7 +96,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/playlists', isAuthenticated, async (req, res) => {
+  // User management routes (admin only)
+  app.get('/api/admin/users', isAuthenticated, requireRole(['admin']), async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  app.patch('/api/admin/users/:id/role', isAuthenticated, requireRole(['admin']), async (req, res) => {
+    try {
+      const userId = req.params.id;
+      const { role } = req.body;
+      
+      if (!['admin', 'editor', 'viewer'].includes(role)) {
+        return res.status(400).json({ message: "Invalid role" });
+      }
+
+      const updatedUser = await storage.updateUserRole(userId, role);
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error updating user role:", error);
+      res.status(500).json({ message: "Failed to update user role" });
+    }
+  });
+
+  app.post('/api/playlists', isAuthenticated, requireRole(['admin', 'editor']), async (req, res) => {
     try {
       const playlistData = insertPlaylistSchema.parse(req.body);
       const playlist = await storage.createPlaylist(playlistData);
@@ -97,7 +152,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/playlists/:id', isAuthenticated, async (req, res) => {
+  app.put('/api/playlists/:id', isAuthenticated, requireRole(['admin', 'editor']), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const playlistData = insertPlaylistSchema.partial().parse(req.body);
@@ -112,7 +167,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/playlists/:id', isAuthenticated, async (req, res) => {
+  app.delete('/api/playlists/:id', isAuthenticated, requireRole(['admin']), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       await storage.deletePlaylist(id);
@@ -135,7 +190,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/videos', isAuthenticated, async (req, res) => {
+  app.post('/api/videos', isAuthenticated, requireRole(['admin', 'editor']), async (req, res) => {
     try {
       const { youtubeUrl, playlistId, languages } = req.body;
       

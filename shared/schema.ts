@@ -8,10 +8,14 @@ import {
   serial,
   boolean,
   integer,
+  pgEnum,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+
+// User role enum
+export const userRoleEnum = pgEnum('user_role', ['admin', 'editor', 'viewer']);
 
 // Session storage table (required for Replit Auth)
 export const sessions = pgTable(
@@ -31,6 +35,7 @@ export const users = pgTable("users", {
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
+  role: userRoleEnum("role").default("viewer"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

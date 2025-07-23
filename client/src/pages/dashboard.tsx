@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AddVideoModal } from "@/components/add-video-modal";
 import { TranscriptEditor } from "@/components/transcript-editor";
+import { UserManagement } from "@/components/user-management";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
@@ -49,6 +50,11 @@ export default function Dashboard() {
 
   const { data: recentVideos } = useQuery({
     queryKey: ["/api/videos"],
+    retry: false,
+  });
+
+  const { data: currentUser } = useQuery({
+    queryKey: ["/api/auth/user"],
     retry: false,
   });
 
@@ -258,6 +264,13 @@ export default function Dashboard() {
               )}
             </CardContent>
           </Card>
+
+          {/* User Management Section (Admin Only) */}
+          {currentUser?.role === 'admin' && (
+            <div className="mb-8">
+              <UserManagement />
+            </div>
+          )}
         </main>
       </div>
 
