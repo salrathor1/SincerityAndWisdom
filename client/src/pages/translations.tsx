@@ -318,8 +318,8 @@ export default function TranslationsPage() {
       
       if (selectedTranscript) {
         console.log('Updating existing transcript:', selectedTranscript.id);
-        // Update existing transcript
-        await apiRequest('PATCH', `/api/videos/${selectedVideoId}/transcripts/${selectedTranscript.id}`, {
+        // Update existing transcript - use PUT endpoint like transcript editor
+        await apiRequest('PUT', `/api/transcripts/${selectedTranscript.id}`, {
           content: contentForSave
         });
       } else {
