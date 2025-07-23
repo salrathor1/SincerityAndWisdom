@@ -723,13 +723,23 @@ export default function Landing() {
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end" className="w-40">
                                   <DropdownMenuItem onClick={async () => {
-                                    // Share current page URL
-                                    const currentUrl = window.location.href;
+                                    // Share current page URL with only language parameter
+                                    const baseUrl = window.location.origin + window.location.pathname;
+                                    const urlParams = new URLSearchParams(window.location.search);
+                                    
+                                    // Build clean URL with only playlist, video, and language params
+                                    const cleanParams = new URLSearchParams();
+                                    if (urlParams.get('playlist')) cleanParams.set('playlist', urlParams.get('playlist')!);
+                                    if (urlParams.get('video')) cleanParams.set('video', urlParams.get('video')!);
+                                    if (urlParams.get('lang')) cleanParams.set('lang', urlParams.get('lang')!);
+                                    
+                                    const cleanUrl = cleanParams.toString() ? `${baseUrl}?${cleanParams.toString()}` : baseUrl;
+                                    
                                     try {
-                                      await navigator.clipboard.writeText(currentUrl);
+                                      await navigator.clipboard.writeText(cleanUrl);
                                       toast({
                                         title: "Link copied!",
-                                        description: "Current page URL copied to clipboard",
+                                        description: "Page URL copied without timestamps",
                                         variant: "default",
                                       });
                                     } catch (err) {
