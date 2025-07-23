@@ -139,16 +139,24 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
       if (transcript && transcript.content) {
         const content = Array.isArray(transcript.content) ? transcript.content : [];
         setSegments(content);
-        setOpenTextContent(content.map((seg: TranscriptSegment) => seg.text).join('\n\n'));
+        updateOpenTextFromSegments(content);
       } else {
         // Create empty transcript structure
-        setSegments([
+        const emptySegments = [
           { time: "0:00", text: "Click here to add your first transcript segment..." },
-        ]);
-        setOpenTextContent("Click here to add your first transcript segment...");
+        ];
+        setSegments(emptySegments);
+        updateOpenTextFromSegments(emptySegments);
       }
     }
   }, [transcripts, selectedLanguage]);
+
+  // Update SRT format whenever segments change or SRT view is toggled
+  useEffect(() => {
+    if (segments.length > 0) {
+      updateOpenTextFromSegments(segments);
+    }
+  }, [segments, isOpenTextView]);
 
   const updateTranscriptMutation = useMutation({
     mutationFn: async (content: TranscriptSegment[]) => {
@@ -352,20 +360,30 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
     // Convert segments to SRT format
     const srtContent = segs.map((seg: TranscriptSegment, index: number) => {
       const startTime = convertTimeToSrt(seg.time);
-      // Calculate end time (start time + 3 seconds as default, or use next segment's start time)
+      // Calculate end time (start time + default duration, or use next segment's start time)
       const nextSeg = segs[index + 1];
       let endTime: string;
       
       if (nextSeg) {
-        endTime = convertTimeToSrt(nextSeg.time);
+        // Use next segment's start time as this segment's end time
+        const nextStartSeconds = parseTimeToSeconds(nextSeg.time);
+        const currentStartSeconds = parseTimeToSeconds(seg.time);
+        
+        // Ensure minimum 1 second duration and don't overlap
+        if (nextStartSeconds > currentStartSeconds) {
+          endTime = convertTimeToSrt(nextSeg.time);
+        } else {
+          // If times are wrong, add 3 seconds
+          endTime = convertSecondsToSrt(currentStartSeconds + 3);
+        }
       } else {
-        // For the last segment, add 3 seconds to start time
-        const endSeconds = parseTimeToSeconds(seg.time) + 3;
-        endTime = convertSecondsToSrt(endSeconds);
+        // For the last segment, add 4 seconds duration
+        const startSeconds = parseTimeToSeconds(seg.time);
+        endTime = convertSecondsToSrt(startSeconds + 4);
       }
       
-      return `${index + 1}\n${startTime} --> ${endTime}\n${seg.text}\n`;
-    }).join('\n');
+      return `${index + 1}\n${startTime} --> ${endTime}\n${seg.text}`;
+    }).join('\n\n');
     setOpenTextContent(srtContent);
   };
 
@@ -616,7 +634,7 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
                   <Textarea
                     value={openTextContent}
                     onChange={canEdit ? (e) => handleOpenTextChange(e.target.value) : undefined}
-                    placeholder="1&#10;00:00:01,000 --> 00:00:04,000&#10;Welcome to this video...&#10;&#10;2&#10;00:00:05,000 --> 00:00:08,000&#10;Today we will discuss..."
+                    placeholder="1&#10;00:00:01,000 --> 00:00:04,000&#10;Welcome to this video transcript...&#10;&#10;2&#10;00:00:05,000 --> 00:00:08,000&#10;Today we will be discussing the main topic...&#10;&#10;3&#10;00:00:09,000 --> 00:00:12,000&#10;Each segment shows timing and text content..."
                     className={`resize-none h-full min-h-[400px] font-mono text-sm ${
                       selectedLanguage === 'ar' ? 'text-right' : 'text-left'
                     } ${!canEdit ? 'bg-gray-50 cursor-not-allowed' : ''}`}
