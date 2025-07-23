@@ -707,11 +707,10 @@ export default function Landing() {
                               variant={isSelecting ? "default" : "outline"}
                               size="sm"
                               onClick={toggleSelectionMode}
-                              className="h-6 text-xs px-2"
+                              className="h-6 w-6 p-0"
                               title={isSelecting ? "Exit selection mode" : "Select segments to share"}
                             >
-                              <Share2 size={10} className="mr-1" />
-                              {isSelecting ? "Cancel" : "Select"}
+                              {isSelecting ? <X size={10} /> : <Share2 size={10} />}
                             </Button>
                             
                             {isSelecting && (
