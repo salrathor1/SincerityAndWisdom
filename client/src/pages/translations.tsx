@@ -480,9 +480,12 @@ export default function TranslationsPage() {
                       {translationSegments.length > 0 ? (
                         translationSegments.map((segment, index) => (
                           <div key={index} className="border rounded-lg p-3">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center">
-                                <Clock size={14} className="mr-2 text-muted-foreground" />
+                            <div className="flex space-x-3 mb-2">
+                              <div className="flex flex-col space-y-2 w-32 flex-shrink-0">
+                                <div className="flex items-center space-x-1">
+                                  <Clock size={12} className="text-muted-foreground" />
+                                  <span className="text-xs text-muted-foreground">Time</span>
+                                </div>
                                 <input
                                   type="text"
                                   value={segment.time}
@@ -491,25 +494,32 @@ export default function TranslationsPage() {
                                     updatedSegments[index] = { ...updatedSegments[index], time: e.target.value };
                                     setTranslationSegments(updatedSegments);
                                   }}
-                                  className="text-sm font-mono text-muted-foreground bg-transparent border-none focus:outline-none w-40"
+                                  className="text-xs h-8 text-center font-mono border-2 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 rounded-lg transition-all duration-200 hover:border-gray-300 dark:hover:border-gray-600"
                                   placeholder="00:00:00,000 --> 00:00:05,000"
                                 />
                               </div>
-                              <Button
-                                onClick={() => deleteSegment(index)}
-                                size="sm"
-                                variant="ghost"
-                                className="text-destructive hover:text-destructive"
-                              >
-                                <Trash2 size={14} />
-                              </Button>
+                              <div className="flex-1">
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="text-xs text-muted-foreground">Translation Text</span>
+                                  <Button
+                                    onClick={() => deleteSegment(index)}
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-6 px-2 text-destructive hover:text-destructive"
+                                  >
+                                    <Trash2 size={12} />
+                                  </Button>
+                                </div>
+                              </div>
                             </div>
-                            <Textarea
-                              value={segment.text}
-                              onChange={(e) => handleSegmentTextChange(index, e.target.value)}
-                              placeholder={`Enter ${getLanguageName(selectedLanguage)} translation...`}
-                              className="min-h-[60px] resize-none text-sm"
-                            />
+                            <div className="ml-35">
+                              <Textarea
+                                value={segment.text}
+                                onChange={(e) => handleSegmentTextChange(index, e.target.value)}
+                                placeholder={`Enter ${getLanguageName(selectedLanguage)} translation...`}
+                                className="text-sm min-h-[60px] resize-none border-2 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 rounded-lg transition-all duration-200 hover:border-gray-300 dark:hover:border-gray-600"
+                              />
+                            </div>
                           </div>
                         ))
                       ) : (
