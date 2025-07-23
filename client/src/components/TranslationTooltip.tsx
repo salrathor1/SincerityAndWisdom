@@ -20,15 +20,15 @@ export function TranslationTooltip({ word, children }: TranslationTooltipProps) 
   }
 
   return (
-    <TooltipProvider>
+    <TooltipProvider delayDuration={0}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <span className="cursor-help hover:bg-blue-100 hover:bg-opacity-30 rounded px-0.5 transition-colors">
+          <span className="cursor-help hover:bg-blue-100 dark:hover:bg-blue-900 hover:bg-opacity-40 dark:hover:bg-opacity-40 rounded px-0.5 transition-all duration-150 ease-in-out">
             {children}
           </span>
         </TooltipTrigger>
-        <TooltipContent side="top" className="max-w-xs">
-          <p className="text-sm font-medium">{translation}</p>
+        <TooltipContent side="top" className="max-w-xs bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg">
+          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{translation}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

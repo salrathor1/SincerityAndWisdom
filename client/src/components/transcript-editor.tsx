@@ -717,7 +717,7 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
               <div className="flex items-center space-x-2">
                 <label className="text-sm text-muted-foreground">Language:</label>
                 <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
-                  <SelectTrigger className="w-32">
+                  <SelectTrigger className="w-32 border-2 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 rounded-lg transition-all duration-200 hover:border-gray-300 dark:hover:border-gray-600">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -780,7 +780,7 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
                       value={videoUrl}
                       onChange={(e) => setVideoUrl(e.target.value)}
                       placeholder="https://www.youtube.com/watch?v=..."
-                      className="text-xs"
+                      className="text-xs border-2 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 rounded-lg px-3 py-2 transition-all duration-200 hover:border-gray-300 dark:hover:border-gray-600"
                       disabled={updateVideoUrlMutation.isPending}
                     />
                     <div className="flex space-x-2">
@@ -833,7 +833,7 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
                       value={selectedPlaylistId?.toString() || ""} 
                       onValueChange={(value) => setSelectedPlaylistId(value ? parseInt(value) : null)}
                     >
-                      <SelectTrigger className="text-xs">
+                      <SelectTrigger className="text-xs border-2 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 rounded-lg transition-all duration-200 hover:border-gray-300 dark:hover:border-gray-600">
                         <SelectValue placeholder="Select a playlist" />
                       </SelectTrigger>
                       <SelectContent>
@@ -995,7 +995,7 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
                         value={srtContent}
                         onChange={(e) => setSrtContent(e.target.value)}
                         rows={8}
-                        className="resize-none"
+                        className="resize-none border-2 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 rounded-lg transition-all duration-200 hover:border-gray-300 dark:hover:border-gray-600 font-mono text-sm"
                       />
                       <div className="flex items-center space-x-2">
                         <Button 
@@ -1064,9 +1064,12 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
                     value={openTextContent}
                     onChange={canEdit ? (e) => handleOpenTextChange(e.target.value) : undefined}
                     placeholder="1&#10;00:00:01,000 --> 00:00:04,000&#10;Welcome to this video transcript...&#10;&#10;2&#10;00:00:05,000 --> 00:00:08,000&#10;Today we will be discussing the main topic...&#10;&#10;3&#10;00:00:09,000 --> 00:00:12,000&#10;Each segment shows timing and text content..."
-                    className={`resize-none h-full min-h-[400px] font-mono text-sm ${
+                    className={`resize-none h-full min-h-[400px] font-mono text-sm border-2 transition-all duration-200 rounded-lg ${
                       selectedLanguage === 'ar' ? 'text-right direction-rtl' : 'text-left direction-ltr'
-                    } ${!canEdit ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                    } ${!canEdit 
+                      ? 'bg-gray-50 dark:bg-gray-800 cursor-not-allowed border-gray-200 dark:border-gray-700' 
+                      : 'border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 hover:border-gray-300 dark:hover:border-gray-600'
+                    }`}
                     readOnly={!canEdit}
                     dir={selectedLanguage === 'ar' ? 'rtl' : 'ltr'}
                   />
@@ -1091,7 +1094,11 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
                             onChange={canEdit ? (e) => handleTimeInputChange(index, e.target.value) : undefined}
                             onBlur={canEdit ? (e) => handleTimeEdit(index, e.target.value) : undefined}
                             onFocus={canEdit ? (e) => e.target.select() : undefined}
-                            className={`text-xs h-8 text-center font-mono ${!canEdit ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                            className={`text-xs h-8 text-center font-mono border-2 rounded-lg transition-all duration-200 ${
+                              !canEdit 
+                                ? 'bg-gray-50 dark:bg-gray-800 cursor-not-allowed border-gray-200 dark:border-gray-700' 
+                                : 'border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 hover:border-gray-300 dark:hover:border-gray-600'
+                            }`}
                             placeholder="0:00"
                             readOnly={!canEdit}
                           />
@@ -1132,9 +1139,12 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
                             value={segment.text}
                             onChange={canEdit ? (e) => handleTextEdit(index, e.target.value) : undefined}
                             onBlur={() => updateOpenTextFromSegments(segments)}
-                            className={`text-sm min-h-[60px] resize-none ${
+                            className={`text-sm min-h-[60px] resize-none border-2 rounded-lg transition-all duration-200 ${
                               selectedLanguage === 'ar' ? 'text-right direction-rtl' : 'text-left direction-ltr'
-                            } ${!canEdit ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                            } ${!canEdit 
+                              ? 'bg-gray-50 dark:bg-gray-800 cursor-not-allowed border-gray-200 dark:border-gray-700' 
+                              : 'border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 hover:border-gray-300 dark:hover:border-gray-600'
+                            }`}
                             placeholder="Enter transcript text here..."
                             readOnly={!canEdit}
                             dir={selectedLanguage === 'ar' ? 'rtl' : 'ltr'}
