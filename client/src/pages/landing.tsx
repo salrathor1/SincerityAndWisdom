@@ -502,7 +502,7 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div className="container mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 py-2 sm:py-4">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4">
           <div className="flex items-center space-x-3">
@@ -601,16 +601,16 @@ export default function Landing() {
         {/* Main Content - Top Row: Video and Transcript */}
         {selectedPlaylist && (
           <>
-            <div className="grid gap-4 lg:gap-6 xl:grid-cols-3 mb-6">
+            <div className="flex flex-col lg:grid lg:gap-6 xl:grid-cols-3 gap-4 mb-6">
               {/* Video Player Column */}
               <div className="xl:col-span-2">
                 {selectedVideo ? (
                   <Card className="shadow-md border bg-white h-auto">
                     <CardContent className="p-0 flex flex-col">
-                      <div className="bg-slate-900 rounded-t-lg overflow-hidden aspect-video">
+                      <div className="bg-slate-900 rounded-t-lg overflow-hidden aspect-video lg:aspect-video">
                         <div ref={playerRef} className="w-full h-full" />
                       </div>
-                      <div className="p-2 flex-1">
+                      <div className="p-3 lg:p-2 flex-1">
                         <div className="flex items-start justify-between mb-1">
                           <div className="flex-1 min-w-0">
                             <h2 className="text-base font-bold text-slate-900 mb-1 line-clamp-2">
@@ -651,14 +651,15 @@ export default function Landing() {
 
               {/* Transcript Column */}
               <div className="xl:col-span-1">
-                <Card className="shadow-md border bg-white flex flex-col min-h-[400px] lg:min-h-[500px] xl:h-auto">
-                  <CardHeader className="pb-2 px-4 pt-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <CardTitle className="text-lg flex items-center font-bold text-slate-900">
-                        <FileText size={18} className="text-indigo-600 mr-2" />
-                        Transcript
+                <Card className="shadow-md border bg-white flex flex-col min-h-[300px] sm:min-h-[400px] lg:min-h-[500px] xl:h-auto">
+                  <CardHeader className="pb-2 px-3 sm:px-4 pt-3 sm:pt-4">
+                    <div className="flex items-center justify-between mb-2 sm:mb-3">
+                      <CardTitle className="text-base sm:text-lg flex items-center font-bold text-slate-900">
+                        <FileText size={16} className="text-indigo-600 mr-2 sm:mr-2" />
+                        <span className="hidden sm:inline">Transcript</span>
+                        <span className="sm:hidden">Text</span>
                       </CardTitle>
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-1 sm:space-x-2">
                         {/* Font Size Controls */}
                         {segments.length > 0 && (
                           <div className="flex items-center space-x-1 bg-slate-100 rounded p-1">
@@ -848,10 +849,10 @@ export default function Landing() {
                     )}
                   </CardHeader>
                   
-                  <CardContent className="flex-1 pt-0 px-4 pb-4">
+                  <CardContent className="flex-1 pt-0 px-3 sm:px-4 pb-3 sm:pb-4">
                     <div 
                       ref={transcriptRef} 
-                      className={`space-y-1 overflow-y-auto ${selectedLanguage === 'ar' ? 'pl-2' : 'pr-2'} h-64 sm:h-80 lg:h-96 xl:h-[480px]`} 
+                      className={`space-y-1 overflow-y-auto ${selectedLanguage === 'ar' ? 'pl-1 sm:pl-2' : 'pr-1 sm:pr-2'} h-48 sm:h-64 lg:h-80 xl:h-[400px]`} 
                       style={{ 
                         direction: selectedLanguage === 'ar' ? 'rtl' : 'ltr'
                       }}
@@ -951,39 +952,40 @@ export default function Landing() {
             {selectedPlaylist && Array.isArray(playlistVideos) && playlistVideos.length > 1 && (
               <div>
                 <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center">
-                      <Video size={18} className="mr-2" />
-                      Videos ({Array.isArray(playlistVideos) ? playlistVideos.length : 0})
+                  <CardHeader className="pb-3 px-3 sm:px-6 pt-3 sm:pt-6">
+                    <CardTitle className="text-base sm:text-lg flex items-center">
+                      <Video size={16} className="mr-2" />
+                      <span className="hidden sm:inline">Videos ({Array.isArray(playlistVideos) ? playlistVideos.length : 0})</span>
+                      <span className="sm:hidden">Videos ({Array.isArray(playlistVideos) ? playlistVideos.length : 0})</span>
                     </CardTitle>
-                    <CardDescription>
-                      Click a video to play it
+                    <CardDescription className="text-xs sm:text-sm">
+                      Tap a video to play it
                     </CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 overflow-y-auto max-h-64 sm:max-h-80 lg:max-h-96 xl:max-h-[420px]">
+                  <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
+                    <div className="grid gap-2 sm:gap-3 grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 overflow-y-auto max-h-48 sm:max-h-64 lg:max-h-80 xl:max-h-[320px]">
                       {Array.isArray(playlistVideos) && playlistVideos.map((video: any) => (
                         <div
                           key={video.id}
-                          className={`p-3 rounded-lg cursor-pointer transition-colors border ${
+                          className={`p-2 sm:p-3 rounded-lg cursor-pointer transition-colors border ${
                             selectedVideo?.id === video.id
                               ? 'bg-blue-50 border-blue-200 shadow-sm'
                               : 'bg-white hover:bg-slate-50 border-slate-200'
                           }`}
                           onClick={() => setSelectedVideo(video)}
                         >
-                          <div className="flex flex-col space-y-2">
+                          <div className="flex flex-col space-y-1.5 sm:space-y-2">
                             <img 
                               src={video.thumbnailUrl} 
                               alt={video.title}
                               className="w-full aspect-video rounded object-cover"
                             />
                             <div>
-                              <h4 className="font-medium text-sm text-slate-900 line-clamp-2 mb-1">
+                              <h4 className="font-medium text-xs sm:text-sm text-slate-900 line-clamp-2 mb-1">
                                 {video.title}
                               </h4>
                               <Badge variant="secondary" className="text-xs">
-                                <Clock size={10} className="mr-1" />
+                                <Clock size={8} className="mr-1" />
                                 {video.duration}
                               </Badge>
                             </div>
