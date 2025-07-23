@@ -12,6 +12,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Languages, Save, Play, Pause } from "lucide-react";
 
+function getLanguageName(code: string): string {
+  const languageMap: { [key: string]: string } = {
+    'ar': 'Arabic',
+    'en': 'English',
+    'ur': 'Urdu',
+    'fr': 'French',
+    'es': 'Spanish',
+    'tr': 'Turkish',
+    'ms': 'Malay'
+  };
+  return languageMap[code] || code;
+}
+
 export default function TranslationsPage() {
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
@@ -68,11 +81,11 @@ export default function TranslationsPage() {
   });
 
   // Get Arabic transcript (read-only reference)
-  const arabicTranscript = transcripts.find(t => t.language === 'arabic');
+  const arabicTranscript = transcripts.find(t => t.language === 'ar');
   
   // Get available translation languages (excluding Arabic)
   const availableLanguages = transcripts
-    .filter(t => t.language !== 'arabic')
+    .filter(t => t.language !== 'ar')
     .map(t => t.language);
 
   // Get selected language transcript
@@ -215,12 +228,12 @@ export default function TranslationsPage() {
                       <SelectValue placeholder="Select language" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="english">English</SelectItem>
-                      <SelectItem value="urdu">Urdu</SelectItem>
-                      <SelectItem value="french">French</SelectItem>
-                      <SelectItem value="spanish">Spanish</SelectItem>
-                      <SelectItem value="turkish">Turkish</SelectItem>
-                      <SelectItem value="malay">Malay</SelectItem>
+                      <SelectItem value="en">English</SelectItem>
+                      <SelectItem value="ur">Urdu</SelectItem>
+                      <SelectItem value="fr">French</SelectItem>
+                      <SelectItem value="es">Spanish</SelectItem>
+                      <SelectItem value="tr">Turkish</SelectItem>
+                      <SelectItem value="ms">Malay</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -232,7 +245,7 @@ export default function TranslationsPage() {
                     Video: {videos.find(v => v.id.toString() === selectedVideoId)?.title}
                   </Badge>
                   <Badge variant="outline">
-                    Language: {selectedLanguage}
+                    Language: {getLanguageName(selectedLanguage)}
                   </Badge>
                   {selectedTranscript && (
                     <Badge variant="secondary">Existing Translation</Badge>
@@ -262,7 +275,7 @@ export default function TranslationsPage() {
                     value={arabicTranscript?.content || "No Arabic transcript available"}
                     readOnly
                     className="min-h-[400px] bg-muted/50 resize-none"
-                    style={{ direction: 'rtl', textAlign: 'right' }}
+                    style={{ direction: 'rtl', textAlign: 'right', fontFamily: 'Arial, sans-serif' }}
                   />
                 </CardContent>
               </Card>
@@ -270,30 +283,29 @@ export default function TranslationsPage() {
               {/* Translation Editor */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <Languages size={20} className="mr-2" />
-                      {selectedLanguage.charAt(0).toUpperCase() + selectedLanguage.slice(1)} Translation
-                    </div>
-                    <Button
-                      onClick={handleSaveTranslation}
-                      disabled={saving || !translationText.trim()}
-                      size="sm"
-                    >
-                      <Save size={16} className="mr-2" />
-                      {saving ? "Saving..." : "Save"}
-                    </Button>
+                  <CardTitle className="flex items-center">
+                    <Languages size={20} className="mr-2" />
+                    {getLanguageName(selectedLanguage)} Translation
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <Textarea
                     value={translationText}
                     onChange={(e) => setTranslationText(e.target.value)}
-                    placeholder={`Enter ${selectedLanguage} translation here...`}
+                    placeholder={`Enter ${getLanguageName(selectedLanguage)} translation here...`}
                     className="min-h-[400px] resize-none"
                   />
-                  <div className="mt-4 text-sm text-muted-foreground">
-                    {translationText.length} characters
+                  <div className="mt-4 flex items-center justify-between">
+                    <div className="text-sm text-muted-foreground">
+                      {translationText.length} characters
+                    </div>
+                    <Button
+                      onClick={handleSaveTranslation}
+                      disabled={saving || !translationText.trim()}
+                    >
+                      <Save size={16} className="mr-2" />
+                      {saving ? "Saving..." : "Save"}
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
