@@ -657,9 +657,10 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
                     onChange={canEdit ? (e) => handleOpenTextChange(e.target.value) : undefined}
                     placeholder="1&#10;00:00:01,000 --> 00:00:04,000&#10;Welcome to this video transcript...&#10;&#10;2&#10;00:00:05,000 --> 00:00:08,000&#10;Today we will be discussing the main topic...&#10;&#10;3&#10;00:00:09,000 --> 00:00:12,000&#10;Each segment shows timing and text content..."
                     className={`resize-none h-full min-h-[400px] font-mono text-sm ${
-                      selectedLanguage === 'ar' ? 'text-right' : 'text-left'
+                      selectedLanguage === 'ar' ? 'text-right direction-rtl' : 'text-left direction-ltr'
                     } ${!canEdit ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                     readOnly={!canEdit}
+                    dir={selectedLanguage === 'ar' ? 'rtl' : 'ltr'}
                   />
                 </div>
               ) : (
@@ -724,10 +725,11 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
                             onChange={canEdit ? (e) => handleTextEdit(index, e.target.value) : undefined}
                             onBlur={() => updateOpenTextFromSegments(segments)}
                             className={`text-sm min-h-[60px] resize-none ${
-                              selectedLanguage === 'ar' ? 'text-right' : 'text-left'
+                              selectedLanguage === 'ar' ? 'text-right direction-rtl' : 'text-left direction-ltr'
                             } ${!canEdit ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                             placeholder="Enter transcript text here..."
                             readOnly={!canEdit}
+                            dir={selectedLanguage === 'ar' ? 'rtl' : 'ltr'}
                           />
                         </div>
                       </div>

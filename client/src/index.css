@@ -79,3 +79,14 @@
   outline-offset: 2px;
   border-radius: 0.375rem;
 }
+
+/* RTL and LTR direction support */
+.direction-rtl {
+  direction: rtl;
+  text-align: right;
+}
+
+.direction-ltr {
+  direction: ltr;
+  text-align: left;
+}
