@@ -500,7 +500,7 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] p-0">
+      <DialogContent className="max-w-6xl max-h-[90vh] p-0" hideCloseButton>
         <DialogHeader className="px-6 py-4 border-b relative">
           <div className="flex items-center justify-between">
             <DialogTitle className="text-lg font-semibold">
