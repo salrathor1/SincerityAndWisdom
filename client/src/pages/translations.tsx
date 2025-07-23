@@ -302,7 +302,11 @@ export default function TranslationsPage() {
   // Save translation mutation
   const saveTranslationMutation = useMutation({
     mutationFn: async () => {
-      if (!selectedVideoId || !selectedLanguage) return;
+      console.log('Save mutation starting...', { selectedVideoId, selectedLanguage, segmentsCount: translationSegments.length });
+      
+      if (!selectedVideoId || !selectedLanguage) {
+        throw new Error('Missing video ID or language');
+      }
       
       // Convert segments to the format expected by the database (JSONB array)
       const contentForSave = translationSegments.map(segment => ({
@@ -310,12 +314,16 @@ export default function TranslationsPage() {
         text: segment.text
       }));
       
+      console.log('Content to save:', contentForSave);
+      
       if (selectedTranscript) {
+        console.log('Updating existing transcript:', selectedTranscript.id);
         // Update existing transcript
         await apiRequest('PATCH', `/api/videos/${selectedVideoId}/transcripts/${selectedTranscript.id}`, {
           content: contentForSave
         });
       } else {
+        console.log('Creating new transcript for language:', selectedLanguage);
         // Create new transcript
         await apiRequest('POST', `/api/videos/${selectedVideoId}/transcripts`, {
           language: selectedLanguage,
@@ -324,6 +332,7 @@ export default function TranslationsPage() {
       }
     },
     onSuccess: () => {
+      console.log('Save mutation successful');
       queryClient.invalidateQueries({ queryKey: ["/api/videos", selectedVideoId, "transcripts"] });
       toast({
         title: "Success",
@@ -347,7 +356,7 @@ export default function TranslationsPage() {
       }
       toast({
         title: "Error",
-        description: "Failed to save translation",
+        description: `Failed to save translation: ${error.message || 'Unknown error'}`,
         variant: "destructive",
       });
       setSaving(false);
@@ -355,6 +364,8 @@ export default function TranslationsPage() {
   });
 
   const handleSaveTranslation = () => {
+    console.log('handleSaveTranslation called', { selectedVideoId, selectedLanguage, segmentsLength: translationSegments.length });
+    
     if (!selectedVideoId || !selectedLanguage) {
       toast({
         title: "Error",
@@ -363,6 +374,16 @@ export default function TranslationsPage() {
       });
       return;
     }
+    
+    if (translationSegments.length === 0 || translationSegments.every(s => !s.text.trim())) {
+      toast({
+        title: "Error",
+        description: "Please add some translation content before saving",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setSaving(true);
     saveTranslationMutation.mutate();
   };
