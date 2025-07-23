@@ -144,12 +144,8 @@ export default function Landing() {
         player.seekTo(sharedSegmentRange.start);
         player.playVideo();
         
-        // Calculate the actual end time based on the end segment
-        const endSegmentTime = parseTimeToSeconds(segments[endSegmentIndex].time);
-        const actualEndTime = Math.max(sharedSegmentRange.end, endSegmentTime + 3); // Add 3 seconds buffer to complete the segment
-        
-        // Set up timer to pause after the complete segment
-        const duration = (actualEndTime - sharedSegmentRange.start) * 1000;
+        // Set up timer to pause after the complete segment (using the same end time from URL)
+        const duration = (sharedSegmentRange.end - sharedSegmentRange.start) * 1000;
         setTimeout(() => {
           if (player && typeof player.pauseVideo === 'function') {
             player.pauseVideo();
@@ -403,7 +399,16 @@ export default function Landing() {
     if (!selectedVideo || !selectedPlaylist) return;
     
     const startTime = parseTimeToSeconds(segments[startIndex].time);
-    const endTime = parseTimeToSeconds(segments[endIndex].time);
+    
+    // Calculate end time to include the complete "to" segment
+    let endTime: number;
+    if (endIndex < segments.length - 1) {
+      // Use the start time of the next segment as the end time
+      endTime = parseTimeToSeconds(segments[endIndex + 1].time);
+    } else {
+      // For the last segment, add a reasonable duration (e.g., 10 seconds)
+      endTime = parseTimeToSeconds(segments[endIndex].time) + 10;
+    }
     
     const baseUrl = window.location.origin + window.location.pathname;
     const shareUrl = `${baseUrl}?playlist=${selectedPlaylist}&video=${selectedVideo.id}&start=${startTime}&end=${endTime}&lang=${selectedLanguage}`;

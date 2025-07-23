@@ -4,6 +4,15 @@
 
 TranscriptHub is a full-stack web application for managing YouTube video transcripts. It allows users to import YouTube videos, create and edit transcripts in multiple languages, organize content into playlists, and manage their video collections with a modern, intuitive interface.
 
+## Recent Changes
+
+### January 23, 2025 - Simplified Segment Sharing System
+- Replaced complex multi-select system with intuitive from/to two-click selection
+- Fixed end time calculation to include complete "to" segment duration
+- Enhanced shared segment playback with proper highlighting during video play
+- Added toast notifications for successful link copying
+- Improved visual feedback with color-coded segments (green=FROM, red=TO, blue=range, orange=shared)
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
