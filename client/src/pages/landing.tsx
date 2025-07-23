@@ -123,20 +123,33 @@ export default function Landing() {
       const startSegmentIndex = segments.findIndex(segment => 
         parseTimeToSeconds(segment.time) >= sharedSegmentRange.start
       );
-      const endSegmentIndex = segments.findIndex(segment => 
-        parseTimeToSeconds(segment.time) >= sharedSegmentRange.end
+      
+      // Find the end segment more accurately - get the segment that contains or follows the end time
+      let endSegmentIndex = segments.findIndex(segment => 
+        parseTimeToSeconds(segment.time) > sharedSegmentRange.end
       );
       
-      if (startSegmentIndex !== -1 && endSegmentIndex !== -1) {
-        // Highlight the shared segment range
+      // If no segment found after end time, use the last segment
+      if (endSegmentIndex === -1) {
+        endSegmentIndex = segments.length - 1;
+      } else {
+        // Use the previous segment (the one that contains the end time)
+        endSegmentIndex = Math.max(0, endSegmentIndex - 1);
+      }
+      
+      if (startSegmentIndex !== -1) {
         setActiveSegmentIndex(startSegmentIndex);
         
-        // Play from start time and stop at end time
+        // Play from start time
         player.seekTo(sharedSegmentRange.start);
         player.playVideo();
         
-        // Set up timer to pause at end time
-        const duration = (sharedSegmentRange.end - sharedSegmentRange.start) * 1000;
+        // Calculate the actual end time based on the end segment
+        const endSegmentTime = parseTimeToSeconds(segments[endSegmentIndex].time);
+        const actualEndTime = Math.max(sharedSegmentRange.end, endSegmentTime + 3); // Add 3 seconds buffer to complete the segment
+        
+        // Set up timer to pause after the complete segment
+        const duration = (actualEndTime - sharedSegmentRange.start) * 1000;
         setTimeout(() => {
           if (player && typeof player.pauseVideo === 'function') {
             player.pauseVideo();
@@ -438,6 +451,33 @@ export default function Landing() {
       }
     }
   }, [activeSegmentIndex]);
+
+  // Track current time for shared segment highlighting during playback
+  useEffect(() => {
+    if (player && sharedSegmentRange) {
+      const interval = setInterval(() => {
+        if (player.getCurrentTime) {
+          const currentTime = player.getCurrentTime();
+          
+          // Find the current segment being played
+          const currentSegmentIndex = segments.findIndex((segment, index) => {
+            const segmentTime = parseTimeToSeconds(segment.time);
+            const nextSegmentTime = index < segments.length - 1 ? 
+              parseTimeToSeconds(segments[index + 1].time) : 
+              segmentTime + 10;
+            
+            return currentTime >= segmentTime && currentTime < nextSegmentTime;
+          });
+          
+          if (currentSegmentIndex !== -1 && currentSegmentIndex !== activeSegmentIndex) {
+            setActiveSegmentIndex(currentSegmentIndex);
+          }
+        }
+      }, 500); // Update every 500ms for smooth highlighting
+      
+      return () => clearInterval(interval);
+    }
+  }, [player, sharedSegmentRange, segments, activeSegmentIndex]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -745,15 +785,27 @@ export default function Landing() {
                           index >= Math.min(fromSegment, toSegment) && 
                           index <= Math.max(fromSegment, toSegment);
                         const isActive = index === activeSegmentIndex;
-                        const isShared = sharedSegmentRange && index >= 0 && segments.length > 0 && 
-                          parseTimeToSeconds(segment.time) >= sharedSegmentRange.start &&
-                          parseTimeToSeconds(segment.time) <= sharedSegmentRange.end;
+                        
+                        // Enhanced shared segment highlighting - include segments within the time range
+                        const isShared = sharedSegmentRange && segments.length > 0 && (() => {
+                          const segmentTime = parseTimeToSeconds(segment.time);
+                          const nextSegmentTime = index < segments.length - 1 ? 
+                            parseTimeToSeconds(segments[index + 1].time) : 
+                            segmentTime + 10; // Assume 10 seconds for last segment
+                          
+                          // Check if this segment overlaps with the shared range
+                          return (segmentTime >= sharedSegmentRange.start && segmentTime <= sharedSegmentRange.end) ||
+                                 (segmentTime <= sharedSegmentRange.start && nextSegmentTime > sharedSegmentRange.start) ||
+                                 (segmentTime < sharedSegmentRange.end && nextSegmentTime >= sharedSegmentRange.end);
+                        })();
                         
                         return (
                           <div
                             key={index}
                             className={`p-3 rounded-lg cursor-pointer transition-all duration-200 border ${
-                              isShared
+                              isShared && isActive
+                                ? 'bg-gradient-to-r from-orange-200 to-yellow-200 border-orange-400 shadow-lg ring-2 ring-orange-300 transform scale-[1.02]'
+                                : isShared
                                 ? 'bg-gradient-to-r from-orange-100 to-yellow-100 border-orange-300 shadow-md ring-2 ring-orange-200'
                                 : isFromSelected
                                 ? 'bg-gradient-to-r from-green-100 to-green-50 border-green-300 shadow-sm ring-2 ring-green-200'
