@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Sidebar } from "@/components/sidebar";
+import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AddVideoModal } from "@/components/add-video-modal";
@@ -112,22 +113,17 @@ export default function Dashboard() {
       
       <div className="flex-1 overflow-hidden">
         {/* Header */}
-        <header className="bg-white border-b border-border px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-semibold text-foreground">Dashboard</h2>
-              <p className="text-sm text-muted-foreground">Manage your YouTube video transcripts</p>
-            </div>
-            <div className="flex items-center space-x-4">
-              {currentUser?.role === 'admin' && (
-                <Button onClick={() => setIsAddVideoOpen(true)} className="flex items-center space-x-2">
-                  <Plus size={16} />
-                  <span>Add Video</span>
-                </Button>
-              )}
-            </div>
-          </div>
-        </header>
+        <PageHeader 
+          title="Dashboard" 
+          description="Manage your YouTube video transcripts"
+        >
+          {currentUser?.role === 'admin' && (
+            <Button onClick={() => setIsAddVideoOpen(true)} className="flex items-center space-x-2">
+              <Plus size={16} />
+              <span>Add Video</span>
+            </Button>
+          )}
+        </PageHeader>
 
         {/* Dashboard Content */}
         <main className="p-8 overflow-y-auto h-full">

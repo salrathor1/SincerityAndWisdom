@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Sidebar } from "@/components/sidebar";
+import { PageHeader } from "@/components/page-header";
 import { UserManagement } from "@/components/user-management";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Shield, Users, Settings, Database } from "lucide-react";
