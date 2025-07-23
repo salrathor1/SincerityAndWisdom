@@ -51,6 +51,14 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
   const queryClient = useQueryClient();
   const [selectedLanguage, setSelectedLanguage] = useState("ar");
 
+  const { data: currentUser } = useQuery({
+    queryKey: ["/api/auth/user"],
+    retry: false,
+  }) as { data: any };
+
+  // Check if user can edit transcripts (admin or editor)
+  const canEdit = currentUser?.role === 'admin' || currentUser?.role === 'editor';
+
   const [segments, setSegments] = useState<TranscriptSegment[]>([]);
   const [activeSegmentIndex, setActiveSegmentIndex] = useState(0);
   const [srtContent, setSrtContent] = useState("");
@@ -518,13 +526,14 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
                 </div>
               </div>
               <div className="flex items-center space-x-2">
-                <Popover open={showSrtImport} onOpenChange={setShowSrtImport}>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      <Upload size={16} className="mr-1" />
-                      Import SRT
-                    </Button>
-                  </PopoverTrigger>
+                {canEdit && (
+                  <Popover open={showSrtImport} onOpenChange={setShowSrtImport}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Upload size={16} className="mr-1" />
+                        Import SRT
+                      </Button>
+                    </PopoverTrigger>
                   <PopoverContent className="w-96 p-4">
                     <div className="space-y-4">
                       <div className="flex items-center space-x-2">
@@ -563,21 +572,32 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
                         </Button>
                       </div>
                     </div>
-                  </PopoverContent>
-                </Popover>
+                    </PopoverContent>
+                  </Popover>
+                )}
                 
-                <Button variant="outline" size="sm" onClick={() => addNewSegment()}>
-                  <Plus size={16} className="mr-1" />
-                  Add Segment
-                </Button>
-                <Button 
-                  size="sm" 
-                  onClick={handleSave}
-                  disabled={updateTranscriptMutation.isPending}
-                >
-                  <Save size={16} className="mr-1" />
-                  {updateTranscriptMutation.isPending ? "Saving..." : "Save"}
-                </Button>
+                {canEdit && (
+                  <>
+                    <Button variant="outline" size="sm" onClick={() => addNewSegment()}>
+                      <Plus size={16} className="mr-1" />
+                      Add Segment
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      onClick={handleSave}
+                      disabled={updateTranscriptMutation.isPending}
+                    >
+                      <Save size={16} className="mr-1" />
+                      {updateTranscriptMutation.isPending ? "Saving..." : "Save"}
+                    </Button>
+                  </>
+                )}
+                
+                {!canEdit && (
+                  <div className="text-sm text-muted-foreground px-3 py-2 bg-gray-100 rounded-lg">
+                    View Only - Contact admin for editing permissions
+                  </div>
+                )}
               </div>
             </div>
 
@@ -595,11 +615,12 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
                   </div>
                   <Textarea
                     value={openTextContent}
-                    onChange={(e) => handleOpenTextChange(e.target.value)}
+                    onChange={canEdit ? (e) => handleOpenTextChange(e.target.value) : undefined}
                     placeholder="1&#10;00:00:01,000 --> 00:00:04,000&#10;Welcome to this video...&#10;&#10;2&#10;00:00:05,000 --> 00:00:08,000&#10;Today we will discuss..."
                     className={`resize-none h-full min-h-[400px] font-mono text-sm ${
                       selectedLanguage === 'ar' ? 'text-right' : 'text-left'
-                    }`}
+                    } ${!canEdit ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                    readOnly={!canEdit}
                   />
                 </div>
               ) : (
@@ -619,10 +640,11 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
                           </div>
                           <Input
                             value={segment.time}
-                            onChange={(e) => handleTimeEdit(index, e.target.value)}
-                            onFocus={(e) => e.target.select()}
-                            className="text-xs h-8 text-center font-mono"
+                            onChange={canEdit ? (e) => handleTimeEdit(index, e.target.value) : undefined}
+                            onFocus={canEdit ? (e) => e.target.select() : undefined}
+                            className={`text-xs h-8 text-center font-mono ${!canEdit ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                             placeholder="0:00"
+                            readOnly={!canEdit}
                           />
                           <button
                             onClick={() => handleSegmentClick(index, segment.time)}
@@ -634,37 +656,39 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
                         <div className="flex-1">
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-xs text-muted-foreground">Transcript Text</span>
-                            <div className="flex items-center space-x-1">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => addNewSegment(index)}
-                                className="h-6 px-2"
-                              >
-                                <Plus size={12} className="text-green-600" />
-                              </Button>
-                              {segments.length > 1 && (
+                            {canEdit && (
+                              <div className="flex items-center space-x-1">
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => deleteSegment(index)}
+                                  onClick={() => addNewSegment(index)}
                                   className="h-6 px-2"
                                 >
-                                  <Trash2 size={12} className="text-red-600" />
+                                  <Plus size={12} className="text-green-600" />
                                 </Button>
-                              )}
-                            </div>
+                                {segments.length > 1 && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => deleteSegment(index)}
+                                    className="h-6 px-2"
+                                  >
+                                    <Trash2 size={12} className="text-red-600" />
+                                  </Button>
+                                )}
+                              </div>
+                            )}
                           </div>
                           <div
-                            className={`text-sm text-foreground editable-content p-3 rounded border-transparent border hover:border-border focus:border-primary min-h-[60px] ${
+                            className={`text-sm text-foreground editable-content p-3 rounded border-transparent border min-h-[60px] ${
                               selectedLanguage === 'ar' ? 'text-right' : 'text-left'
-                            }`}
-                            contentEditable
+                            } ${canEdit ? 'hover:border-border focus:border-primary' : 'bg-gray-50 cursor-not-allowed border-gray-200'}`}
+                            contentEditable={canEdit}
                             suppressContentEditableWarning
-                            onBlur={(e) => {
+                            onBlur={canEdit ? (e) => {
                               handleTextEdit(index, e.currentTarget.textContent || "");
                               updateOpenTextFromSegments(segments);
-                            }}
+                            } : undefined}
                             dangerouslySetInnerHTML={{ __html: segment.text }}
                           />
                         </div>
@@ -673,9 +697,11 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
                   ) : (
                     <div className="text-center py-8">
                       <p className="text-muted-foreground">No transcript segments yet.</p>
-                      <Button className="mt-4" onClick={() => addNewSegment()}>
-                        Add First Segment
-                      </Button>
+                      {canEdit && (
+                        <Button className="mt-4" onClick={() => addNewSegment()}>
+                          Add First Segment
+                        </Button>
+                      )}
                     </div>
                   )}
                 </div>

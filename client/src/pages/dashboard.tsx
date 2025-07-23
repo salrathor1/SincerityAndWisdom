@@ -119,10 +119,12 @@ export default function Dashboard() {
               <p className="text-sm text-muted-foreground">Manage your YouTube video transcripts</p>
             </div>
             <div className="flex items-center space-x-4">
-              <Button onClick={() => setIsAddVideoOpen(true)} className="flex items-center space-x-2">
-                <Plus size={16} />
-                <span>Add Video</span>
-              </Button>
+              {currentUser?.role === 'admin' && (
+                <Button onClick={() => setIsAddVideoOpen(true)} className="flex items-center space-x-2">
+                  <Plus size={16} />
+                  <span>Add Video</span>
+                </Button>
+              )}
             </div>
           </div>
         </header>
@@ -254,12 +256,14 @@ export default function Dashboard() {
                   <p className="mt-1 text-sm text-muted-foreground">
                     Get started by adding your first video.
                   </p>
-                  <div className="mt-6">
-                    <Button onClick={() => setIsAddVideoOpen(true)}>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add Video
-                    </Button>
-                  </div>
+                  {currentUser?.role === 'admin' && (
+                    <div className="mt-6">
+                      <Button onClick={() => setIsAddVideoOpen(true)}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add Video
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>

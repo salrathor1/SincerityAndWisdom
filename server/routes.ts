@@ -124,7 +124,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/playlists', isAuthenticated, requireRole(['admin', 'editor']), async (req, res) => {
+  app.post('/api/playlists', isAuthenticated, requireRole(['admin']), async (req, res) => {
     try {
       const playlistData = insertPlaylistSchema.parse(req.body);
       const playlist = await storage.createPlaylist(playlistData);
@@ -152,7 +152,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/playlists/:id', isAuthenticated, requireRole(['admin', 'editor']), async (req, res) => {
+  app.put('/api/playlists/:id', isAuthenticated, requireRole(['admin']), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const playlistData = insertPlaylistSchema.partial().parse(req.body);
@@ -190,7 +190,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/videos', isAuthenticated, requireRole(['admin', 'editor']), async (req, res) => {
+  app.post('/api/videos', isAuthenticated, requireRole(['admin']), async (req, res) => {
     try {
       const { youtubeUrl, playlistId, languages } = req.body;
       
@@ -302,7 +302,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/videos/:videoId/transcripts', isAuthenticated, async (req, res) => {
+  app.post('/api/videos/:videoId/transcripts', isAuthenticated, requireRole(['admin', 'editor']), async (req, res) => {
     try {
       const videoId = parseInt(req.params.videoId);
       const transcriptData = insertTranscriptSchema.parse({
@@ -334,7 +334,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/transcripts/:id', isAuthenticated, async (req, res) => {
+  app.put('/api/transcripts/:id', isAuthenticated, requireRole(['admin', 'editor']), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const transcriptData = insertTranscriptSchema.partial().parse(req.body);
@@ -349,7 +349,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/transcripts/:id', isAuthenticated, async (req, res) => {
+  app.delete('/api/transcripts/:id', isAuthenticated, requireRole(['admin']), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       await storage.deleteTranscript(id);
@@ -361,7 +361,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // SRT Import route
-  app.post('/api/transcripts/:id/import-srt', isAuthenticated, async (req, res) => {
+  app.post('/api/transcripts/:id/import-srt', isAuthenticated, requireRole(['admin', 'editor']), async (req, res) => {
     try {
       const transcriptId = parseInt(req.params.id);
       const { srtContent } = req.body;
