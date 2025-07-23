@@ -30,11 +30,29 @@ function getLanguageName(code: string): string {
   return languageMap[code] || code;
 }
 
-function parseSRTContent(content: string): TranscriptSegment[] {
+function parseSRTContent(content: any): TranscriptSegment[] {
   if (!content) return [];
   
+  // Handle JSONB array content (stored segments)
+  if (Array.isArray(content)) {
+    return content.map(segment => ({
+      time: segment.time || segment.timestamp || "00:00:00,000",
+      text: segment.text || segment.content || ""
+    }));
+  }
+  
+  // Handle string content (SRT format)
+  let contentStr = '';
+  if (typeof content === 'string') {
+    contentStr = content;
+  } else if (typeof content === 'object' && content !== null) {
+    contentStr = content.text || content.content || JSON.stringify(content);
+  } else {
+    contentStr = String(content);
+  }
+  
   const segments: TranscriptSegment[] = [];
-  const blocks = content.trim().split(/\n\s*\n/);
+  const blocks = contentStr.trim().split(/\n\s*\n/);
   
   blocks.forEach(block => {
     const lines = block.trim().split('\n');
@@ -133,9 +151,12 @@ export default function TranslationsPage() {
   // Update translation segments when transcript changes
   useEffect(() => {
     if (selectedTranscript) {
-      const segments = parseSRTContent(selectedTranscript.content || "");
+      const segments = parseSRTContent(selectedTranscript.content);
       setTranslationSegments(segments);
-      setTranslationText(selectedTranscript.content || "");
+      
+      // Convert segments to SRT format for saving
+      const srtContent = convertSegmentsToSRT(segments);
+      setTranslationText(srtContent);
     } else {
       // Initialize with empty segments matching Arabic segments
       const emptySegments = arabicSegments.map(segment => ({
