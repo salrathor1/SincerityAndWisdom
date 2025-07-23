@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -74,14 +74,6 @@ function parseSRTContent(content: any): TranscriptSegment[] {
 
 
 
-// Declare YouTube iframe API types
-declare global {
-  interface Window {
-    YT: any;
-    onYouTubeIframeAPIReady: () => void;
-  }
-}
-
 export default function TranslationsPage() {
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
@@ -92,8 +84,6 @@ export default function TranslationsPage() {
   const [translationSegments, setTranslationSegments] = useState<TranscriptSegment[]>([]);
   const [saving, setSaving] = useState(false);
   const [viewMode, setViewMode] = useState<'segments' | 'text'>('segments');
-  const [player, setPlayer] = useState<any>(null);
-  const playerRef = useRef<HTMLDivElement>(null);
 
   const { data: currentUser } = useQuery({
     queryKey: ["/api/auth/user"],
@@ -153,84 +143,6 @@ export default function TranslationsPage() {
 
   // Get selected language transcript
   const selectedTranscript = transcripts.find(t => t.language === selectedLanguage);
-
-  // Get selected video data
-  const selectedVideo = videos.find(v => v.id.toString() === selectedVideoId);
-
-  // YouTube API setup
-  useEffect(() => {
-    if (!selectedVideo) return;
-
-    const loadYouTubeAPI = () => {
-      if (window.YT && window.YT.Player) {
-        initializePlayer();
-        return;
-      }
-
-      window.onYouTubeIframeAPIReady = initializePlayer;
-
-      if (!document.querySelector('script[src*="youtube.com/iframe_api"]')) {
-        const script = document.createElement('script');
-        script.src = 'https://www.youtube.com/iframe_api';
-        document.head.appendChild(script);
-      }
-    };
-
-    const initializePlayer = () => {
-      if (!playerRef.current || !selectedVideo?.youtubeId) return;
-
-      console.log('Initializing YouTube player for:', selectedVideo.title);
-      
-      const newPlayer = new window.YT.Player(playerRef.current, {
-        height: '200',
-        width: '100%',
-        videoId: selectedVideo.youtubeId,
-        playerVars: {
-          'playsinline': 1,
-          'modestbranding': 1,
-          'rel': 0,
-          'showinfo': 0,
-        },
-        events: {
-          'onReady': (event: any) => {
-            console.log('Player ready for:', selectedVideo.title);
-            setPlayer(newPlayer);
-          },
-          'onError': (event: any) => {
-            console.error('YouTube player error:', event.data);
-          }
-        }
-      });
-    };
-
-    loadYouTubeAPI();
-
-    return () => {
-      if (player && typeof player.destroy === 'function') {
-        player.destroy();
-      }
-      setPlayer(null);
-    };
-  }, [selectedVideo?.youtubeId]);
-
-  // Convert simple time format to seconds for YouTube player
-  const convertTimeToSeconds = (timeStr: string): number => {
-    const parts = timeStr.split(':');
-    if (parts.length === 2) {
-      const [minutes, seconds] = parts.map(Number);
-      return minutes * 60 + seconds;
-    }
-    return 0;
-  };
-
-  // Jump to timestamp
-  const jumpToTime = (timeStr: string) => {
-    if (!player || !timeStr) return;
-    
-    const seconds = convertTimeToSeconds(timeStr);
-    player.seekTo(seconds, true);
-    player.playVideo();
-  };
 
   // Update translation segments when transcript changes
   useEffect(() => {
@@ -519,30 +431,6 @@ export default function TranslationsPage() {
             </Card>
           )}
 
-          {/* Video Player Panel */}
-          {selectedVideoId && selectedLanguage && selectedVideo && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <div className="w-6 h-6 mr-2 bg-red-600 rounded flex items-center justify-center">
-                    <div className="w-0 h-0 border-l-[6px] border-l-white border-y-[4px] border-y-transparent ml-0.5"></div>
-                  </div>
-                  Video Player
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-3">
-                  <h4 className="text-sm font-medium mb-2">{selectedVideo.title}</h4>
-                  <div 
-                    ref={playerRef} 
-                    className="w-full rounded-lg overflow-hidden bg-black"
-                    style={{ height: '300px' }}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
           {/* Translation Interface */}
           {selectedVideoId && selectedLanguage && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -561,20 +449,11 @@ export default function TranslationsPage() {
                       {arabicSegments.length > 0 ? (
                         arabicSegments.map((segment, index) => (
                           <div key={index} className="border rounded-lg p-3 bg-muted/30">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center">
-                                <Clock size={14} className="mr-2 text-muted-foreground" />
-                                <span className="text-sm font-mono text-muted-foreground">
-                                  {segment.time}
-                                </span>
-                              </div>
-                              <button 
-                                onClick={() => jumpToTime(segment.time)}
-                                className="text-xs text-blue-600 hover:text-blue-800 transition-colors disabled:opacity-50"
-                                disabled={!player}
-                              >
-                                Jump to
-                              </button>
+                            <div className="flex items-center mb-2">
+                              <Clock size={14} className="mr-2 text-muted-foreground" />
+                              <span className="text-sm font-mono text-muted-foreground">
+                                {segment.time}
+                              </span>
                             </div>
                             <div 
                               className="text-sm leading-relaxed"
@@ -644,11 +523,7 @@ export default function TranslationsPage() {
                                 className="text-xs h-8 text-center font-mono border-2 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 rounded-lg transition-all duration-200 hover:border-gray-300 dark:hover:border-gray-600"
                                 placeholder="0:00"
                               />
-                              <button 
-                                onClick={() => jumpToTime(segment.time)}
-                                className="text-xs text-blue-600 hover:text-blue-800 transition-colors disabled:opacity-50"
-                                disabled={!player}
-                              >
+                              <button className="text-xs text-blue-600 hover:text-blue-800 transition-colors">
                                 Jump to
                               </button>
                             </div>
