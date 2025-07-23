@@ -791,17 +791,18 @@ export default function Landing() {
                           index <= Math.max(fromSegment, toSegment);
                         const isActive = index === activeSegmentIndex;
                         
-                        // Enhanced shared segment highlighting - include segments within the time range
+                        // Enhanced shared segment highlighting - only highlight segments that will play completely
                         const isShared = sharedSegmentRange && segments.length > 0 && (() => {
                           const segmentTime = parseTimeToSeconds(segment.time);
                           const nextSegmentTime = index < segments.length - 1 ? 
                             parseTimeToSeconds(segments[index + 1].time) : 
                             segmentTime + 10; // Assume 10 seconds for last segment
                           
-                          // Check if this segment overlaps with the shared range
-                          return (segmentTime >= sharedSegmentRange.start && segmentTime <= sharedSegmentRange.end) ||
-                                 (segmentTime <= sharedSegmentRange.start && nextSegmentTime > sharedSegmentRange.start) ||
-                                 (segmentTime < sharedSegmentRange.end && nextSegmentTime >= sharedSegmentRange.end);
+                          // Only highlight if the segment starts within the range AND will play completely
+                          // (i.e., the next segment starts before or at the shared range end)
+                          return segmentTime >= sharedSegmentRange.start && 
+                                 segmentTime < sharedSegmentRange.end &&
+                                 nextSegmentTime <= sharedSegmentRange.end;
                         })();
                         
                         return (
