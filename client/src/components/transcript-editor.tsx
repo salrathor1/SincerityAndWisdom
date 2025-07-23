@@ -26,6 +26,7 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 import { Save, Upload, FileText, Clock, Trash2, Plus, Edit, AlignLeft, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface TranscriptSegment {
   time: string;
@@ -69,11 +70,20 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
   const [timeInputs, setTimeInputs] = useState<string[]>([]);
   const [videoUrl, setVideoUrl] = useState("");
   const [isEditingUrl, setIsEditingUrl] = useState(false);
+  const [selectedPlaylistId, setSelectedPlaylistId] = useState<number | null>(null);
+  const [isEditingPlaylist, setIsEditingPlaylist] = useState(false);
+  const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
+  const [isEditingLanguages, setIsEditingLanguages] = useState(false);
   const playerRef = useRef<HTMLDivElement>(null);
 
   const { data: transcripts } = useQuery({
     queryKey: ["/api/videos", video?.id, "transcripts"],
     enabled: isOpen && !!video?.id,
+  });
+
+  const { data: playlists } = useQuery({
+    queryKey: ["/api/playlists"],
+    enabled: isOpen && canEdit,
   });
 
   // Initialize YouTube iframe API
@@ -136,12 +146,25 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
     }
   }, [isOpen, player]);
 
-  // Initialize video URL when video changes
+  // Initialize video URL and other data when video changes
   useEffect(() => {
     if (video?.youtubeId) {
       setVideoUrl(`https://www.youtube.com/watch?v=${video.youtubeId}`);
     }
-  }, [video?.youtubeId]);
+    if (video?.playlistId) {
+      setSelectedPlaylistId(video.playlistId);
+    } else {
+      setSelectedPlaylistId(null);
+    }
+  }, [video?.youtubeId, video?.playlistId]);
+
+  // Initialize selected languages when transcripts change
+  useEffect(() => {
+    if (transcripts && Array.isArray(transcripts)) {
+      const languages = transcripts.map((t: any) => t.language);
+      setSelectedLanguages(languages);
+    }
+  }, [transcripts]);
 
   useEffect(() => {
     if (transcripts && Array.isArray(transcripts) && transcripts.length > 0) {
@@ -149,7 +172,7 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
       if (transcript && transcript.content) {
         const content = Array.isArray(transcript.content) ? transcript.content : [];
         setSegments(content);
-        setTimeInputs(content.map(seg => seg.time));
+        setTimeInputs(content.map((seg: any) => seg.time));
         updateOpenTextFromSegments(content);
       } else {
         // Create empty transcript structure
@@ -314,6 +337,114 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
   const handleCancelUrlEdit = () => {
     setVideoUrl(`https://www.youtube.com/watch?v=${video.youtubeId}`);
     setIsEditingUrl(false);
+  };
+
+  const updatePlaylistMutation = useMutation({
+    mutationFn: async (playlistId: number | null) => {
+      await apiRequest("PUT", `/api/videos/${video.id}`, {
+        playlistId,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Video playlist updated successfully!",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/videos"] });
+      setIsEditingPlaylist(false);
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update playlist",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateLanguagesMutation = useMutation({
+    mutationFn: async (languages: string[]) => {
+      // Add new languages (create new transcripts)
+      const currentLanguages = Array.isArray(transcripts) ? transcripts.map((t: any) => t.language) : [];
+      const languagesToAdd = languages.filter((lang: string) => !currentLanguages.includes(lang));
+      const languagesToRemove = currentLanguages.filter((lang: string) => !languages.includes(lang));
+
+      // Create new transcripts for added languages
+      for (const language of languagesToAdd) {
+        await apiRequest("POST", `/api/videos/${video.id}/transcripts`, {
+          language,
+          content: [],
+        });
+      }
+
+      // Delete transcripts for removed languages (admin only)
+      if (currentUser?.role === 'admin') {
+        for (const language of languagesToRemove) {
+          const transcript = Array.isArray(transcripts) ? transcripts.find((t: any) => t.language === language) : null;
+          if (transcript) {
+            await apiRequest("DELETE", `/api/transcripts/${transcript.id}`);
+          }
+        }
+      }
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Available languages updated successfully!",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/videos", video?.id, "transcripts"] });
+      setIsEditingLanguages(false);
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update languages",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleUpdatePlaylist = () => {
+    updatePlaylistMutation.mutate(selectedPlaylistId);
+  };
+
+  const handleCancelPlaylistEdit = () => {
+    setSelectedPlaylistId(video?.playlistId || null);
+    setIsEditingPlaylist(false);
+  };
+
+  const handleUpdateLanguages = () => {
+    updateLanguagesMutation.mutate(selectedLanguages);
+  };
+
+  const handleCancelLanguagesEdit = () => {
+    if (transcripts && Array.isArray(transcripts)) {
+      const languages = transcripts.map((t: any) => t.language);
+      setSelectedLanguages(languages);
+    }
+    setIsEditingLanguages(false);
   };
 
   const handleImportSrt = () => {
@@ -559,7 +690,7 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
     updateSegmentsFromOpenText(text);
   };
 
-  const availableLanguages = [
+  const languageOptions = [
     { code: "en", name: "English" },
     { code: "ar", name: "Arabic" },
     { code: "es", name: "Spanish" },
@@ -585,7 +716,7 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {availableLanguages.map((lang) => (
+                    {languageOptions.map((lang) => (
                       <SelectItem key={lang.code} value={lang.code}>
                         {lang.name}
                       </SelectItem>
@@ -671,6 +802,144 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
                   <p className="text-xs break-all font-mono bg-muted p-2 rounded">
                     {videoUrl}
                   </p>
+                )}
+              </div>
+
+              {/* Playlist Editor */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-medium">Playlist:</label>
+                  {canEdit && !isEditingPlaylist && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsEditingPlaylist(true)}
+                      className="h-6 px-2 text-xs"
+                    >
+                      <Edit size={12} className="mr-1" />
+                      Edit
+                    </Button>
+                  )}
+                </div>
+                
+                {isEditingPlaylist ? (
+                  <div className="space-y-2">
+                    <Select 
+                      value={selectedPlaylistId?.toString() || ""} 
+                      onValueChange={(value) => setSelectedPlaylistId(value ? parseInt(value) : null)}
+                    >
+                      <SelectTrigger className="text-xs">
+                        <SelectValue placeholder="Select a playlist" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">No Playlist</SelectItem>
+                        {Array.isArray(playlists) && playlists.map((playlist: any) => (
+                          <SelectItem key={playlist.id} value={playlist.id.toString()}>
+                            {playlist.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <div className="flex space-x-2">
+                      <Button
+                        size="sm"
+                        onClick={handleUpdatePlaylist}
+                        disabled={updatePlaylistMutation.isPending}
+                        className="h-6 px-2 text-xs"
+                      >
+                        {updatePlaylistMutation.isPending ? "Updating..." : "Update"}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleCancelPlaylistEdit}
+                        disabled={updatePlaylistMutation.isPending}
+                        className="h-6 px-2 text-xs"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs bg-muted p-2 rounded">
+                    {video.playlist?.name || "No Playlist"}
+                  </p>
+                )}
+              </div>
+
+              {/* Available Languages Editor */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-medium">Available Languages:</label>
+                  {canEdit && !isEditingLanguages && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsEditingLanguages(true)}
+                      className="h-6 px-2 text-xs"
+                    >
+                      <Edit size={12} className="mr-1" />
+                      Edit
+                    </Button>
+                  )}
+                </div>
+                
+                {isEditingLanguages ? (
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      {languageOptions.map((lang) => (
+                        <div key={lang.code} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`lang-${lang.code}`}
+                            checked={selectedLanguages.includes(lang.code)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedLanguages([...selectedLanguages, lang.code]);
+                              } else {
+                                setSelectedLanguages(selectedLanguages.filter(l => l !== lang.code));
+                              }
+                            }}
+                          />
+                          <label htmlFor={`lang-${lang.code}`} className="text-xs">
+                            {lang.name}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button
+                        size="sm"
+                        onClick={handleUpdateLanguages}
+                        disabled={updateLanguagesMutation.isPending || selectedLanguages.length === 0}
+                        className="h-6 px-2 text-xs"
+                      >
+                        {updateLanguagesMutation.isPending ? "Updating..." : "Update"}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleCancelLanguagesEdit}
+                        disabled={updateLanguagesMutation.isPending}
+                        className="h-6 px-2 text-xs"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                    {currentUser?.role !== 'admin' && (
+                      <p className="text-xs text-muted-foreground">
+                        Note: Only admins can remove languages. You can add new ones.
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-xs bg-muted p-2 rounded">
+                    {selectedLanguages.length > 0 
+                      ? selectedLanguages.map(code => 
+                          languageOptions.find(l => l.code === code)?.name
+                        ).join(', ')
+                      : "No languages available"
+                    }
+                  </div>
                 )}
               </div>
               
