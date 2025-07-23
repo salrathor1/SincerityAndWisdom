@@ -7,9 +7,13 @@ import {
   List, 
   FileText, 
   BarChart3, 
+  LogOut,
+  User,
   Shield
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: Home },
@@ -29,7 +33,9 @@ export function Sidebar() {
     enabled: isAuthenticated,
   }) as { data: any };
 
-
+  const handleLogout = () => {
+    window.location.href = "/api/logout";
+  };
 
   return (
     <div className="w-64 bg-white shadow-sm border-r border-border flex flex-col h-screen">
@@ -90,7 +96,40 @@ export function Sidebar() {
         </ul>
       </nav>
 
-
+      {/* User Profile */}
+      <div className="p-4 border-t border-border">
+        <div className="flex items-center space-x-3">
+          <Avatar className="w-8 h-8">
+            <AvatarImage 
+              src={currentUser?.profileImageUrl || ""} 
+              alt={currentUser?.firstName || "User"} 
+              className="object-cover"
+            />
+            <AvatarFallback>
+              <User size={16} />
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-sidebar-foreground truncate">
+              {currentUser?.firstName && currentUser?.lastName 
+                ? `${currentUser.firstName} ${currentUser.lastName}`
+                : currentUser?.email || "Admin User"
+              }
+            </p>
+            <p className="text-xs text-muted-foreground truncate">
+              {currentUser?.email || "admin@example.com"}
+            </p>
+          </div>
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={handleLogout}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <LogOut size={16} />
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
