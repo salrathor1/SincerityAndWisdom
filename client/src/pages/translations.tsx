@@ -519,6 +519,30 @@ export default function TranslationsPage() {
             </Card>
           )}
 
+          {/* Video Player Panel */}
+          {selectedVideoId && selectedLanguage && selectedVideo && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <div className="w-6 h-6 mr-2 bg-red-600 rounded flex items-center justify-center">
+                    <div className="w-0 h-0 border-l-[6px] border-l-white border-y-[4px] border-y-transparent ml-0.5"></div>
+                  </div>
+                  Video Player
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-3">
+                  <h4 className="text-sm font-medium mb-2">{selectedVideo.title}</h4>
+                  <div 
+                    ref={playerRef} 
+                    className="w-full rounded-lg overflow-hidden bg-black"
+                    style={{ height: '300px' }}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Translation Interface */}
           {selectedVideoId && selectedLanguage && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -532,20 +556,6 @@ export default function TranslationsPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {/* Video Player */}
-                  {selectedVideo && (
-                    <div className="mb-4">
-                      <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-3">
-                        <h4 className="text-sm font-medium mb-2">{selectedVideo.title}</h4>
-                        <div 
-                          ref={playerRef} 
-                          className="w-full rounded-lg overflow-hidden bg-black"
-                          style={{ height: '200px' }}
-                        />
-                      </div>
-                    </div>
-                  )}
-
                   {viewMode === 'segments' ? (
                     <div className="max-h-[500px] overflow-y-auto space-y-3">
                       {arabicSegments.length > 0 ? (
