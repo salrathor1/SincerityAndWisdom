@@ -151,12 +151,12 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
     }
   }, [transcripts, selectedLanguage]);
 
-  // Update SRT format whenever segments change or SRT view is toggled
+  // Update SRT format only when SRT view is toggled (not on every segment change)
   useEffect(() => {
-    if (segments.length > 0) {
+    if (segments.length > 0 && isOpenTextView) {
       updateOpenTextFromSegments(segments);
     }
-  }, [segments, isOpenTextView]);
+  }, [isOpenTextView]);
 
   const updateTranscriptMutation = useMutation({
     mutationFn: async (content: TranscriptSegment[]) => {
