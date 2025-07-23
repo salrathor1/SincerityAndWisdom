@@ -896,14 +896,14 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
                 {isEditingPlaylist ? (
                   <div className="space-y-2">
                     <Select 
-                      value={selectedPlaylistId?.toString() || ""} 
-                      onValueChange={(value) => setSelectedPlaylistId(value ? parseInt(value) : null)}
+                      value={selectedPlaylistId?.toString() || "none"} 
+                      onValueChange={(value) => setSelectedPlaylistId(value === "none" ? null : parseInt(value))}
                     >
                       <SelectTrigger className="text-xs border-2 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 rounded-lg transition-all duration-200 hover:border-gray-300 dark:hover:border-gray-600">
                         <SelectValue placeholder="Select a playlist" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">No Playlist</SelectItem>
+                        <SelectItem value="none">No Playlist</SelectItem>
                         {Array.isArray(playlists) && playlists.map((playlist: any) => (
                           <SelectItem key={playlist.id} value={playlist.id.toString()}>
                             {playlist.name}
