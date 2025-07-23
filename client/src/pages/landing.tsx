@@ -144,18 +144,9 @@ export default function Landing() {
         player.seekTo(sharedSegmentRange.start);
         player.playVideo();
         
-        // Set up timer to pause at the exact end time from URL
-        const duration = (sharedSegmentRange.end - sharedSegmentRange.start) * 1000;
-        
         // Debug logging to understand the timing
-        console.log(`Shared segment: ${sharedSegmentRange.start}s to ${sharedSegmentRange.end}s (${duration/1000}s duration)`);
-        
-        setTimeout(() => {
-          if (player && typeof player.pauseVideo === 'function') {
-            console.log(`Pausing video at ${sharedSegmentRange.end}s after ${duration/1000}s`);
-            player.pauseVideo();
-          }
-        }, duration);
+        console.log(`Shared segment: ${sharedSegmentRange.start}s to ${sharedSegmentRange.end}s`);
+        console.log(`Will pause when video reaches ${sharedSegmentRange.end}s`);
       }
     }
   }, [player, sharedSegmentRange, segments]);
@@ -469,13 +460,17 @@ export default function Landing() {
         if (player.getCurrentTime) {
           const currentTime = player.getCurrentTime();
           
-          // Debug: Log current playback time
-          console.log(`Current time: ${currentTime.toFixed(1)}s, Target end: ${sharedSegmentRange.end}s`);
+          // Log every few seconds for debugging
+          if (Math.floor(currentTime) % 2 === 0) {
+            console.log(`Playing: ${currentTime.toFixed(1)}s / ${sharedSegmentRange.end}s`);
+          }
           
           // Check if we've reached the end time and should pause
+          // Be very precise with the timing
           if (currentTime >= sharedSegmentRange.end) {
-            console.log(`Reached end time ${sharedSegmentRange.end}s, pausing video`);
+            console.log(`PAUSING: Current time ${currentTime.toFixed(1)}s reached target ${sharedSegmentRange.end}s`);
             player.pauseVideo();
+            clearInterval(interval); // Stop the monitoring
             return;
           }
           
@@ -493,7 +488,7 @@ export default function Landing() {
             setActiveSegmentIndex(currentSegmentIndex);
           }
         }
-      }, 500); // Update every 500ms for smooth highlighting
+      }, 100); // Check more frequently (every 100ms) for better precision
       
       return () => clearInterval(interval);
     }
