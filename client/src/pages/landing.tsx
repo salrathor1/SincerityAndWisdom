@@ -144,10 +144,15 @@ export default function Landing() {
         player.seekTo(sharedSegmentRange.start);
         player.playVideo();
         
-        // Set up timer to pause after the complete segment (using the same end time from URL)
+        // Set up timer to pause at the exact end time from URL
         const duration = (sharedSegmentRange.end - sharedSegmentRange.start) * 1000;
+        
+        // Debug logging to understand the timing
+        console.log(`Shared segment: ${sharedSegmentRange.start}s to ${sharedSegmentRange.end}s (${duration/1000}s duration)`);
+        
         setTimeout(() => {
           if (player && typeof player.pauseVideo === 'function') {
+            console.log(`Pausing video at ${sharedSegmentRange.end}s after ${duration/1000}s`);
             player.pauseVideo();
           }
         }, duration);
@@ -463,6 +468,16 @@ export default function Landing() {
       const interval = setInterval(() => {
         if (player.getCurrentTime) {
           const currentTime = player.getCurrentTime();
+          
+          // Debug: Log current playback time
+          console.log(`Current time: ${currentTime.toFixed(1)}s, Target end: ${sharedSegmentRange.end}s`);
+          
+          // Check if we've reached the end time and should pause
+          if (currentTime >= sharedSegmentRange.end) {
+            console.log(`Reached end time ${sharedSegmentRange.end}s, pausing video`);
+            player.pauseVideo();
+            return;
+          }
           
           // Find the current segment being played
           const currentSegmentIndex = segments.findIndex((segment, index) => {
