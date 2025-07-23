@@ -462,25 +462,35 @@ export default function Landing() {
   // Track current time for shared segment highlighting during playback
   useEffect(() => {
     if (player && sharedSegmentRange) {
+      let hasCompletedSegment = false;
+      
       const interval = setInterval(() => {
-        if (player.getCurrentTime) {
+        if (player.getCurrentTime && player.getPlayerState) {
           const currentTime = player.getCurrentTime();
+          const playerState = player.getPlayerState();
           
           // Log every few seconds for debugging
           if (Math.floor(currentTime) % 2 === 0) {
             console.log(`Playing: ${currentTime.toFixed(1)}s / ${sharedSegmentRange.end}s`);
           }
           
-          // Check if we've reached the end time and should pause
-          // Be very precise with the timing
-          if (currentTime >= sharedSegmentRange.end) {
+          // Check if we've reached the end time and should pause (only once)
+          if (currentTime >= sharedSegmentRange.end && !hasCompletedSegment) {
             console.log(`PAUSING: Current time ${currentTime.toFixed(1)}s reached target ${sharedSegmentRange.end}s`);
+            hasCompletedSegment = true;
             player.pauseVideo();
-            clearInterval(interval); // Stop the monitoring
+            // Don't clear interval here - let it continue for highlighting
             return;
           }
           
-          // Find the current segment being played
+          // After segment completion, if user resumes playing, stop monitoring the segment boundary
+          if (hasCompletedSegment && playerState === 1) { // 1 = playing
+            console.log(`User resumed playback after segment completion - allowing normal playback`);
+            clearInterval(interval);
+            return;
+          }
+          
+          // Find the current segment being played (for highlighting)
           const currentSegmentIndex = segments.findIndex((segment, index) => {
             const segmentTime = parseTimeToSeconds(segment.time);
             const nextSegmentTime = index < segments.length - 1 ? 
