@@ -72,11 +72,7 @@ function parseSRTContent(content: any): TranscriptSegment[] {
   return segments;
 }
 
-function convertSegmentsToSRT(segments: TranscriptSegment[]): string {
-  return segments.map((segment, index) => {
-    return `${index + 1}\n${segment.time} --> ${segment.time}\n${segment.text}`;
-  }).join('\n\n');
-}
+
 
 export default function TranslationsPage() {
   const { toast } = useToast();
@@ -85,7 +81,6 @@ export default function TranslationsPage() {
   
   const [selectedVideoId, setSelectedVideoId] = useState<string>("");
   const [selectedLanguage, setSelectedLanguage] = useState<string>("");
-  const [translationText, setTranslationText] = useState<string>("");
   const [translationSegments, setTranslationSegments] = useState<TranscriptSegment[]>([]);
   const [saving, setSaving] = useState(false);
 
@@ -153,10 +148,6 @@ export default function TranslationsPage() {
     if (selectedTranscript) {
       const segments = parseSRTContent(selectedTranscript.content);
       setTranslationSegments(segments);
-      
-      // Convert segments to SRT format for saving
-      const srtContent = convertSegmentsToSRT(segments);
-      setTranslationText(srtContent);
     } else {
       // Initialize with empty segments matching Arabic segments
       const emptySegments = arabicSegments.map(segment => ({
@@ -164,7 +155,6 @@ export default function TranslationsPage() {
         text: ""
       }));
       setTranslationSegments(emptySegments);
-      setTranslationText("");
     }
   }, [selectedTranscript, arabicSegments]);
 
@@ -173,10 +163,6 @@ export default function TranslationsPage() {
     const updatedSegments = [...translationSegments];
     updatedSegments[index] = { ...updatedSegments[index], text: newText };
     setTranslationSegments(updatedSegments);
-    
-    // Update the full text for saving
-    const updatedContent = convertSegmentsToSRT(updatedSegments);
-    setTranslationText(updatedContent);
   };
 
   // Save translation mutation
@@ -184,16 +170,22 @@ export default function TranslationsPage() {
     mutationFn: async () => {
       if (!selectedVideoId || !selectedLanguage) return;
       
+      // Convert segments to the format expected by the database (JSONB array)
+      const contentForSave = translationSegments.map(segment => ({
+        time: segment.time,
+        text: segment.text
+      }));
+      
       if (selectedTranscript) {
         // Update existing transcript
         await apiRequest('PATCH', `/api/videos/${selectedVideoId}/transcripts/${selectedTranscript.id}`, {
-          content: translationText
+          content: contentForSave
         });
       } else {
         // Create new transcript
         await apiRequest('POST', `/api/videos/${selectedVideoId}/transcripts`, {
           language: selectedLanguage,
-          content: translationText
+          content: contentForSave
         });
       }
     },
