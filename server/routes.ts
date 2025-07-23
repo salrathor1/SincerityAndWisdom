@@ -12,16 +12,23 @@ const requireRole = (roles: string[]) => {
   return async (req: any, res: any, next: any) => {
     try {
       const userId = req.user?.claims?.sub;
+      console.log('Role check for user:', userId);
+      
       if (!userId) {
+        console.log('No user ID found');
         return res.status(401).json({ message: "Unauthorized" });
       }
 
       const user = await storage.getUser(userId);
       if (!user) {
+        console.log('User not found in database:', userId);
         return res.status(401).json({ message: "User not found" });
       }
 
+      console.log('User role check:', { userId, userRole: user.role, requiredRoles: roles });
+      
       if (!roles.includes(user.role || 'viewer')) {
+        console.log('Insufficient permissions:', { userRole: user.role, requiredRoles: roles });
         return res.status(403).json({ message: "Insufficient permissions" });
       }
 
@@ -112,11 +119,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.params.id;
       const { role } = req.body;
       
+      console.log('Role update request:', { userId, role, currentUser: req.currentUser?.id });
+      
       if (!['admin', 'editor', 'viewer'].includes(role)) {
+        console.log('Invalid role provided:', role);
         return res.status(400).json({ message: "Invalid role" });
       }
 
       const updatedUser = await storage.updateUserRole(userId, role);
+      console.log('Role updated successfully:', { userId, newRole: role });
       res.json(updatedUser);
     } catch (error) {
       console.error("Error updating user role:", error);

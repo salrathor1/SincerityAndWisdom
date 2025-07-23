@@ -14,18 +14,14 @@ export function UserManagement() {
   const queryClient = useQueryClient();
   const [updatingUser, setUpdatingUser] = useState<string | null>(null);
 
-  const { data: users = [], isLoading } = useQuery({
+  const { data: users = [], isLoading } = useQuery<any[]>({
     queryKey: ["/api/admin/users"],
     retry: false,
   });
 
   const updateRoleMutation = useMutation({
     mutationFn: async ({ userId, role }: { userId: string; role: string }) => {
-      await apiRequest(`/api/admin/users/${userId}/role`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role }),
-      });
+      await apiRequest('PATCH', `/api/admin/users/${userId}/role`, { role });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
@@ -37,7 +33,10 @@ export function UserManagement() {
       setUpdatingUser(null);
     },
     onError: (error) => {
-      console.error('Role update error:', error);
+      console.error('Role update error details:', error);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+      
       if (isUnauthorizedError(error)) {
         toast({
           title: "Unauthorized", 
@@ -51,7 +50,7 @@ export function UserManagement() {
       }
       toast({
         title: "Error",
-        description: "Failed to update user role",
+        description: `Failed to update user role: ${error.message}`,
         variant: "destructive",
       });
       setUpdatingUser(null);
