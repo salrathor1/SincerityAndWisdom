@@ -631,7 +631,7 @@ export default function Landing() {
                       <div className="bg-slate-900 rounded-t-lg overflow-hidden relative" style={{paddingBottom: 'calc(56.25% + 25px)'}}>
                         <div ref={playerRef} className="absolute inset-0 w-full h-full" />
                       </div>
-                      <div className="p-3 lg:p-2 flex-1">
+                      <div className="p-3 lg:p-2 flex-1 flex flex-col">
                         <div className="flex items-start justify-between mb-1">
                           <div className="flex-1 min-w-0">
                             <h2 className="text-base font-bold text-slate-900 mb-1 line-clamp-2">
@@ -649,9 +649,11 @@ export default function Landing() {
                             </div>
                           </div>
                         </div>
-                        <p className="text-xs text-slate-600 leading-relaxed line-clamp-2">
-                          {selectedVideo.description}
-                        </p>
+                        <div className="flex-1 overflow-auto">
+                          <p className="text-xs text-slate-600 leading-relaxed">
+                            {selectedVideo.description}
+                          </p>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
