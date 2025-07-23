@@ -11,15 +11,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Video, FileText, Play, Clock, Languages, LogIn, ChevronLeft, ChevronRight, Search, X, Plus, Minus, List, Share2, Copy } from "lucide-react";
+
+import { Video, FileText, Play, Clock, Languages, LogIn, ChevronLeft, ChevronRight, Search, X, Plus, Minus, List, Share2, Copy, CheckCircle } from "lucide-react";
 import { TranslatedText } from "@/components/TranslatedText";
+import { useToast } from "@/hooks/use-toast";
 
 interface TranscriptSegment {
   time: string;
@@ -46,13 +41,14 @@ export default function Landing() {
   const [searchResults, setSearchResults] = useState<number[]>([]);
   const [currentSearchIndex, setCurrentSearchIndex] = useState(-1);
   const [fontSize, setFontSize] = useState(14); // Base font size in pixels
-  const [selectedSegments, setSelectedSegments] = useState<number[]>([]);
+  const [fromSegment, setFromSegment] = useState<number | null>(null);
+  const [toSegment, setToSegment] = useState<number | null>(null);
   const [isSelecting, setIsSelecting] = useState(false);
-  const [shareableLink, setShareableLink] = useState("");
-  const [showShareModal, setShowShareModal] = useState(false);
+  const [selectionStep, setSelectionStep] = useState<'from' | 'to'>('from');
   const [sharedSegmentRange, setSharedSegmentRange] = useState<{start: number, end: number} | null>(null);
   const playerRef = useRef<HTMLDivElement>(null);
   const transcriptRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
   // Fetch playlists for public viewing
   const { data: playlists } = useQuery({
@@ -133,11 +129,7 @@ export default function Landing() {
       
       if (startSegmentIndex !== -1 && endSegmentIndex !== -1) {
         // Highlight the shared segment range
-        const highlightedSegments = [];
-        for (let i = startSegmentIndex; i <= endSegmentIndex; i++) {
-          highlightedSegments.push(i);
-        }
-        setSelectedSegments(highlightedSegments);
+        setActiveSegmentIndex(startSegmentIndex);
         
         // Play from start time and stop at end time
         player.seekTo(sharedSegmentRange.start);
@@ -340,97 +332,87 @@ export default function Landing() {
     setFontSize(14); // Reset to default
   };
 
-  // Handle segment selection for sharing
+  // Handle segment selection for sharing - simplified from/to system
   const handleSegmentClick = (segmentIndex: number, time?: string, event?: React.MouseEvent) => {
-    // If called with time parameter (backward compatibility)
-    if (typeof time === 'string' && !event) {
-      const seconds = parseTimeToSeconds(time);
-      if (player && player.seekTo) {
-        player.seekTo(seconds, true);
+    if (isSelecting) {
+      event?.preventDefault();
+      
+      if (selectionStep === 'from') {
+        // First click - set FROM segment
+        setFromSegment(segmentIndex);
+        setToSegment(null);
+        setSelectionStep('to');
+      } else {
+        // Second click - set TO segment and generate URL
+        const fromIndex = fromSegment!;
+        const toIndex = segmentIndex;
+        
+        // Ensure from is always before to
+        const startIndex = Math.min(fromIndex, toIndex);
+        const endIndex = Math.max(fromIndex, toIndex);
+        
+        setToSegment(endIndex);
+        
+        // Generate and copy URL immediately
+        generateAndCopyShareableLink(startIndex, endIndex);
+        
+        // Reset selection mode after successful copy
+        setTimeout(() => {
+          setIsSelecting(false);
+          setFromSegment(null);
+          setToSegment(null);
+          setSelectionStep('from');
+        }, 1000);
       }
+      
+      return;
+    }
+    
+    // Regular navigation behavior
+    if (player && segments.length > 0) {
+      const segmentTime = time ? parseTimeToSeconds(time) : parseTimeToSeconds(segments[segmentIndex].time);
       setActiveSegmentIndex(segmentIndex);
-      return;
-    }
-
-    // New enhanced functionality with event handling
-    if (!event) {
-      // Default behavior without event
-      const segmentTime = parseTimeToSeconds(segments[segmentIndex].time);
-      if (player) {
-        player.seekTo(segmentTime);
-        setActiveSegmentIndex(segmentIndex);
-      }
-      return;
-    }
-    if (event.shiftKey && selectedSegments.length > 0) {
-      // Shift-click to extend selection
-      const lastSelected = selectedSegments[selectedSegments.length - 1];
-      const start = Math.min(lastSelected, segmentIndex);
-      const end = Math.max(lastSelected, segmentIndex);
-      const range = [];
-      for (let i = start; i <= end; i++) {
-        range.push(i);
-      }
-      setSelectedSegments(range);
-    } else if (event.ctrlKey || event.metaKey) {
-      // Ctrl/Cmd-click to add/remove from selection
-      if (selectedSegments.includes(segmentIndex)) {
-        setSelectedSegments(prev => prev.filter(i => i !== segmentIndex));
-      } else {
-        setSelectedSegments(prev => [...prev, segmentIndex].sort((a, b) => a - b));
-      }
-    } else if (isSelecting) {
-      // Regular click during selection mode
-      if (selectedSegments.includes(segmentIndex)) {
-        setSelectedSegments(prev => prev.filter(i => i !== segmentIndex));
-      } else {
-        setSelectedSegments(prev => [...prev, segmentIndex].sort((a, b) => a - b));
-      }
-    } else {
-      // Regular click for navigation
-      const segmentTime = parseTimeToSeconds(segments[segmentIndex].time);
-      if (player) {
-        player.seekTo(segmentTime);
-        setActiveSegmentIndex(segmentIndex);
-      }
+      player.seekTo(segmentTime, true);
+      player.playVideo();
     }
   };
 
-  // Generate shareable link for selected segments
-  const generateShareableLink = () => {
-    if (selectedSegments.length === 0 || !selectedVideo || !selectedPlaylist) return;
+  // Toggle selection mode for from/to selection
+  const toggleSelectionMode = () => {
+    setIsSelecting(!isSelecting);
+    setFromSegment(null);
+    setToSegment(null);
+    setSelectionStep('from');
+  };
 
-    const sortedSegments = [...selectedSegments].sort((a, b) => a - b);
-    const startSegment = sortedSegments[0];
-    const endSegment = sortedSegments[sortedSegments.length - 1];
+  // Generate and copy shareable link immediately for from/to segments
+  const generateAndCopyShareableLink = async (startIndex: number, endIndex: number) => {
+    if (!selectedVideo || !selectedPlaylist) return;
     
-    const startTime = parseTimeToSeconds(segments[startSegment].time);
-    const endTime = parseTimeToSeconds(segments[endSegment].time);
+    const startTime = parseTimeToSeconds(segments[startIndex].time);
+    const endTime = parseTimeToSeconds(segments[endIndex].time);
     
     const baseUrl = window.location.origin + window.location.pathname;
     const shareUrl = `${baseUrl}?playlist=${selectedPlaylist}&video=${selectedVideo.id}&start=${startTime}&end=${endTime}&lang=${selectedLanguage}`;
     
-    setShareableLink(shareUrl);
-    setShowShareModal(true);
-  };
-
-  // Copy link to clipboard
-  const copyToClipboard = async () => {
     try {
-      await navigator.clipboard.writeText(shareableLink);
-      setShowShareModal(false);
+      await navigator.clipboard.writeText(shareUrl);
+      toast({
+        title: "Link copied!",
+        description: `Range: ${segments[startIndex].time} - ${segments[endIndex].time}`,
+        variant: "default",
+      });
     } catch (err) {
       console.error('Failed to copy: ', err);
+      toast({
+        title: "Copy failed",
+        description: "Please copy the URL manually from the address bar",
+        variant: "destructive",
+      });
     }
   };
 
-  // Toggle selection mode
-  const toggleSelectionMode = () => {
-    setIsSelecting(!isSelecting);
-    if (isSelecting) {
-      setSelectedSegments([]);
-    }
-  };
+
 
   useEffect(() => {
     if (Array.isArray(playlists) && playlists.length > 0 && !selectedPlaylist) {
@@ -678,17 +660,15 @@ export default function Landing() {
                               {isSelecting ? "Cancel" : "Select"}
                             </Button>
                             
-                            {selectedSegments.length > 0 && (
-                              <Button
-                                variant="default"
-                                size="sm"
-                                onClick={generateShareableLink}
-                                className="h-6 text-xs px-2 bg-blue-600 hover:bg-blue-700"
-                                title={`Share ${selectedSegments.length} selected segments`}
-                              >
-                                <Copy size={10} className="mr-1" />
-                                Share ({selectedSegments.length})
-                              </Button>
+                            {isSelecting && (
+                              <div className="text-xs text-slate-600 bg-slate-100 px-2 py-1 rounded">
+                                {selectionStep === 'from' ? 'Click FROM segment' : 'Click TO segment'}
+                                {fromSegment !== null && selectionStep === 'to' && (
+                                  <span className="ml-1 text-blue-600">
+                                    (From: {segments[fromSegment]?.time})
+                                  </span>
+                                )}
+                              </div>
                             )}
                           </div>
                         )}
@@ -699,7 +679,7 @@ export default function Landing() {
                     {isSelecting && segments.length > 0 && (
                       <div className="bg-blue-50 border border-blue-200 rounded p-2 mb-2">
                         <p className="text-xs text-blue-800">
-                          <strong>Selection Mode:</strong> Click segments to select them. Use Ctrl/Cmd+click for multiple selections, Shift+click to extend selection.
+                          <strong>From/To Selection:</strong> First click selects FROM segment, second click selects TO segment. The link will be automatically copied to your clipboard.
                         </p>
                       </div>
                     )}
@@ -759,7 +739,11 @@ export default function Landing() {
                   <CardContent className="flex-1 pt-0 px-4 pb-4">
                     <div ref={transcriptRef} className="space-y-1 h-full overflow-y-auto pr-2" style={{ height: '480px' }}>
                       {segments.map((segment, index) => {
-                        const isSelected = selectedSegments.includes(index);
+                        const isFromSelected = fromSegment === index;
+                        const isToSelected = toSegment === index;
+                        const isInRange = fromSegment !== null && toSegment !== null && 
+                          index >= Math.min(fromSegment, toSegment) && 
+                          index <= Math.max(fromSegment, toSegment);
                         const isActive = index === activeSegmentIndex;
                         const isShared = sharedSegmentRange && index >= 0 && segments.length > 0 && 
                           parseTimeToSeconds(segment.time) >= sharedSegmentRange.start &&
@@ -771,7 +755,11 @@ export default function Landing() {
                             className={`p-3 rounded-lg cursor-pointer transition-all duration-200 border ${
                               isShared
                                 ? 'bg-gradient-to-r from-orange-100 to-yellow-100 border-orange-300 shadow-md ring-2 ring-orange-200'
-                                : isSelected
+                                : isFromSelected
+                                ? 'bg-gradient-to-r from-green-100 to-green-50 border-green-300 shadow-sm ring-2 ring-green-200'
+                                : isToSelected 
+                                ? 'bg-gradient-to-r from-red-100 to-red-50 border-red-300 shadow-sm ring-2 ring-red-200'
+                                : isInRange
                                 ? 'bg-gradient-to-r from-blue-100 to-blue-50 border-blue-300 shadow-sm'
                                 : isActive
                                 ? 'bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-300 shadow-sm transform scale-[1.02]'
@@ -882,40 +870,7 @@ export default function Landing() {
         )}
       </div>
 
-      {/* Share Modal */}
-      <Dialog open={showShareModal} onOpenChange={setShowShareModal}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Share Video Segment</DialogTitle>
-            <DialogDescription>
-              Copy this link to share the selected transcript segment with others. The video will play from the selected time range and highlight the shared segment.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex items-center space-x-2">
-            <div className="grid flex-1 gap-2">
-              <Input
-                id="link"
-                value={shareableLink}
-                readOnly
-                className="text-sm"
-              />
-            </div>
-            <Button 
-              type="submit" 
-              size="sm" 
-              className="px-3"
-              onClick={copyToClipboard}
-            >
-              <Copy className="h-4 w-4" />
-            </Button>
-          </div>
-          <div className="text-xs text-gray-500">
-            Selected segments: {selectedSegments.length > 0 && segments.length > 0 ? 
-              `${segments[Math.min(...selectedSegments)]?.time} - ${segments[Math.max(...selectedSegments)]?.time}` : 
-              'None'}
-          </div>
-        </DialogContent>
-      </Dialog>
+
     </div>
   );
 }
