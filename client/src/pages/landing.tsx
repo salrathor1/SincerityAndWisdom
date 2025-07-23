@@ -626,7 +626,7 @@ export default function Landing() {
               {/* Video Player Column */}
               <div className="xl:col-span-2">
                 {selectedVideo ? (
-                  <Card className="shadow-md border bg-white h-auto">
+                  <Card className="shadow-md border bg-white flex flex-col min-h-[300px] sm:min-h-[400px] lg:min-h-[500px] xl:h-auto">
                     <CardContent className="p-0 flex flex-col">
                       <div className="bg-slate-900 rounded-t-lg overflow-hidden aspect-video lg:aspect-video">
                         <div ref={playerRef} className="w-full h-full" />
@@ -656,7 +656,7 @@ export default function Landing() {
                     </CardContent>
                   </Card>
                 ) : (
-                  <Card className="shadow-md border bg-gradient-to-br from-slate-50 to-slate-100 min-h-[400px] sm:min-h-[500px]">
+                  <Card className="shadow-md border bg-gradient-to-br from-slate-50 to-slate-100 flex flex-col min-h-[300px] sm:min-h-[400px] lg:min-h-[500px] xl:h-auto">
                     <CardContent className="p-6 text-center h-full flex flex-col justify-center">
                       <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center mx-auto mb-3">
                         <Video size={24} className="text-white" />
