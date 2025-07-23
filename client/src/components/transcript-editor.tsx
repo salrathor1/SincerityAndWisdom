@@ -29,7 +29,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
-import { Save, Upload, FileText, Clock, Trash2, Plus, Edit, AlignLeft, X } from "lucide-react";
+import { Save, Upload, FileText, Clock, Trash2, Plus, Edit, AlignLeft, X, ExternalLink } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -783,6 +783,18 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
                   </SelectContent>
                 </Select>
               </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  window.open(`/?playlist=${video.playlistId}&video=${video.id}`, '_blank');
+                }}
+                className="flex items-center space-x-1 text-xs"
+                title="View video on landing page"
+              >
+                <ExternalLink size={12} />
+                <span>View Video</span>
+              </Button>
               <Button
                 variant="ghost"
                 size="sm"
