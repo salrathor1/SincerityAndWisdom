@@ -496,32 +496,33 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="container mx-auto px-2 py-4">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {/* Header */}
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
               <Video className="text-white" size={20} />
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900">TranscriptHub</h1>
-              <p className="text-sm text-slate-600">Watch videos with synchronized transcripts</p>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-900">TranscriptHub</h1>
+              <p className="text-xs sm:text-sm text-slate-600 truncate">Watch videos with synchronized transcripts</p>
             </div>
           </div>
-          <Button onClick={handleLogin} variant="outline" size="sm">
+          <Button onClick={handleLogin} variant="outline" size="sm" className="self-start sm:self-center flex-shrink-0">
             <LogIn size={16} className="mr-2" />
-            Admin Login
+            <span className="hidden sm:inline">Admin Login</span>
+            <span className="sm:hidden">Login</span>
           </Button>
         </div>
 
         {/* Playlist and Video Selectors */}
         <div className="mb-4">
           <div className="bg-white rounded-lg shadow-md border p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-6">
-                <div className="flex items-center space-x-2">
-                  <List size={16} className="text-indigo-600" />
-                  <span className="text-sm font-medium text-slate-700">Playlist:</span>
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 flex-1 min-w-0">
+                <div className="flex items-center gap-2 min-w-0">
+                  <List size={16} className="text-indigo-600 flex-shrink-0" />
+                  <span className="text-sm font-medium text-slate-700 flex-shrink-0">Playlist:</span>
                   <Select 
                     value={selectedPlaylist?.toString()} 
                     onValueChange={(value) => {
@@ -529,7 +530,7 @@ export default function Landing() {
                       setSelectedVideo(null);
                     }}
                   >
-                    <SelectTrigger className="w-80 h-9">
+                    <SelectTrigger className="w-full sm:w-80 h-9">
                       <SelectValue placeholder="Choose playlist" />
                     </SelectTrigger>
                     <SelectContent>
@@ -543,49 +544,47 @@ export default function Landing() {
                 </div>
                 
                 {selectedPlaylist && Array.isArray(playlistVideos) && playlistVideos.length > 0 && (
-                  <>
-                    <div className="flex items-center space-x-2">
-                      <Play size={16} className="text-green-600" />
-                      <span className="text-sm font-medium text-slate-700">Video:</span>
-                      <Select 
-                        value={selectedVideo?.id?.toString() || ""} 
-                        onValueChange={(value) => {
-                          const video = playlistVideos.find((v: any) => v.id.toString() === value);
-                          setSelectedVideo(video);
-                        }}
-                      >
-                        <SelectTrigger className="w-[41rem] h-9">
-                          <SelectValue placeholder="Choose video" />
-                        </SelectTrigger>
-                        <SelectContent className="w-[41rem]">
-                          {playlistVideos.map((video: any) => (
-                            <SelectItem key={video.id} value={video.id.toString()}>
-                              <div className="flex items-center space-x-3 py-1 w-full">
-                                <img 
-                                  src={video.thumbnailUrl} 
-                                  alt={video.title}
-                                  className="w-12 h-9 rounded object-cover flex-shrink-0"
-                                />
-                                <div className="flex-1 min-w-0">
-                                  <div className="font-medium text-sm truncate max-w-[500px]">
-                                    {video.title}
-                                  </div>
-                                  <div className="text-xs text-slate-500">
-                                    {video.duration}
-                                  </div>
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <Play size={16} className="text-green-600 flex-shrink-0" />
+                    <span className="text-sm font-medium text-slate-700 flex-shrink-0">Video:</span>
+                    <Select 
+                      value={selectedVideo?.id?.toString() || ""} 
+                      onValueChange={(value) => {
+                        const video = playlistVideos.find((v: any) => v.id.toString() === value);
+                        setSelectedVideo(video);
+                      }}
+                    >
+                      <SelectTrigger className="w-full min-w-0 h-9">
+                        <SelectValue placeholder="Choose video" />
+                      </SelectTrigger>
+                      <SelectContent className="w-full max-w-2xl">
+                        {playlistVideos.map((video: any) => (
+                          <SelectItem key={video.id} value={video.id.toString()}>
+                            <div className="flex items-center space-x-3 py-1 w-full">
+                              <img 
+                                src={video.thumbnailUrl} 
+                                alt={video.title}
+                                className="w-12 h-9 rounded object-cover flex-shrink-0"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium text-sm truncate">
+                                  {video.title}
+                                </div>
+                                <div className="text-xs text-slate-500">
+                                  {video.duration}
                                 </div>
                               </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 )}
               </div>
               
               {selectedPlaylist && Array.isArray(playlistVideos) && playlistVideos.length > 0 && (
-                <Badge variant="outline" className="text-xs">
+                <Badge variant="outline" className="text-xs flex-shrink-0 self-start sm:self-center">
                   {playlistVideos.length} videos
                 </Badge>
               )}
@@ -596,13 +595,13 @@ export default function Landing() {
         {/* Main Content - Top Row: Video and Transcript */}
         {selectedPlaylist && (
           <>
-            <div className="grid gap-6 lg:grid-cols-3 mb-6">
+            <div className="grid gap-4 lg:gap-6 xl:grid-cols-3 mb-6">
               {/* Video Player Column */}
-              <div className="lg:col-span-2">
+              <div className="xl:col-span-2">
                 {selectedVideo ? (
-                  <Card className="shadow-md border bg-white" style={{ height: '600px' }}>
-                    <CardContent className="p-0 h-full flex flex-col">
-                      <div className="bg-slate-900 rounded-t-lg overflow-hidden" style={{ height: '480px' }}>
+                  <Card className="shadow-md border bg-white h-auto">
+                    <CardContent className="p-0 flex flex-col">
+                      <div className="bg-slate-900 rounded-t-lg overflow-hidden aspect-video">
                         <div ref={playerRef} className="w-full h-full" />
                       </div>
                       <div className="p-2 flex-1">
@@ -630,7 +629,7 @@ export default function Landing() {
                     </CardContent>
                   </Card>
                 ) : (
-                  <Card className="shadow-md border bg-gradient-to-br from-slate-50 to-slate-100" style={{ height: '600px' }}>
+                  <Card className="shadow-md border bg-gradient-to-br from-slate-50 to-slate-100 min-h-[400px] sm:min-h-[500px]">
                     <CardContent className="p-6 text-center h-full flex flex-col justify-center">
                       <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center mx-auto mb-3">
                         <Video size={24} className="text-white" />
@@ -645,8 +644,8 @@ export default function Landing() {
               </div>
 
               {/* Transcript Column */}
-              <div className="lg:col-span-1 h-full">
-                <Card className="shadow-md border bg-white flex flex-col" style={{ height: '600px' }}>
+              <div className="xl:col-span-1">
+                <Card className="shadow-md border bg-white flex flex-col min-h-[400px] lg:min-h-[500px] xl:h-auto">
                   <CardHeader className="pb-2 px-4 pt-4">
                     <div className="flex items-center justify-between mb-3">
                       <CardTitle className="text-lg flex items-center font-bold text-slate-900">
@@ -794,9 +793,8 @@ export default function Landing() {
                   <CardContent className="flex-1 pt-0 px-4 pb-4">
                     <div 
                       ref={transcriptRef} 
-                      className={`space-y-1 h-full overflow-y-auto ${selectedLanguage === 'ar' ? 'pl-2' : 'pr-2'}`} 
+                      className={`space-y-1 overflow-y-auto ${selectedLanguage === 'ar' ? 'pl-2' : 'pr-2'} h-64 sm:h-80 lg:h-96 xl:h-[480px]`} 
                       style={{ 
-                        height: '480px',
                         direction: selectedLanguage === 'ar' ? 'rtl' : 'ltr'
                       }}
                     >
@@ -905,7 +903,7 @@ export default function Landing() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 overflow-y-auto" style={{ maxHeight: '420px' }}>
+                    <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 overflow-y-auto max-h-64 sm:max-h-80 lg:max-h-96 xl:max-h-[420px]">
                       {Array.isArray(playlistVideos) && playlistVideos.map((video: any) => (
                         <div
                           key={video.id}
