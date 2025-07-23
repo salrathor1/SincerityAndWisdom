@@ -792,7 +792,14 @@ export default function Landing() {
                   </CardHeader>
                   
                   <CardContent className="flex-1 pt-0 px-4 pb-4">
-                    <div ref={transcriptRef} className="space-y-1 h-full overflow-y-auto pr-2" style={{ height: '480px' }}>
+                    <div 
+                      ref={transcriptRef} 
+                      className={`space-y-1 h-full overflow-y-auto ${selectedLanguage === 'ar' ? 'pl-2' : 'pr-2'}`} 
+                      style={{ 
+                        height: '480px',
+                        direction: selectedLanguage === 'ar' ? 'rtl' : 'ltr'
+                      }}
+                    >
                       {segments.map((segment, index) => {
                         const isFromSelected = fromSegment === index;
                         const isToSelected = toSegment === index;
@@ -833,9 +840,12 @@ export default function Landing() {
                                 ? 'bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-300 shadow-sm transform scale-[1.02]'
                                 : 'bg-white hover:bg-slate-50 border-slate-200 hover:border-slate-300 hover:shadow-sm'
                             } ${isSelecting ? 'ring-2 ring-transparent hover:ring-blue-200' : ''}`}
+                            style={{
+                              direction: selectedLanguage === 'ar' ? 'rtl' : 'ltr'
+                            }}
                             onClick={(e) => handleSegmentClick(index, segment.time, e)}
                           >
-                            <div className="flex items-start space-x-2">
+                            <div className={`flex items-start ${selectedLanguage === 'ar' ? 'space-x-reverse space-x-2' : 'space-x-2'}`}>
                               <Badge variant="secondary" className="text-xs flex-shrink-0 mt-0.5">
                                 {segment.time}
                               </Badge>
