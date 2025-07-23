@@ -578,10 +578,17 @@ export default function TranslationsPage() {
                           setTranslationSegments(newSegments);
                         }}
                         onKeyDown={(e) => {
-                          // Allow Enter key to create new lines
+                          // Allow Enter key to work normally
                           if (e.key === 'Enter') {
+                            // Don't prevent default, let textarea handle Enter naturally
                             e.stopPropagation();
                           }
+                        }}
+                        onInput={(e) => {
+                          // Handle input changes including Enter key
+                          const target = e.target as HTMLTextAreaElement;
+                          const newSegments = getSegmentsFromSRT(target.value);
+                          setTranslationSegments(newSegments);
                         }}
                         placeholder={`Enter ${getLanguageName(selectedLanguage)} translation in SRT format:
 
