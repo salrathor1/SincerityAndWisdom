@@ -14,7 +14,7 @@ import UserBlank from "@/pages/user-blank";
 import NotFound from "@/pages/not-found";
 
 function Router() {
-  const { isAuthenticated, isLoading, isViewer } = useAuth();
+  const { isAuthenticated, isLoading, isViewer, user } = useAuth();
 
   if (isLoading) {
     return (
@@ -23,6 +23,8 @@ function Router() {
       </div>
     );
   }
+
+
 
   return (
     <Switch>
