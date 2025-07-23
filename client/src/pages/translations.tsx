@@ -577,6 +577,12 @@ export default function TranslationsPage() {
                           const newSegments = getSegmentsFromSRT(e.target.value);
                           setTranslationSegments(newSegments);
                         }}
+                        onKeyDown={(e) => {
+                          // Allow Enter key to create new lines
+                          if (e.key === 'Enter') {
+                            e.stopPropagation();
+                          }
+                        }}
                         placeholder={`Enter ${getLanguageName(selectedLanguage)} translation in SRT format:
 
 1
@@ -586,7 +592,7 @@ Your translation text here
 2
 00:00:05,000 --> 00:00:05,000
 Next segment translation...`}
-                        className="min-h-[400px] resize-none text-sm font-mono"
+                        className="min-h-[400px] resize-none text-sm font-mono border-2 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 rounded-lg transition-all duration-200 hover:border-gray-300 dark:hover:border-gray-600"
                       />
                     </div>
                   )}
