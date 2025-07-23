@@ -697,17 +697,15 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
                               </div>
                             )}
                           </div>
-                          <div
-                            className={`text-sm text-foreground editable-content p-3 rounded border-transparent border min-h-[60px] ${
+                          <Textarea
+                            value={segment.text}
+                            onChange={canEdit ? (e) => handleTextEdit(index, e.target.value) : undefined}
+                            onBlur={() => updateOpenTextFromSegments(segments)}
+                            className={`text-sm min-h-[60px] resize-none ${
                               selectedLanguage === 'ar' ? 'text-right' : 'text-left'
-                            } ${canEdit ? 'hover:border-border focus:border-primary' : 'bg-gray-50 cursor-not-allowed border-gray-200'}`}
-                            contentEditable={canEdit}
-                            suppressContentEditableWarning
-                            onBlur={canEdit ? (e) => {
-                              handleTextEdit(index, e.currentTarget.textContent || "");
-                              updateOpenTextFromSegments(segments);
-                            } : undefined}
-                            dangerouslySetInnerHTML={{ __html: segment.text }}
+                            } ${!canEdit ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                            placeholder="Enter transcript text here..."
+                            readOnly={!canEdit}
                           />
                         </div>
                       </div>
