@@ -10,7 +10,12 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Languages, Save, Play, Pause } from "lucide-react";
+import { Languages, Save, Clock } from "lucide-react";
+
+interface TranscriptSegment {
+  time: string;
+  text: string;
+}
 
 function getLanguageName(code: string): string {
   const languageMap: { [key: string]: string } = {
@@ -25,6 +30,36 @@ function getLanguageName(code: string): string {
   return languageMap[code] || code;
 }
 
+function parseSRTContent(content: string): TranscriptSegment[] {
+  if (!content) return [];
+  
+  const segments: TranscriptSegment[] = [];
+  const blocks = content.trim().split(/\n\s*\n/);
+  
+  blocks.forEach(block => {
+    const lines = block.trim().split('\n');
+    if (lines.length >= 3) {
+      const timeMatch = lines[1].match(/(\d{2}:\d{2}:\d{2},\d{3})\s*-->\s*(\d{2}:\d{2}:\d{2},\d{3})/);
+      if (timeMatch) {
+        const startTime = timeMatch[1];
+        const text = lines.slice(2).join('\n');
+        segments.push({
+          time: startTime,
+          text: text
+        });
+      }
+    }
+  });
+  
+  return segments;
+}
+
+function convertSegmentsToSRT(segments: TranscriptSegment[]): string {
+  return segments.map((segment, index) => {
+    return `${index + 1}\n${segment.time} --> ${segment.time}\n${segment.text}`;
+  }).join('\n\n');
+}
+
 export default function TranslationsPage() {
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
@@ -33,6 +68,7 @@ export default function TranslationsPage() {
   const [selectedVideoId, setSelectedVideoId] = useState<string>("");
   const [selectedLanguage, setSelectedLanguage] = useState<string>("");
   const [translationText, setTranslationText] = useState<string>("");
+  const [translationSegments, setTranslationSegments] = useState<TranscriptSegment[]>([]);
   const [saving, setSaving] = useState(false);
 
   const { data: currentUser } = useQuery({
@@ -83,6 +119,9 @@ export default function TranslationsPage() {
   // Get Arabic transcript (read-only reference)
   const arabicTranscript = transcripts.find(t => t.language === 'ar');
   
+  // Parse Arabic content into segments
+  const arabicSegments = arabicTranscript ? parseSRTContent(arabicTranscript.content) : [];
+  
   // Get available translation languages (excluding Arabic)
   const availableLanguages = transcripts
     .filter(t => t.language !== 'ar')
@@ -91,14 +130,33 @@ export default function TranslationsPage() {
   // Get selected language transcript
   const selectedTranscript = transcripts.find(t => t.language === selectedLanguage);
 
-  // Update translation text when transcript changes
+  // Update translation segments when transcript changes
   useEffect(() => {
     if (selectedTranscript) {
+      const segments = parseSRTContent(selectedTranscript.content || "");
+      setTranslationSegments(segments);
       setTranslationText(selectedTranscript.content || "");
     } else {
+      // Initialize with empty segments matching Arabic segments
+      const emptySegments = arabicSegments.map(segment => ({
+        time: segment.time,
+        text: ""
+      }));
+      setTranslationSegments(emptySegments);
       setTranslationText("");
     }
-  }, [selectedTranscript]);
+  }, [selectedTranscript, arabicSegments]);
+
+  // Handle segment text updates
+  const handleSegmentTextChange = (index: number, newText: string) => {
+    const updatedSegments = [...translationSegments];
+    updatedSegments[index] = { ...updatedSegments[index], text: newText };
+    setTranslationSegments(updatedSegments);
+    
+    // Update the full text for saving
+    const updatedContent = convertSegmentsToSRT(updatedSegments);
+    setTranslationText(updatedContent);
+  };
 
   // Save translation mutation
   const saveTranslationMutation = useMutation({
@@ -271,12 +329,30 @@ export default function TranslationsPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <Textarea
-                    value={arabicTranscript?.content || "No Arabic transcript available"}
-                    readOnly
-                    className="min-h-[400px] bg-muted/50 resize-none"
-                    style={{ direction: 'rtl', textAlign: 'right', fontFamily: 'Arial, sans-serif' }}
-                  />
+                  <div className="max-h-[500px] overflow-y-auto space-y-3">
+                    {arabicSegments.length > 0 ? (
+                      arabicSegments.map((segment, index) => (
+                        <div key={index} className="border rounded-lg p-3 bg-muted/30">
+                          <div className="flex items-center mb-2">
+                            <Clock size={14} className="mr-2 text-muted-foreground" />
+                            <span className="text-sm font-mono text-muted-foreground">
+                              {segment.time}
+                            </span>
+                          </div>
+                          <div 
+                            className="text-sm leading-relaxed"
+                            style={{ direction: 'rtl', textAlign: 'right', fontFamily: 'Arial, sans-serif' }}
+                          >
+                            {segment.text}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center text-muted-foreground py-8">
+                        No Arabic transcript available
+                      </div>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
 
@@ -289,24 +365,48 @@ export default function TranslationsPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <Textarea
-                    value={translationText}
-                    onChange={(e) => setTranslationText(e.target.value)}
-                    placeholder={`Enter ${getLanguageName(selectedLanguage)} translation here...`}
-                    className="min-h-[400px] resize-none"
-                  />
-                  <div className="mt-4 flex items-center justify-between">
-                    <div className="text-sm text-muted-foreground">
-                      {translationText.length} characters
-                    </div>
-                    <Button
-                      onClick={handleSaveTranslation}
-                      disabled={saving || !translationText.trim()}
-                    >
-                      <Save size={16} className="mr-2" />
-                      {saving ? "Saving..." : "Save"}
-                    </Button>
+                  <div className="max-h-[500px] overflow-y-auto space-y-3">
+                    {arabicSegments.length > 0 ? (
+                      arabicSegments.map((segment, index) => {
+                        const translationSegment = translationSegments[index];
+                        return (
+                          <div key={index} className="border rounded-lg p-3">
+                            <div className="flex items-center mb-2">
+                              <Clock size={14} className="mr-2 text-muted-foreground" />
+                              <span className="text-sm font-mono text-muted-foreground">
+                                {segment.time}
+                              </span>
+                            </div>
+                            <Textarea
+                              value={translationSegment?.text || ""}
+                              onChange={(e) => handleSegmentTextChange(index, e.target.value)}
+                              placeholder={`Enter ${getLanguageName(selectedLanguage)} translation for this segment...`}
+                              className="min-h-[60px] resize-none text-sm"
+                            />
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="text-center text-muted-foreground py-8">
+                        Select a video with Arabic transcript to begin translation
+                      </div>
+                    )}
                   </div>
+                  
+                  {arabicSegments.length > 0 && (
+                    <div className="mt-4 flex items-center justify-between border-t pt-4">
+                      <div className="text-sm text-muted-foreground">
+                        {translationSegments.filter(s => s.text.trim()).length} of {arabicSegments.length} segments translated
+                      </div>
+                      <Button
+                        onClick={handleSaveTranslation}
+                        disabled={saving || translationSegments.every(s => !s.text.trim())}
+                      >
+                        <Save size={16} className="mr-2" />
+                        {saving ? "Saving..." : "Save Translation"}
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
