@@ -9,6 +9,7 @@ import Dashboard from "@/pages/dashboard";
 import Videos from "@/pages/videos";
 import Playlists from "@/pages/playlists";
 import Transcripts from "@/pages/transcripts";
+import TranslationsPage from "@/pages/translations";
 import AdminPanel from "@/pages/admin";
 import UserBlank from "@/pages/user-blank";
 import NotFound from "@/pages/not-found";
@@ -40,6 +41,7 @@ function Router() {
           <Route path="/videos" component={UserBlank} />
           <Route path="/playlists" component={UserBlank} />
           <Route path="/transcripts" component={UserBlank} />
+          <Route path="/translations" component={UserBlank} />
           <Route path="/admin" component={UserBlank} />
         </>
       ) : (
@@ -49,6 +51,7 @@ function Router() {
           <Route path="/videos" component={Videos} />
           <Route path="/playlists" component={Playlists} />
           <Route path="/transcripts" component={Transcripts} />
+          <Route path="/translations" component={TranslationsPage} />
           <Route path="/admin" component={AdminPanel} />
         </>
       )}

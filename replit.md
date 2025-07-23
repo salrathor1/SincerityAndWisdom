@@ -6,6 +6,21 @@ The Sunnah and Wisdom is a full-stack web application for managing Islamic educa
 
 ## Recent Changes
 
+### January 23, 2025 - Added Translation Management System
+- Created new Translations page (/translations) for comparing Arabic with other language translations
+- Implemented side-by-side interface with read-only Arabic reference and editable translation text
+- Added language selector supporting English, Urdu, French, Spanish, Turkish, and Malay
+- Integrated role-based access control (admin/editor can access, viewers see blank page)
+- Added Translations menu item to sidebar navigation with Languages icon
+- Supports both editing existing translations and creating new ones with proper API integration
+
+### January 23, 2025 - Fixed User Role Management
+- Resolved role update functionality that was failing due to permission errors
+- Updated both admin users (salrathor1@hotmail.com, abdulmunimparray@gmail.com) to admin role
+- Fixed API call format in user management component to use correct parameters
+- Added detailed error logging for better debugging of role-based access issues
+- Role-based routing now properly blocks viewers from accessing admin features
+
 ### January 23, 2025 - Added Vocabulary Management System
 - Added vocabulary field to videos database table for storing word definitions and notes
 - Created tabbed interface in admin video editing modal with Transcript and Vocabulary tabs
@@ -17,7 +32,7 @@ The Sunnah and Wisdom is a full-stack web application for managing Islamic educa
 ### January 23, 2025 - Simplified Segment Sharing System
 - Replaced complex multi-select system with intuitive from/to two-click selection
 - Fixed end time calculation to include complete "to" segment duration
-- Enhanced shared segment playback with proper highlighting during video play
+- Enhanced shared segment playbook with proper highlighting during video play
 - Added toast notifications for successful link copying
 - Improved visual feedback with color-coded segments (green=FROM, red=TO, blue=range, orange=shared)
 

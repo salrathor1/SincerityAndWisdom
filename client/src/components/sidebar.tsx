@@ -6,6 +6,7 @@ import {
   Home, 
   List, 
   FileText, 
+  Languages,
   BarChart3, 
   LogOut,
   User,
@@ -20,6 +21,7 @@ const navigation = [
   { name: "Videos", href: "/videos", icon: Video },
   { name: "Playlists", href: "/playlists", icon: List },
   { name: "Transcripts", href: "/transcripts", icon: FileText },
+  { name: "Translations", href: "/translations", icon: Languages },
   { name: "Analytics", href: "/analytics", icon: BarChart3 },
 ];
 
