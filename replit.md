@@ -6,6 +6,14 @@ TranscriptHub is a full-stack web application for managing YouTube video transcr
 
 ## Recent Changes
 
+### January 23, 2025 - Added Vocabulary Management System
+- Added vocabulary field to videos database table for storing word definitions and notes
+- Created tabbed interface in admin video editing modal with Transcript and Vocabulary tabs
+- Implemented vocabulary save functionality with proper role-based permissions (admin/editor can edit)
+- Added tabbed interface on landing page with Transcript and Vocabulary tabs
+- Vocabulary content is displayed from database and shows appropriate empty states
+- Applied consistent styling and modern tab design across both admin and public interfaces
+
 ### January 23, 2025 - Simplified Segment Sharing System
 - Replaced complex multi-select system with intuitive from/to two-click selection
 - Fixed end time calculation to include complete "to" segment duration

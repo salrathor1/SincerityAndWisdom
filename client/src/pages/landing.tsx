@@ -17,6 +17,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 
 import { Video, FileText, Play, Clock, Languages, LogIn, ChevronLeft, ChevronRight, Search, X, Plus, Minus, List, Share2, Copy, CheckCircle, Link, Scissors, ChevronDown } from "lucide-react";
 import { TranslatedText } from "@/components/TranslatedText";
@@ -52,6 +58,7 @@ export default function Landing() {
   const [isSelecting, setIsSelecting] = useState(false);
   const [selectionStep, setSelectionStep] = useState<'from' | 'to'>('from');
   const [sharedSegmentRange, setSharedSegmentRange] = useState<{start: number, end: number} | null>(null);
+  const [activeTab, setActiveTab] = useState("transcript");
   const playerRef = useRef<HTMLDivElement>(null);
   const transcriptRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -659,17 +666,31 @@ export default function Landing() {
                 )}
               </div>
 
-              {/* Transcript Column */}
+              {/* Transcript & Vocabulary Column */}
               <div className="xl:col-span-1">
                 <Card className="shadow-md border bg-white flex flex-col min-h-[300px] sm:min-h-[400px] lg:min-h-[500px] xl:h-auto">
                   <CardHeader className="pb-2 px-3 sm:px-4 pt-3 sm:pt-4">
-                    <div className="flex items-center justify-between mb-2 sm:mb-3">
-                      <CardTitle className="text-base sm:text-lg flex items-center font-bold text-slate-900">
-                        <FileText size={16} className="text-indigo-600 mr-2 sm:mr-2" />
-                        <span className="hidden sm:inline">Transcript</span>
-                        <span className="sm:hidden">Text</span>
-                      </CardTitle>
-                      <div className="flex items-center space-x-1 sm:space-x-2">
+                    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                      <TabsList className="grid w-full grid-cols-2 mb-3">
+                        <TabsTrigger value="transcript" className="flex items-center space-x-1">
+                          <FileText size={14} />
+                          <span>Transcript</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="vocabulary" className="flex items-center space-x-1">
+                          <Languages size={14} />
+                          <span>Vocabulary</span>
+                        </TabsTrigger>
+                      </TabsList>
+                      
+                      {/* Transcript Tab */}
+                      <TabsContent value="transcript" className="mt-0 space-y-0">
+                        <div className="flex items-center justify-between mb-2 sm:mb-3">
+                          <CardTitle className="text-base sm:text-lg flex items-center font-bold text-slate-900">
+                            <FileText size={16} className="text-indigo-600 mr-2 sm:mr-2" />
+                            <span className="hidden sm:inline">Transcript</span>
+                            <span className="sm:hidden">Text</span>
+                          </CardTitle>
+                          <div className="flex items-center space-x-1 sm:space-x-2">
                         {/* Font Size Controls */}
                         {segments.length > 0 && (
                           <div className="flex items-center space-x-1 bg-slate-100 rounded p-1">
@@ -857,9 +878,41 @@ export default function Landing() {
                         )}
                       </div>
                     )}
+                      </TabsContent>
+                      
+                      {/* Vocabulary Tab */}
+                      <TabsContent value="vocabulary" className="mt-0 space-y-0">
+                        <CardContent className="flex-1 pt-0 px-3 sm:px-4 pb-3 sm:pb-4">
+                          <div className="h-[240px] sm:h-[320px] lg:h-[400px] xl:h-[450px]">
+                            {selectedVideo?.vocabulary ? (
+                              <div className="h-full overflow-y-auto px-2 py-3">
+                                <div className="prose prose-sm max-w-none">
+                                  <p className="whitespace-pre-wrap leading-relaxed text-slate-700">
+                                    {selectedVideo.vocabulary}
+                                  </p>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="h-full flex items-center justify-center text-center">
+                                <div className="space-y-3">
+                                  <Languages size={32} className="mx-auto opacity-50 text-slate-400" />
+                                  <div>
+                                    <p className="text-slate-600 font-medium">No vocabulary notes available</p>
+                                    <p className="text-slate-500 text-sm">
+                                      {selectedVideo ? 'This video doesn\'t have vocabulary notes yet.' : 'Select a video to see vocabulary notes.'}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </CardContent>
+                      </TabsContent>
+                    </Tabs>
                   </CardHeader>
                   
                   <CardContent className="flex-1 pt-0 px-3 sm:px-4 pb-3 sm:pb-4">
+                    {activeTab === "transcript" && (
                     <div 
                       ref={transcriptRef} 
                       className={`space-y-1 overflow-y-auto ${selectedLanguage === 'ar' ? 'pl-1 sm:pl-2' : 'pr-1 sm:pr-2'} h-48 sm:h-64 lg:h-80 xl:h-[400px]`} 
@@ -953,8 +1006,9 @@ export default function Landing() {
                         </div>
                       )}
                     </div>
-              </CardContent>
-            </Card>
+                    )}
+                  </CardContent>
+                </Card>
               </div>
             </div>
 
