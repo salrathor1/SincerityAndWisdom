@@ -722,18 +722,29 @@ export default function Landing() {
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end" className="w-40">
-                                  <DropdownMenuItem onClick={toggleSelectionMode}>
+                                  <DropdownMenuItem onClick={async () => {
+                                    // Share current page URL
+                                    const currentUrl = window.location.href;
+                                    try {
+                                      await navigator.clipboard.writeText(currentUrl);
+                                      toast({
+                                        title: "Link copied!",
+                                        description: "Current page URL copied to clipboard",
+                                        variant: "default",
+                                      });
+                                    } catch (err) {
+                                      console.error('Failed to copy: ', err);
+                                      toast({
+                                        title: "Copy failed",
+                                        description: "Please copy the URL manually from the address bar",
+                                        variant: "destructive",
+                                      });
+                                    }
+                                  }}>
                                     <Link size={12} className="mr-2" />
                                     Share Link
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => {
-                                    // TODO: Implement create segment functionality
-                                    toast({
-                                      title: "Coming Soon",
-                                      description: "Create Segment feature will be available soon",
-                                      variant: "default",
-                                    });
-                                  }}>
+                                  <DropdownMenuItem onClick={toggleSelectionMode}>
                                     <Scissors size={12} className="mr-2" />
                                     Create Segment
                                   </DropdownMenuItem>
@@ -770,7 +781,7 @@ export default function Landing() {
                     {isSelecting && segments.length > 0 && (
                       <div className="bg-blue-50 border border-blue-200 rounded p-2 mb-2">
                         <p className="text-xs text-blue-800">
-                          <strong>From/To Selection:</strong> First click selects FROM segment, second click selects TO segment. The link will be automatically copied to your clipboard.
+                          <strong>Create Segment:</strong> First click selects FROM segment, second click selects TO segment. The shareable link will be automatically copied to your clipboard.
                         </p>
                       </div>
                     )}
