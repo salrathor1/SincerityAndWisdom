@@ -1,4 +1,5 @@
 import { Link, useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { 
   Video, 
@@ -7,7 +8,8 @@ import {
   FileText, 
   BarChart3, 
   LogOut,
-  User
+  User,
+  Shield
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -23,7 +25,13 @@ const navigation = [
 
 export function Sidebar() {
   const [location] = useLocation();
-  const { user } = useAuth();
+  const { isAuthenticated } = useAuth();
+  
+  const { data: currentUser } = useQuery({
+    queryKey: ["/api/auth/user"],
+    retry: false,
+    enabled: isAuthenticated,
+  }) as { data: any };
 
   const handleLogout = () => {
     window.location.href = "/api/logout";
@@ -66,6 +74,25 @@ export function Sidebar() {
               </li>
             );
           })}
+          
+          {/* Admin Panel Link (Admin Only) */}
+          {currentUser?.role === 'admin' && (
+            <li>
+              <Link href="/admin">
+                <a
+                  className={cn(
+                    "flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors border-t border-border mt-4 pt-4",
+                    location === "/admin"
+                      ? "bg-red-100 text-red-700 border-red-200"
+                      : "text-red-600 hover:bg-red-50 hover:text-red-700"
+                  )}
+                >
+                  <Shield size={20} />
+                  <span className="font-medium">Admin Panel</span>
+                </a>
+              </Link>
+            </li>
+          )}
         </ul>
       </nav>
 
@@ -74,8 +101,8 @@ export function Sidebar() {
         <div className="flex items-center space-x-3">
           <Avatar className="w-8 h-8">
             <AvatarImage 
-              src={user?.profileImageUrl || ""} 
-              alt={user?.firstName || "User"} 
+              src={currentUser?.profileImageUrl || ""} 
+              alt={currentUser?.firstName || "User"} 
               className="object-cover"
             />
             <AvatarFallback>
@@ -84,13 +111,13 @@ export function Sidebar() {
           </Avatar>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-sidebar-foreground truncate">
-              {user?.firstName && user?.lastName 
-                ? `${user.firstName} ${user.lastName}`
-                : user?.email || "Admin User"
+              {currentUser?.firstName && currentUser?.lastName 
+                ? `${currentUser.firstName} ${currentUser.lastName}`
+                : currentUser?.email || "Admin User"
               }
             </p>
             <p className="text-xs text-muted-foreground truncate">
-              {user?.email || "admin@example.com"}
+              {currentUser?.email || "admin@example.com"}
             </p>
           </div>
           <Button 

@@ -9,6 +9,7 @@ import Dashboard from "@/pages/dashboard";
 import Videos from "@/pages/videos";
 import Playlists from "@/pages/playlists";
 import Transcripts from "@/pages/transcripts";
+import AdminPanel from "@/pages/admin";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -32,6 +33,7 @@ function Router() {
           <Route path="/videos" component={Videos} />
           <Route path="/playlists" component={Playlists} />
           <Route path="/transcripts" component={Transcripts} />
+          <Route path="/admin" component={AdminPanel} />
         </>
       )}
       <Route component={NotFound} />
