@@ -165,7 +165,7 @@ export default function TranslationsPage() {
   // Add new segment
   const addNewSegment = () => {
     const newSegment = {
-      time: "00:00:00,000 --> 00:00:05,000",
+      time: "00:00:00,000",
       text: ""
     };
     setTranslationSegments([...translationSegments, newSegment]);
@@ -182,7 +182,7 @@ export default function TranslationsPage() {
     return segments
       .filter(segment => segment.text.trim())
       .map((segment, index) => {
-        // Handle both single timestamp and range formats
+        // For SRT format, we need start and end times, so duplicate single timestamp
         const timeRange = segment.time.includes(' --> ') 
           ? segment.time 
           : `${segment.time} --> ${segment.time}`;
@@ -203,10 +203,10 @@ export default function TranslationsPage() {
       if (lines.length >= 3) {
         const timeMatch = lines[1].match(/(\d{2}:\d{2}:\d{2},\d{3})\s*-->\s*(\d{2}:\d{2}:\d{2},\d{3})/);
         if (timeMatch) {
-          const fullTimeRange = lines[1]; // Keep the full time range
+          const startTime = timeMatch[1]; // Use only start time for consistency with Arabic side
           const text = lines.slice(2).join('\n');
           segments.push({
-            time: fullTimeRange,
+            time: startTime,
             text: text
           });
         }
@@ -495,7 +495,7 @@ export default function TranslationsPage() {
                                     setTranslationSegments(updatedSegments);
                                   }}
                                   className="text-xs h-8 text-center font-mono border-2 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 rounded-lg transition-all duration-200 hover:border-gray-300 dark:hover:border-gray-600"
-                                  placeholder="00:00:00,000 --> 00:00:05,000"
+                                  placeholder="00:00:00,000"
                                 />
                               </div>
                               <div className="flex-1">
@@ -542,11 +542,11 @@ export default function TranslationsPage() {
                         placeholder={`Enter ${getLanguageName(selectedLanguage)} translation in SRT format:
 
 1
-00:00:01,000 --> 00:00:05,000
+00:00:01,000 --> 00:00:01,000
 Your translation text here
 
 2
-00:00:05,000 --> 00:00:10,000
+00:00:05,000 --> 00:00:05,000
 Next segment translation...`}
                         className="min-h-[400px] resize-none text-sm font-mono"
                       />
