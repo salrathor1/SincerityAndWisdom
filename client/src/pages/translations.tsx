@@ -150,14 +150,10 @@ export default function TranslationsPage() {
       const segments = parseSRTContent(selectedTranscript.content);
       setTranslationSegments(segments);
     } else {
-      // Initialize with empty segments matching Arabic segments
-      const emptySegments = arabicSegments.map(segment => ({
-        time: segment.time,
-        text: ""
-      }));
-      setTranslationSegments(emptySegments);
+      // Initialize with empty array - user can create their own segments
+      setTranslationSegments([]);
     }
-  }, [selectedTranscript, arabicSegments]);
+  }, [selectedTranscript]);
 
   // Handle segment text updates
   const handleSegmentTextChange = (index: number, newText: string) => {
@@ -181,18 +177,41 @@ export default function TranslationsPage() {
     setTranslationSegments(updatedSegments);
   };
 
-  // Convert segments to text format
-  const getTextFromSegments = (segments: TranscriptSegment[]): string => {
-    return segments.map(segment => segment.text).filter(text => text.trim()).join('\n\n');
+  // Convert segments to SRT format
+  const getSRTFromSegments = (segments: TranscriptSegment[], isArabic = false): string => {
+    return segments
+      .filter(segment => segment.text.trim())
+      .map((segment, index) => {
+        const endTime = segment.time; // Use same time for end as placeholder
+        const text = isArabic ? segment.text : segment.text;
+        return `${index + 1}\n${segment.time} --> ${endTime}\n${text}`;
+      })
+      .join('\n\n');
   };
 
-  // Convert text to segments format
-  const getSegmentsFromText = (text: string): TranscriptSegment[] => {
-    const paragraphs = text.split('\n\n').filter(p => p.trim());
-    return paragraphs.map((paragraph, index) => ({
-      time: `00:${String(index).padStart(2, '0')}:00,000`,
-      text: paragraph.trim()
-    }));
+  // Convert SRT format to segments
+  const getSegmentsFromSRT = (srtText: string): TranscriptSegment[] => {
+    if (!srtText.trim()) return [];
+    
+    const blocks = srtText.trim().split(/\n\s*\n/);
+    const segments: TranscriptSegment[] = [];
+    
+    blocks.forEach(block => {
+      const lines = block.trim().split('\n');
+      if (lines.length >= 3) {
+        const timeMatch = lines[1].match(/(\d{2}:\d{2}:\d{2},\d{3})\s*-->\s*(\d{2}:\d{2}:\d{2},\d{3})/);
+        if (timeMatch) {
+          const startTime = timeMatch[1];
+          const text = lines.slice(2).join('\n');
+          segments.push({
+            time: startTime,
+            text: text
+          });
+        }
+      }
+    });
+    
+    return segments;
   };
 
   // Save translation mutation
@@ -379,7 +398,7 @@ export default function TranslationsPage() {
                     onClick={() => setViewMode('text')}
                     size="sm"
                   >
-                    Text View
+                    SRT View
                   </Button>
                 </div>
               </CardContent>
@@ -427,10 +446,10 @@ export default function TranslationsPage() {
                   ) : (
                     <div className="max-h-[500px] overflow-y-auto">
                       <div 
-                        className="p-3 text-sm leading-relaxed whitespace-pre-wrap"
-                        style={{ direction: 'rtl', textAlign: 'right', fontFamily: 'Arial, sans-serif' }}
+                        className="p-3 text-sm font-mono leading-relaxed whitespace-pre-wrap bg-muted/20 rounded"
+                        style={{ direction: 'ltr', textAlign: 'left' }}
                       >
-                        {getTextFromSegments(arabicSegments)}
+                        {getSRTFromSegments(arabicSegments, true)}
                       </div>
                     </div>
                   )}
@@ -486,7 +505,7 @@ export default function TranslationsPage() {
                             <Textarea
                               value={segment.text}
                               onChange={(e) => handleSegmentTextChange(index, e.target.value)}
-                              placeholder={`Enter ${getLanguageName(selectedLanguage)} translation for this segment...`}
+                              placeholder={`Enter ${getLanguageName(selectedLanguage)} translation...`}
                               className="min-h-[60px] resize-none text-sm"
                             />
                           </div>
@@ -503,13 +522,21 @@ export default function TranslationsPage() {
                   ) : (
                     <div className="max-h-[500px] overflow-y-auto">
                       <Textarea
-                        value={getTextFromSegments(translationSegments)}
+                        value={getSRTFromSegments(translationSegments)}
                         onChange={(e) => {
-                          const newSegments = getSegmentsFromText(e.target.value);
+                          const newSegments = getSegmentsFromSRT(e.target.value);
                           setTranslationSegments(newSegments);
                         }}
-                        placeholder={`Enter ${getLanguageName(selectedLanguage)} translation as continuous text...`}
-                        className="min-h-[400px] resize-none text-sm"
+                        placeholder={`Enter ${getLanguageName(selectedLanguage)} translation in SRT format:
+
+1
+00:00:01,000 --> 00:00:05,000
+Your translation text here
+
+2
+00:00:05,000 --> 00:00:10,000
+Next segment translation...`}
+                        className="min-h-[400px] resize-none text-sm font-mono"
                       />
                     </div>
                   )}
