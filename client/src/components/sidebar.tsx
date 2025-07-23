@@ -42,10 +42,14 @@ export function Sidebar() {
       {/* Logo/Brand */}
       <div className="p-6 border-b border-border">
         <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <Video className="text-white" size={16} />
+          <div className="w-8 h-8 bg-gradient-to-br from-green-600 to-green-700 rounded-lg flex items-center justify-center">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="text-white">
+              <path d="M9 12c0-3.31 2.69-6 6-6s6 2.69 6 6c0 2.22-1.21 4.15-3 5.19V22h-6v-4.81c-1.79-1.04-3-2.97-3-5.19z" fill="currentColor"/>
+              <circle cx="15" cy="12" r="2" fill="#059669"/>
+              <path d="m11 17 4 4V15z" fill="#059669"/>
+            </svg>
           </div>
-          <h1 className="text-xl font-semibold text-foreground">TranscriptHub</h1>
+          <h1 className="text-xl font-semibold text-foreground">The Sunnah and Wisdom</h1>
         </div>
       </div>
 

@@ -1,8 +1,8 @@
-# TranscriptHub - YouTube Video Transcript Manager
+# The Sunnah and Wisdom - Islamic Video Transcript Manager
 
 ## Overview
 
-TranscriptHub is a full-stack web application for managing YouTube video transcripts. It allows users to import YouTube videos, create and edit transcripts in multiple languages, organize content into playlists, and manage their video collections with a modern, intuitive interface.
+The Sunnah and Wisdom is a full-stack web application for managing Islamic educational video transcripts. It allows users to import YouTube videos, create and edit transcripts in multiple languages (Arabic and English), organize content into playlists, and manage their Islamic educational video collections with a modern, intuitive interface.
 
 ## Recent Changes
 
