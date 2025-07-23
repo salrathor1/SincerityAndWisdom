@@ -10,10 +10,11 @@ import Videos from "@/pages/videos";
 import Playlists from "@/pages/playlists";
 import Transcripts from "@/pages/transcripts";
 import AdminPanel from "@/pages/admin";
+import UserBlank from "@/pages/user-blank";
 import NotFound from "@/pages/not-found";
 
 function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, isViewer } = useAuth();
 
   if (isLoading) {
     return (
@@ -30,7 +31,17 @@ function Router() {
       
       {!isAuthenticated ? (
         <Route path="/" component={Landing} />
+      ) : isViewer ? (
+        /* Show blank page for users with viewer role */
+        <>
+          <Route path="/" component={UserBlank} />
+          <Route path="/videos" component={UserBlank} />
+          <Route path="/playlists" component={UserBlank} />
+          <Route path="/transcripts" component={UserBlank} />
+          <Route path="/admin" component={UserBlank} />
+        </>
       ) : (
+        /* Normal routes for editors and admins */
         <>
           <Route path="/" component={Dashboard} />
           <Route path="/videos" component={Videos} />
