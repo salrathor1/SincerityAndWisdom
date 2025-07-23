@@ -11,8 +11,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-import { Video, FileText, Play, Clock, Languages, LogIn, ChevronLeft, ChevronRight, Search, X, Plus, Minus, List, Share2, Copy, CheckCircle } from "lucide-react";
+import { Video, FileText, Play, Clock, Languages, LogIn, ChevronLeft, ChevronRight, Search, X, Plus, Minus, List, Share2, Copy, CheckCircle, Link, Scissors, ChevronDown } from "lucide-react";
 import { TranslatedText } from "@/components/TranslatedText";
 import { useToast } from "@/hooks/use-toast";
 
@@ -703,15 +709,47 @@ export default function Landing() {
                         {/* Selection and Share Controls */}
                         {segments.length > 0 && (
                           <div className="flex items-center space-x-1">
-                            <Button
-                              variant={isSelecting ? "default" : "outline"}
-                              size="sm"
-                              onClick={toggleSelectionMode}
-                              className="h-6 w-6 p-0"
-                              title={isSelecting ? "Exit selection mode" : "Select segments to share"}
-                            >
-                              {isSelecting ? <X size={10} /> : <Share2 size={10} />}
-                            </Button>
+                            {!isSelecting ? (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-6 px-2 text-xs"
+                                  >
+                                    <Share2 size={10} className="mr-1" />
+                                    <ChevronDown size={8} />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-40">
+                                  <DropdownMenuItem onClick={toggleSelectionMode}>
+                                    <Link size={12} className="mr-2" />
+                                    Share Link
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => {
+                                    // TODO: Implement create segment functionality
+                                    toast({
+                                      title: "Coming Soon",
+                                      description: "Create Segment feature will be available soon",
+                                      variant: "default",
+                                    });
+                                  }}>
+                                    <Scissors size={12} className="mr-2" />
+                                    Create Segment
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            ) : (
+                              <Button
+                                variant="default"
+                                size="sm"
+                                onClick={toggleSelectionMode}
+                                className="h-6 w-6 p-0"
+                                title="Exit selection mode"
+                              >
+                                <X size={10} />
+                              </Button>
+                            )}
                             
                             {isSelecting && (
                               <div className="text-xs text-slate-600 bg-slate-100 px-2 py-1 rounded">
