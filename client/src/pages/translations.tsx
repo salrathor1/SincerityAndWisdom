@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Languages, Save, Clock } from "lucide-react";
+import { Languages, Save, Clock, Plus, Trash2 } from "lucide-react";
 
 interface TranscriptSegment {
   time: string;
@@ -83,6 +83,7 @@ export default function TranslationsPage() {
   const [selectedLanguage, setSelectedLanguage] = useState<string>("");
   const [translationSegments, setTranslationSegments] = useState<TranscriptSegment[]>([]);
   const [saving, setSaving] = useState(false);
+  const [viewMode, setViewMode] = useState<'segments' | 'text'>('segments');
 
   const { data: currentUser } = useQuery({
     queryKey: ["/api/auth/user"],
@@ -163,6 +164,35 @@ export default function TranslationsPage() {
     const updatedSegments = [...translationSegments];
     updatedSegments[index] = { ...updatedSegments[index], text: newText };
     setTranslationSegments(updatedSegments);
+  };
+
+  // Add new segment
+  const addNewSegment = () => {
+    const newSegment = {
+      time: "00:00:00,000",
+      text: ""
+    };
+    setTranslationSegments([...translationSegments, newSegment]);
+  };
+
+  // Delete segment
+  const deleteSegment = (index: number) => {
+    const updatedSegments = translationSegments.filter((_, i) => i !== index);
+    setTranslationSegments(updatedSegments);
+  };
+
+  // Convert segments to text format
+  const getTextFromSegments = (segments: TranscriptSegment[]): string => {
+    return segments.map(segment => segment.text).filter(text => text.trim()).join('\n\n');
+  };
+
+  // Convert text to segments format
+  const getSegmentsFromText = (text: string): TranscriptSegment[] => {
+    const paragraphs = text.split('\n\n').filter(p => p.trim());
+    return paragraphs.map((paragraph, index) => ({
+      time: `00:${String(index).padStart(2, '0')}:00,000`,
+      text: paragraph.trim()
+    }));
   };
 
   // Save translation mutation
@@ -329,6 +359,33 @@ export default function TranslationsPage() {
             </CardContent>
           </Card>
 
+          {/* View Mode Toggle */}
+          {selectedVideoId && selectedLanguage && (
+            <Card>
+              <CardHeader>
+                <CardTitle>View Mode</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex space-x-2">
+                  <Button
+                    variant={viewMode === 'segments' ? 'default' : 'outline'}
+                    onClick={() => setViewMode('segments')}
+                    size="sm"
+                  >
+                    Segment View
+                  </Button>
+                  <Button
+                    variant={viewMode === 'text' ? 'default' : 'outline'}
+                    onClick={() => setViewMode('text')}
+                    size="sm"
+                  >
+                    Text View
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Translation Interface */}
           {selectedVideoId && selectedLanguage && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -342,84 +399,133 @@ export default function TranslationsPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="max-h-[500px] overflow-y-auto space-y-3">
-                    {arabicSegments.length > 0 ? (
-                      arabicSegments.map((segment, index) => (
-                        <div key={index} className="border rounded-lg p-3 bg-muted/30">
-                          <div className="flex items-center mb-2">
-                            <Clock size={14} className="mr-2 text-muted-foreground" />
-                            <span className="text-sm font-mono text-muted-foreground">
-                              {segment.time}
-                            </span>
-                          </div>
-                          <div 
-                            className="text-sm leading-relaxed"
-                            style={{ direction: 'rtl', textAlign: 'right', fontFamily: 'Arial, sans-serif' }}
-                          >
-                            {segment.text}
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-center text-muted-foreground py-8">
-                        No Arabic transcript available
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Translation Editor */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Languages size={20} className="mr-2" />
-                    {getLanguageName(selectedLanguage)} Translation
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="max-h-[500px] overflow-y-auto space-y-3">
-                    {arabicSegments.length > 0 ? (
-                      arabicSegments.map((segment, index) => {
-                        const translationSegment = translationSegments[index];
-                        return (
-                          <div key={index} className="border rounded-lg p-3">
+                  {viewMode === 'segments' ? (
+                    <div className="max-h-[500px] overflow-y-auto space-y-3">
+                      {arabicSegments.length > 0 ? (
+                        arabicSegments.map((segment, index) => (
+                          <div key={index} className="border rounded-lg p-3 bg-muted/30">
                             <div className="flex items-center mb-2">
                               <Clock size={14} className="mr-2 text-muted-foreground" />
                               <span className="text-sm font-mono text-muted-foreground">
                                 {segment.time}
                               </span>
                             </div>
+                            <div 
+                              className="text-sm leading-relaxed"
+                              style={{ direction: 'rtl', textAlign: 'right', fontFamily: 'Arial, sans-serif' }}
+                            >
+                              {segment.text}
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center text-muted-foreground py-8">
+                          No Arabic transcript available
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="max-h-[500px] overflow-y-auto">
+                      <div 
+                        className="p-3 text-sm leading-relaxed whitespace-pre-wrap"
+                        style={{ direction: 'rtl', textAlign: 'right', fontFamily: 'Arial, sans-serif' }}
+                      >
+                        {getTextFromSegments(arabicSegments)}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Translation Editor */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Languages size={20} className="mr-2" />
+                      {getLanguageName(selectedLanguage)} Translation
+                    </div>
+                    {viewMode === 'segments' && (
+                      <Button onClick={addNewSegment} size="sm" variant="outline">
+                        <Plus size={16} className="mr-1" />
+                        Add Segment
+                      </Button>
+                    )}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {viewMode === 'segments' ? (
+                    <div className="max-h-[500px] overflow-y-auto space-y-3">
+                      {translationSegments.length > 0 ? (
+                        translationSegments.map((segment, index) => (
+                          <div key={index} className="border rounded-lg p-3">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center">
+                                <Clock size={14} className="mr-2 text-muted-foreground" />
+                                <input
+                                  type="text"
+                                  value={segment.time}
+                                  onChange={(e) => {
+                                    const updatedSegments = [...translationSegments];
+                                    updatedSegments[index] = { ...updatedSegments[index], time: e.target.value };
+                                    setTranslationSegments(updatedSegments);
+                                  }}
+                                  className="text-sm font-mono text-muted-foreground bg-transparent border-none focus:outline-none w-32"
+                                  placeholder="00:00:00,000"
+                                />
+                              </div>
+                              <Button
+                                onClick={() => deleteSegment(index)}
+                                size="sm"
+                                variant="ghost"
+                                className="text-destructive hover:text-destructive"
+                              >
+                                <Trash2 size={14} />
+                              </Button>
+                            </div>
                             <Textarea
-                              value={translationSegment?.text || ""}
+                              value={segment.text}
                               onChange={(e) => handleSegmentTextChange(index, e.target.value)}
                               placeholder={`Enter ${getLanguageName(selectedLanguage)} translation for this segment...`}
                               className="min-h-[60px] resize-none text-sm"
                             />
                           </div>
-                        );
-                      })
-                    ) : (
-                      <div className="text-center text-muted-foreground py-8">
-                        Select a video with Arabic transcript to begin translation
-                      </div>
-                    )}
-                  </div>
-                  
-                  {arabicSegments.length > 0 && (
-                    <div className="mt-4 flex items-center justify-between border-t pt-4">
-                      <div className="text-sm text-muted-foreground">
-                        {translationSegments.filter(s => s.text.trim()).length} of {arabicSegments.length} segments translated
-                      </div>
-                      <Button
-                        onClick={handleSaveTranslation}
-                        disabled={saving || translationSegments.every(s => !s.text.trim())}
-                      >
-                        <Save size={16} className="mr-2" />
-                        {saving ? "Saving..." : "Save Translation"}
-                      </Button>
+                        ))
+                      ) : (
+                        <div className="text-center text-muted-foreground py-8">
+                          <Button onClick={addNewSegment} variant="outline">
+                            <Plus size={16} className="mr-2" />
+                            Add First Segment
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="max-h-[500px] overflow-y-auto">
+                      <Textarea
+                        value={getTextFromSegments(translationSegments)}
+                        onChange={(e) => {
+                          const newSegments = getSegmentsFromText(e.target.value);
+                          setTranslationSegments(newSegments);
+                        }}
+                        placeholder={`Enter ${getLanguageName(selectedLanguage)} translation as continuous text...`}
+                        className="min-h-[400px] resize-none text-sm"
+                      />
                     </div>
                   )}
+                  
+                  <div className="mt-4 flex items-center justify-between border-t pt-4">
+                    <div className="text-sm text-muted-foreground">
+                      {translationSegments.filter(s => s.text.trim()).length} of {translationSegments.length} segments with content
+                    </div>
+                    <Button
+                      onClick={handleSaveTranslation}
+                      disabled={saving || translationSegments.every(s => !s.text.trim())}
+                    >
+                      <Save size={16} className="mr-2" />
+                      {saving ? "Saving..." : "Save Translation"}
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             </div>
