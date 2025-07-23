@@ -66,6 +66,7 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
   const [player, setPlayer] = useState<any>(null);
   const [isOpenTextView, setIsOpenTextView] = useState(false);
   const [openTextContent, setOpenTextContent] = useState("");
+  const [timeInputs, setTimeInputs] = useState<string[]>([]);
   const playerRef = useRef<HTMLDivElement>(null);
 
   const { data: transcripts } = useQuery({
@@ -139,6 +140,7 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
       if (transcript && transcript.content) {
         const content = Array.isArray(transcript.content) ? transcript.content : [];
         setSegments(content);
+        setTimeInputs(content.map(seg => seg.time));
         updateOpenTextFromSegments(content);
       } else {
         // Create empty transcript structure
@@ -146,6 +148,7 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
           { time: "0:00", text: "Click here to add your first transcript segment..." },
         ];
         setSegments(emptySegments);
+        setTimeInputs(["0:00"]);
         updateOpenTextFromSegments(emptySegments);
       }
     }
@@ -290,12 +293,23 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
     setSegments(newSegments);
   };
 
+  const handleTimeInputChange = (index: number, newTime: string) => {
+    const newTimeInputs = [...timeInputs];
+    newTimeInputs[index] = newTime;
+    setTimeInputs(newTimeInputs);
+  };
+
   const handleTimeEdit = (index: number, newTime: string) => {
     // Format the time input (allow formats like 1:23, 01:23, 1:23:45)
     const formattedTime = formatTimeInput(newTime);
     const newSegments = [...segments];
     newSegments[index] = { ...newSegments[index], time: formattedTime };
     setSegments(newSegments);
+    
+    // Update the time inputs state to match
+    const newTimeInputs = [...timeInputs];
+    newTimeInputs[index] = formattedTime;
+    setTimeInputs(newTimeInputs);
   };
 
   const formatTimeInput = (time: string): string => {
@@ -327,13 +341,18 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
       text: "New transcript segment...",
     };
     
+    const newTimeInputs = [...timeInputs];
+    
     if (insertIndex !== undefined) {
       newSegments.splice(insertIndex + 1, 0, newSegment);
+      newTimeInputs.splice(insertIndex + 1, 0, "0:00");
     } else {
       newSegments.push(newSegment);
+      newTimeInputs.push("0:00");
     }
     
     setSegments(newSegments);
+    setTimeInputs(newTimeInputs);
     updateOpenTextFromSegments(newSegments);
   };
 
@@ -347,7 +366,9 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
     }
     
     const newSegments = segments.filter((_, i) => i !== index);
+    const newTimeInputs = timeInputs.filter((_, i) => i !== index);
     setSegments(newSegments);
+    setTimeInputs(newTimeInputs);
     updateOpenTextFromSegments(newSegments);
     
     // Adjust active segment index if needed
@@ -657,8 +678,9 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
                             <span className="text-xs text-muted-foreground">Time</span>
                           </div>
                           <Input
-                            value={segment.time}
-                            onChange={canEdit ? (e) => handleTimeEdit(index, e.target.value) : undefined}
+                            value={timeInputs[index] || segment.time}
+                            onChange={canEdit ? (e) => handleTimeInputChange(index, e.target.value) : undefined}
+                            onBlur={canEdit ? (e) => handleTimeEdit(index, e.target.value) : undefined}
                             onFocus={canEdit ? (e) => e.target.select() : undefined}
                             className={`text-xs h-8 text-center font-mono ${!canEdit ? 'bg-gray-50 cursor-not-allowed' : ''}`}
                             placeholder="0:00"
