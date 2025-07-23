@@ -23,7 +23,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
-import { Save, Upload, FileText, Clock, Trash2, Plus, Edit, AlignLeft } from "lucide-react";
+import { Save, Upload, FileText, Clock, Trash2, Plus, Edit, AlignLeft, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 
@@ -501,7 +501,7 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-6xl max-h-[90vh] p-0">
-        <DialogHeader className="px-6 py-4 border-b">
+        <DialogHeader className="px-6 py-4 border-b relative">
           <div className="flex items-center justify-between">
             <DialogTitle className="text-lg font-semibold">
               Edit Transcript - {video.title}
@@ -522,6 +522,15 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
                   </SelectContent>
                 </Select>
               </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onClose}
+                className="h-8 w-8 p-0 hover:bg-gray-100 rounded-full"
+                aria-label="Close transcript editor"
+              >
+                <X size={16} />
+              </Button>
             </div>
           </div>
         </DialogHeader>
