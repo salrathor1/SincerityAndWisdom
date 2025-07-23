@@ -83,6 +83,7 @@ export default function TranslationsPage() {
   const [selectedLanguage, setSelectedLanguage] = useState<string>("");
   const [translationSegments, setTranslationSegments] = useState<TranscriptSegment[]>([]);
   const [saving, setSaving] = useState(false);
+  const [srtTextContent, setSrtTextContent] = useState("");
   const [viewMode, setViewMode] = useState<'segments' | 'text'>('segments');
 
   const { data: currentUser } = useQuery({
@@ -149,11 +150,20 @@ export default function TranslationsPage() {
     if (selectedTranscript) {
       const segments = parseSRTContent(selectedTranscript.content);
       setTranslationSegments(segments);
+      setSrtTextContent(getSRTFromSegments(segments));
     } else {
       // Initialize with empty array - user can create their own segments
       setTranslationSegments([]);
+      setSrtTextContent("");
     }
   }, [selectedTranscript]);
+
+  // Update SRT content when switching to SRT view mode
+  useEffect(() => {
+    if (viewMode === 'text' && translationSegments.length > 0) {
+      setSrtTextContent(getSRTFromSegments(translationSegments));
+    }
+  }, [viewMode]);
 
   // Handle segment text updates
   const handleSegmentTextChange = (index: number, newText: string) => {
@@ -169,6 +179,55 @@ export default function TranslationsPage() {
       text: ""
     };
     setTranslationSegments([...translationSegments, newSegment]);
+  };
+
+  // Handle SRT text changes (similar to transcript editor)
+  const handleSRTTextChange = (text: string) => {
+    setSrtTextContent(text);
+    updateSegmentsFromSRT(text);
+  };
+
+  // Update segments from SRT text (similar to transcript editor)
+  const updateSegmentsFromSRT = (text: string) => {
+    // Parse SRT format
+    const srtBlocks = text.split('\n\n').filter(block => block.trim());
+    
+    if (srtBlocks.length === 0) {
+      setTranslationSegments([{ time: "0:00", text: "" }]);
+      return;
+    }
+    
+    const newSegments: TranscriptSegment[] = [];
+    
+    for (const block of srtBlocks) {
+      const lines = block.trim().split('\n');
+      if (lines.length >= 3) {
+        // Standard SRT format: sequence number, timestamp, text
+        const sequenceNum = lines[0];
+        const timeLine = lines[1];
+        const textLines = lines.slice(2);
+        
+        // Parse the timestamp line (e.g., "00:01:23,000 --> 00:01:26,000")
+        const timeMatch = timeLine.match(/^(\d{2}:\d{2}:\d{2},\d{3})\s*-->\s*(\d{2}:\d{2}:\d{2},\d{3})$/);
+        if (timeMatch) {
+          const startTime = convertFromSRTTime(timeMatch[1]);
+          const text = textLines.join('\n');
+          newSegments.push({ time: startTime, text });
+        }
+      } else if (lines.length === 1) {
+        // Simple text line - use existing timestamp or default
+        newSegments.push({
+          time: translationSegments[newSegments.length]?.time || "0:00",
+          text: lines[0],
+        });
+      }
+    }
+    
+    if (newSegments.length === 0) {
+      setTranslationSegments([{ time: "0:00", text: "" }]);
+    } else {
+      setTranslationSegments(newSegments);
+    }
   };
 
   // Delete segment
@@ -572,24 +631,8 @@ export default function TranslationsPage() {
                   ) : (
                     <div className="max-h-[500px] overflow-y-auto">
                       <Textarea
-                        value={getSRTFromSegments(translationSegments)}
-                        onChange={(e) => {
-                          const newSegments = getSegmentsFromSRT(e.target.value);
-                          setTranslationSegments(newSegments);
-                        }}
-                        onKeyDown={(e) => {
-                          // Allow Enter key to work normally
-                          if (e.key === 'Enter') {
-                            // Don't prevent default, let textarea handle Enter naturally
-                            e.stopPropagation();
-                          }
-                        }}
-                        onInput={(e) => {
-                          // Handle input changes including Enter key
-                          const target = e.target as HTMLTextAreaElement;
-                          const newSegments = getSegmentsFromSRT(target.value);
-                          setTranslationSegments(newSegments);
-                        }}
+                        value={srtTextContent}
+                        onChange={(e) => handleSRTTextChange(e.target.value)}
                         placeholder={`Enter ${getLanguageName(selectedLanguage)} translation in SRT format:
 
 1
