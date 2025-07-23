@@ -413,7 +413,7 @@ export default function Landing() {
       await navigator.clipboard.writeText(shareUrl);
       toast({
         title: "Link copied!",
-        description: `Range: ${segments[startIndex].time} - ${segments[endIndex].time}`,
+        description: "Share this segment with others",
         variant: "default",
       });
     } catch (err) {
