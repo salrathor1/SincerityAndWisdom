@@ -20,6 +20,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
@@ -74,6 +80,8 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
   const [isEditingPlaylist, setIsEditingPlaylist] = useState(false);
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
   const [isEditingLanguages, setIsEditingLanguages] = useState(false);
+  const [activeTab, setActiveTab] = useState("transcript");
+  const [vocabulary, setVocabulary] = useState("");
   const playerRef = useRef<HTMLDivElement>(null);
 
   const { data: transcripts } = useQuery({
@@ -156,7 +164,12 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
     } else {
       setSelectedPlaylistId(null);
     }
-  }, [video?.youtubeId, video?.playlistId]);
+    if (video?.vocabulary) {
+      setVocabulary(video.vocabulary);
+    } else {
+      setVocabulary("");
+    }
+  }, [video?.youtubeId, video?.playlistId, video?.vocabulary]);
 
   // Initialize selected languages when transcripts change
   useEffect(() => {
@@ -450,6 +463,47 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
       setSelectedLanguages(languages);
     }
     setIsEditingLanguages(false);
+  };
+
+  const updateVocabularyMutation = useMutation({
+    mutationFn: async (vocabularyText: string) => {
+      await apiRequest("PUT", `/api/videos/${video.id}`, {
+        vocabulary: vocabularyText,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Vocabulary updated successfully!",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/videos"] });
+      // Update video object to reflect changes
+      if (video) {
+        video.vocabulary = vocabulary;
+      }
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update vocabulary",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSaveVocabulary = () => {
+    updateVocabularyMutation.mutate(vocabulary);
   };
 
   const handleImportSrt = () => {
@@ -955,24 +1009,32 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
             </div>
           </div>
 
-          {/* Transcript Editor */}
+          {/* Tabbed Editor */}
           <div className="w-1/2 p-6 flex flex-col">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-4">
-                <h4 className="font-medium text-foreground">Transcript</h4>
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="text-view"
-                    checked={isOpenTextView}
-                    onCheckedChange={setIsOpenTextView}
-                  />
-                  <label htmlFor="text-view" className="text-sm text-muted-foreground cursor-pointer">
-                    <FileText size={14} className="inline mr-1" />
-                    SRT Format
-                  </label>
-                </div>
-              </div>
-              <div className="flex items-center space-x-2">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
+              <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="transcript">Transcript</TabsTrigger>
+                <TabsTrigger value="vocabulary">Vocabulary</TabsTrigger>
+              </TabsList>
+              
+              {/* Transcript Tab */}
+              <TabsContent value="transcript" className="flex-1 flex flex-col mt-0">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-4">
+                    <h4 className="font-medium text-foreground">Transcript Editor</h4>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="text-view"
+                        checked={isOpenTextView}
+                        onCheckedChange={setIsOpenTextView}
+                      />
+                      <label htmlFor="text-view" className="text-sm text-muted-foreground cursor-pointer">
+                        <FileText size={14} className="inline mr-1" />
+                        SRT Format
+                      </label>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
                 {canEdit && (
                   <Popover open={showSrtImport} onOpenChange={setShowSrtImport}>
                     <PopoverTrigger asChild>
@@ -1165,6 +1227,41 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
                 </div>
               )}
             </div>
+            </TabsContent>
+            
+            {/* Vocabulary Tab */}
+            <TabsContent value="vocabulary" className="flex-1 flex flex-col mt-0">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="font-medium text-foreground">Vocabulary Notes</h4>
+                {canEdit && (
+                  <Button 
+                    onClick={handleSaveVocabulary}
+                    disabled={updateVocabularyMutation.isPending}
+                    size="sm"
+                    className="flex items-center space-x-2"
+                  >
+                    <Save size={16} />
+                    <span>{updateVocabularyMutation.isPending ? "Saving..." : "Save"}</span>
+                  </Button>
+                )}
+              </div>
+              
+              <div className="flex-1">
+                <Textarea
+                  value={vocabulary}
+                  onChange={canEdit ? (e) => setVocabulary(e.target.value) : undefined}
+                  className={`w-full h-full min-h-[400px] resize-none border-2 rounded-lg transition-all duration-200 ${
+                    !canEdit 
+                      ? 'bg-gray-50 dark:bg-gray-800 cursor-not-allowed border-gray-200 dark:border-gray-700' 
+                      : 'border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 hover:border-gray-300 dark:hover:border-gray-600'
+                  }`}
+                  placeholder={canEdit ? "Add vocabulary notes, word definitions, and explanations here..." : "No vocabulary notes available"}
+                  readOnly={!canEdit}
+                />
+              </div>
+            </TabsContent>
+            
+            </Tabs>
           </div>
         </div>
       </DialogContent>

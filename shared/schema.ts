@@ -57,6 +57,7 @@ export const videos = pgTable("videos", {
   thumbnailUrl: varchar("thumbnail_url", { length: 500 }),
   youtubeUrl: varchar("youtube_url", { length: 500 }).notNull(),
   playlistId: integer("playlist_id").references(() => playlists.id),
+  vocabulary: text("vocabulary"), // vocabulary notes and definitions
   status: varchar("status", { length: 20 }).default("processing"), // processing, complete, error
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
