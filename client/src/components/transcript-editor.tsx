@@ -351,7 +351,12 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
         description: "Video playlist updated successfully!",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/videos"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/playlists"] });
       setIsEditingPlaylist(false);
+      // Update video object to reflect changes
+      if (video) {
+        video.playlistId = selectedPlaylistId;
+      }
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {
@@ -702,8 +707,8 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] p-0" hideCloseButton>
-        <DialogHeader className="px-6 py-4 border-b relative">
+      <DialogContent className="max-w-6xl max-h-[90vh] p-0 overflow-hidden" hideCloseButton>
+        <DialogHeader className="px-6 py-4 border-b relative flex-shrink-0">
           <div className="flex items-center justify-between">
             <DialogTitle className="text-lg font-semibold">
               Edit Transcript - {video.title}
@@ -737,18 +742,18 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
           </div>
         </DialogHeader>
 
-        <div className="flex h-[calc(90vh-120px)]">
+        <div className="flex h-[calc(90vh-120px)] overflow-hidden">
           {/* Video Player */}
-          <div className="w-1/2 p-6 border-r">
-            <div className="aspect-video bg-slate-900 rounded-lg mb-4 relative overflow-hidden">
+          <div className="w-1/2 p-6 border-r flex flex-col">
+            <div className="aspect-video bg-slate-900 rounded-lg mb-4 relative overflow-hidden flex-shrink-0">
               <div
                 ref={playerRef}
                 className="w-full h-full"
               />
             </div>
 
-            {/* Video Info */}
-            <div className="text-sm text-muted-foreground space-y-3">
+            {/* Video Info - Scrollable */}
+            <div className="text-sm text-muted-foreground space-y-3 overflow-y-auto flex-1 pr-2">
               <p className="font-medium">{video.title}</p>
               <p>Duration: {video.duration}</p>
               
