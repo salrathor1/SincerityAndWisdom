@@ -165,7 +165,7 @@ export default function TranslationsPage() {
   // Add new segment
   const addNewSegment = () => {
     const newSegment = {
-      time: "00:00:00,000",
+      time: "00:00:00,000 --> 00:00:05,000",
       text: ""
     };
     setTranslationSegments([...translationSegments, newSegment]);
@@ -182,9 +182,11 @@ export default function TranslationsPage() {
     return segments
       .filter(segment => segment.text.trim())
       .map((segment, index) => {
-        const endTime = segment.time; // Use same time for end as placeholder
-        const text = isArabic ? segment.text : segment.text;
-        return `${index + 1}\n${segment.time} --> ${endTime}\n${text}`;
+        // Handle both single timestamp and range formats
+        const timeRange = segment.time.includes(' --> ') 
+          ? segment.time 
+          : `${segment.time} --> ${segment.time}`;
+        return `${index + 1}\n${timeRange}\n${segment.text}`;
       })
       .join('\n\n');
   };
@@ -201,10 +203,10 @@ export default function TranslationsPage() {
       if (lines.length >= 3) {
         const timeMatch = lines[1].match(/(\d{2}:\d{2}:\d{2},\d{3})\s*-->\s*(\d{2}:\d{2}:\d{2},\d{3})/);
         if (timeMatch) {
-          const startTime = timeMatch[1];
+          const fullTimeRange = lines[1]; // Keep the full time range
           const text = lines.slice(2).join('\n');
           segments.push({
-            time: startTime,
+            time: fullTimeRange,
             text: text
           });
         }
@@ -479,19 +481,45 @@ export default function TranslationsPage() {
                         translationSegments.map((segment, index) => (
                           <div key={index} className="border rounded-lg p-3">
                             <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center">
-                                <Clock size={14} className="mr-2 text-muted-foreground" />
-                                <input
-                                  type="text"
-                                  value={segment.time}
-                                  onChange={(e) => {
-                                    const updatedSegments = [...translationSegments];
-                                    updatedSegments[index] = { ...updatedSegments[index], time: e.target.value };
-                                    setTranslationSegments(updatedSegments);
-                                  }}
-                                  className="text-sm font-mono text-muted-foreground bg-transparent border-none focus:outline-none w-32"
-                                  placeholder="00:00:00,000"
-                                />
+                              <div className="flex items-center space-x-2">
+                                <Clock size={14} className="text-muted-foreground" />
+                                <div className="flex items-center space-x-1">
+                                  <input
+                                    type="text"
+                                    value={segment.time.split(' --> ')[0] || segment.time}
+                                    onChange={(e) => {
+                                      const updatedSegments = [...translationSegments];
+                                      const endTime = segment.time.includes(' --> ') 
+                                        ? segment.time.split(' --> ')[1] 
+                                        : segment.time;
+                                      updatedSegments[index] = { 
+                                        ...updatedSegments[index], 
+                                        time: `${e.target.value} --> ${endTime}`
+                                      };
+                                      setTranslationSegments(updatedSegments);
+                                    }}
+                                    className="text-xs font-mono text-muted-foreground bg-muted/30 border rounded px-2 py-1 w-24"
+                                    placeholder="00:00:00,000"
+                                  />
+                                  <span className="text-xs text-muted-foreground">→</span>
+                                  <input
+                                    type="text"
+                                    value={segment.time.split(' --> ')[1] || segment.time}
+                                    onChange={(e) => {
+                                      const updatedSegments = [...translationSegments];
+                                      const startTime = segment.time.includes(' --> ') 
+                                        ? segment.time.split(' --> ')[0] 
+                                        : segment.time;
+                                      updatedSegments[index] = { 
+                                        ...updatedSegments[index], 
+                                        time: `${startTime} --> ${e.target.value}`
+                                      };
+                                      setTranslationSegments(updatedSegments);
+                                    }}
+                                    className="text-xs font-mono text-muted-foreground bg-muted/30 border rounded px-2 py-1 w-24"
+                                    placeholder="00:00:05,000"
+                                  />
+                                </div>
                               </div>
                               <Button
                                 onClick={() => deleteSegment(index)}
