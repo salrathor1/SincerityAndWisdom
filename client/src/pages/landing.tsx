@@ -715,13 +715,13 @@ export default function Landing() {
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    className="h-6 px-2 text-xs"
+                                    className="h-6 px-1.5 text-xs min-w-0"
                                   >
-                                    <Share2 size={10} className="mr-1" />
-                                    <ChevronDown size={8} />
+                                    <Share2 size={9} className="mr-0.5" />
+                                    <ChevronDown size={7} />
                                   </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-40">
+                                <DropdownMenuContent align="end" className="w-28 text-xs">
                                   <DropdownMenuItem onClick={async () => {
                                     // Share current page URL with only language parameter
                                     const baseUrl = window.location.origin + window.location.pathname;
@@ -751,11 +751,11 @@ export default function Landing() {
                                       });
                                     }
                                   }}>
-                                    <Link size={12} className="mr-2" />
+                                    <Link size={10} className="mr-1" />
                                     Share Link
                                   </DropdownMenuItem>
                                   <DropdownMenuItem onClick={toggleSelectionMode}>
-                                    <Scissors size={12} className="mr-2" />
+                                    <Scissors size={10} className="mr-1" />
                                     Create Segment
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
