@@ -787,7 +787,7 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  window.open(`/?playlist=${video.playlistId}&video=${video.id}`, '_blank');
+                  window.open(`/landing?playlist=${video.playlistId}&video=${video.id}`, '_blank');
                 }}
                 className="flex items-center space-x-1 text-xs"
                 title="View video on landing page"
