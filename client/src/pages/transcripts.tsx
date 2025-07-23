@@ -57,26 +57,29 @@ export default function Transcripts() {
     video.transcripts && video.transcripts.length > 0
   ) || [];
 
-  // Flatten transcripts with video info for easier filtering
-  const allTranscripts = videosWithTranscripts.flatMap((video: any) =>
-    video.transcripts.map((transcript: any) => ({
-      ...transcript,
-      video,
-    }))
-  );
-
-  // Apply filters
-  const filteredTranscripts = allTranscripts.filter((transcript: any) => {
-    const matchesSearch = transcript.video.title.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesLanguage = languageFilter === "all" || transcript.language === languageFilter;
+  // Apply filters to videos
+  const filteredVideos = videosWithTranscripts.filter((video: any) => {
+    const matchesSearch = video.title.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesLanguage = languageFilter === "all" || 
+      video.transcripts.some((t: any) => t.language === languageFilter);
     return matchesSearch && matchesLanguage;
   });
 
   // Get unique languages for filter
-  const availableLanguages = [...new Set(allTranscripts.map((t: any) => t.language))];
+  const availableLanguages = Array.from(
+    new Set(
+      videosWithTranscripts.flatMap((video: any) => 
+        video.transcripts.map((t: any) => t.language)
+      )
+    )
+  );
 
-  const handleEditTranscript = (transcript: any) => {
-    setSelectedVideo(transcript.video);
+  const handleEditVideo = (video: any) => {
+    setSelectedVideo(video);
+  };
+
+  const getVideoLanguages = (video: any) => {
+    return video.transcripts.map((t: any) => t.language);
   };
 
   const formatTimeAgo = (dateString: string) => {
@@ -90,14 +93,16 @@ export default function Transcripts() {
   };
 
   const getLanguageName = (code: string) => {
-    const languages: { [key: string]: string } = {
-      en: "English",
+    const languageNames: { [key: string]: string } = {
       ar: "Arabic",
-      es: "Spanish",
+      en: "English", 
+      ur: "Urdu",
       fr: "French",
-      de: "German",
+      es: "Spanish",
+      tr: "Turkish",
+      ms: "Malay"
     };
-    return languages[code] || code.toUpperCase();
+    return languageNames[code] || code.toUpperCase();
   };
 
   const getContentLength = (content: any) => {
@@ -163,27 +168,27 @@ export default function Transcripts() {
                 </Card>
               ))}
             </div>
-          ) : filteredTranscripts.length > 0 ? (
+          ) : filteredVideos.length > 0 ? (
             <div className="space-y-4">
-              {filteredTranscripts.map((transcript: any) => (
-                <Card key={`${transcript.video.id}-${transcript.language}`} className="group hover:shadow-lg transition-shadow">
+              {filteredVideos.map((video: any) => (
+                <Card key={video.id} className="group hover:shadow-lg transition-shadow">
                   <CardContent className="p-6">
                     <div className="flex space-x-4">
                       <img
-                        src={transcript.video.thumbnailUrl || "/placeholder-video.jpg"}
-                        alt={transcript.video.title}
+                        src={video.thumbnailUrl || "/placeholder-video.jpg"}
+                        alt={video.title}
                         className="w-24 h-14 rounded object-cover"
                       />
                       
                       <div className="flex-1 space-y-2">
                         <div className="flex items-start justify-between">
                           <h3 className="font-medium text-foreground group-hover:text-primary transition-colors line-clamp-1">
-                            {transcript.video.title}
+                            {video.title}
                           </h3>
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleEditTranscript(transcript)}
+                            onClick={() => handleEditVideo(video)}
                             className="opacity-0 group-hover:opacity-100 transition-opacity"
                           >
                             <Edit size={14} className="mr-1" />
@@ -192,32 +197,33 @@ export default function Transcripts() {
                         </div>
                         
                         <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                          <div className="flex items-center space-x-1">
+                          <div className="flex items-center space-x-2">
                             <Globe size={14} />
-                            <Badge variant="secondary" className="text-xs">
-                              {getLanguageName(transcript.language)}
-                            </Badge>
+                            <span>Available in:</span>
+                            <div className="flex gap-1">
+                              {getVideoLanguages(video).map((lang: string) => (
+                                <Badge key={lang} variant="secondary" className="text-xs">
+                                  {getLanguageName(lang)}
+                                </Badge>
+                              ))}
+                            </div>
                           </div>
-                          
+                        </div>
+                        
+                        <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                           <div className="flex items-center space-x-1">
                             <FileText size={14} />
                             <span>
-                              {getContentLength(transcript.content)} characters
+                              {video.transcripts.length} transcript{video.transcripts.length !== 1 ? 's' : ''}
                             </span>
                           </div>
                           
-                          <span>Updated {formatTimeAgo(transcript.updatedAt)}</span>
-                          
-                          {transcript.isAutoGenerated && (
-                            <Badge variant="outline" className="text-xs">
-                              Auto-generated
-                            </Badge>
-                          )}
+                          <span>Duration: {video.duration || 'Unknown'}</span>
                         </div>
                         
-                        {transcript.video.playlist && (
+                        {video.playlist && (
                           <div className="text-sm text-primary">
-                            Playlist: {transcript.video.playlist.name}
+                            Playlist: {video.playlist.name}
                           </div>
                         )}
                       </div>
