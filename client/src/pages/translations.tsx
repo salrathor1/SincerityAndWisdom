@@ -165,7 +165,7 @@ export default function TranslationsPage() {
   // Add new segment
   const addNewSegment = () => {
     const newSegment = {
-      time: "00:00:00,000",
+      time: "0:00",
       text: ""
     };
     setTranslationSegments([...translationSegments, newSegment]);
@@ -177,18 +177,42 @@ export default function TranslationsPage() {
     setTranslationSegments(updatedSegments);
   };
 
+  // Convert time format (e.g., "0:00" to "00:00:00,000")
+  const convertToSRTTime = (timeStr: string): string => {
+    if (timeStr.includes(',')) return timeStr; // Already in SRT format
+    
+    const parts = timeStr.split(':');
+    if (parts.length === 2) {
+      const [minutes, seconds] = parts;
+      return `00:${minutes.padStart(2, '0')}:${seconds.padStart(2, '0')},000`;
+    }
+    return "00:00:00,000";
+  };
+
   // Convert segments to SRT format
   const getSRTFromSegments = (segments: TranscriptSegment[], isArabic = false): string => {
     return segments
       .filter(segment => segment.text.trim())
       .map((segment, index) => {
-        // For SRT format, we need start and end times, so duplicate single timestamp
-        const timeRange = segment.time.includes(' --> ') 
-          ? segment.time 
-          : `${segment.time} --> ${segment.time}`;
-        return `${index + 1}\n${timeRange}\n${segment.text}`;
+        const startTime = convertToSRTTime(segment.time);
+        // Calculate end time: use next segment's time or add 5 seconds
+        const nextSegment = segments[index + 1];
+        const endTime = nextSegment ? convertToSRTTime(nextSegment.time) : startTime;
+        return `${index + 1}\n${startTime} --> ${endTime}\n${segment.text}`;
       })
       .join('\n\n');
+  };
+
+  // Convert SRT time to simple format (e.g., "00:01:23,000" to "1:23")
+  const convertFromSRTTime = (srtTime: string): string => {
+    const timePart = srtTime.split(',')[0]; // Remove milliseconds
+    const [hours, minutes, seconds] = timePart.split(':');
+    
+    // If hours is 00, return minutes:seconds format
+    if (hours === '00') {
+      return `${parseInt(minutes)}:${seconds}`;
+    }
+    return `${parseInt(hours)}:${minutes}:${seconds}`;
   };
 
   // Convert SRT format to segments
@@ -203,7 +227,7 @@ export default function TranslationsPage() {
       if (lines.length >= 3) {
         const timeMatch = lines[1].match(/(\d{2}:\d{2}:\d{2},\d{3})\s*-->\s*(\d{2}:\d{2}:\d{2},\d{3})/);
         if (timeMatch) {
-          const startTime = timeMatch[1]; // Use only start time for consistency with Arabic side
+          const startTime = convertFromSRTTime(timeMatch[1]); // Convert to simple format
           const text = lines.slice(2).join('\n');
           segments.push({
             time: startTime,

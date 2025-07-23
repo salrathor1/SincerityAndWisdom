@@ -6,13 +6,17 @@ The Sunnah and Wisdom is a full-stack web application for managing Islamic educa
 
 ## Recent Changes
 
-### January 23, 2025 - Added Translation Management System
-- Created new Translations page (/translations) for comparing Arabic with other language translations
-- Implemented side-by-side interface with read-only Arabic reference and editable translation text
-- Added language selector supporting English, Urdu, French, Spanish, Turkish, and Malay
-- Integrated role-based access control (admin/editor can access, viewers see blank page)
+### January 23, 2025 - Enhanced Translation Management System
+- Created comprehensive Translations page (/translations) for comparing Arabic with other language translations
+- Implemented professional side-by-side interface matching transcript editor design
+- Added dual view modes: "Segment View" (individual editing) and "SRT View" (continuous text format)
+- Enhanced timestamp editing with professional styling matching video transcript editor
+- Implemented simple time format (0:00, 0:11, 0:30) with automatic SRT conversion for end times
+- Added segment management: add/delete segments with proper timing calculations
+- Integrated language selector supporting English, Urdu, French, Spanish, Turkish, and Malay
+- Applied role-based access control (admin/editor can access, viewers see blank page)
 - Added Translations menu item to sidebar navigation with Languages icon
-- Supports both editing existing translations and creating new ones with proper API integration
+- Supports independent translation segments not bound to Arabic timing structure
 
 ### January 23, 2025 - Fixed User Role Management
 - Resolved role update functionality that was failing due to permission errors
