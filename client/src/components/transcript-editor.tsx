@@ -1122,7 +1122,7 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto min-h-0">
               {isOpenTextView ? (
                 <div className="h-full">
                   <div className="mb-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
@@ -1149,7 +1149,7 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
                   />
                 </div>
               ) : (
-                <div className="space-y-3 h-full overflow-y-auto pr-2">
+                <div className="space-y-3 overflow-y-auto pr-2" style={{ maxHeight: 'calc(100vh - 400px)' }}>
                   {segments.length > 0 ? (
                     segments.map((segment, index) => (
                       <div
