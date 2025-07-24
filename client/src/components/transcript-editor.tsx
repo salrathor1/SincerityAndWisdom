@@ -1149,7 +1149,7 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
                   />
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-3 h-full overflow-y-auto pr-2">
                   {segments.length > 0 ? (
                     segments.map((segment, index) => (
                       <div
