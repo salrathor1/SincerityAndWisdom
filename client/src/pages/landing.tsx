@@ -112,12 +112,20 @@ export default function Landing() {
       if (lang) {
         setSelectedLanguage(lang);
       }
+    } else {
+      // If no shared segment parameters, check for regular playlist/video parameters
+      if (playlistId) {
+        setSelectedPlaylist(parseInt(playlistId));
+      }
+      if (lang) {
+        setSelectedLanguage(lang);
+      }
     }
   }, []);
 
   // Auto-select video from URL parameters when playlist videos are loaded
   useEffect(() => {
-    if (Array.isArray(playlistVideos) && playlistVideos.length > 0 && sharedSegmentRange) {
+    if (Array.isArray(playlistVideos) && playlistVideos.length > 0) {
       const urlParams = new URLSearchParams(window.location.search);
       const videoId = urlParams.get('video');
       
@@ -125,10 +133,16 @@ export default function Landing() {
         const targetVideo = playlistVideos.find((v: any) => v.id.toString() === videoId);
         if (targetVideo) {
           setSelectedVideo(targetVideo);
+          return; // Found and set the target video, exit early
         }
       }
+      
+      // If no specific video ID in URL or video not found, select first video
+      if (!selectedVideo) {
+        setSelectedVideo(playlistVideos[0]);
+      }
     }
-  }, [playlistVideos, sharedSegmentRange]);
+  }, [playlistVideos, selectedVideo]);
 
   // Auto-play shared segment when video and transcripts are loaded
   useEffect(() => {
@@ -441,17 +455,18 @@ export default function Landing() {
 
 
 
+  // Auto-select first playlist only if no URL parameters are present
   useEffect(() => {
     if (Array.isArray(playlists) && playlists.length > 0 && !selectedPlaylist) {
-      setSelectedPlaylist(playlists[0].id);
+      const urlParams = new URLSearchParams(window.location.search);
+      const hasUrlPlaylist = urlParams.get('playlist');
+      
+      // Only auto-select if no URL playlist parameter exists
+      if (!hasUrlPlaylist) {
+        setSelectedPlaylist(playlists[0].id);
+      }
     }
   }, [playlists, selectedPlaylist]);
-
-  useEffect(() => {
-    if (Array.isArray(playlistVideos) && playlistVideos.length > 0 && !selectedVideo) {
-      setSelectedVideo(playlistVideos[0]);
-    }
-  }, [playlistVideos, selectedVideo]);
 
   // Auto-scroll to active segment
   useEffect(() => {
@@ -763,15 +778,14 @@ export default function Landing() {
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end" className="w-28 text-xs">
                                   <DropdownMenuItem onClick={async () => {
-                                    // Share current page URL with only language parameter
+                                    // Share current page URL with current playlist, video, and language
                                     const baseUrl = window.location.origin + window.location.pathname;
-                                    const urlParams = new URLSearchParams(window.location.search);
                                     
-                                    // Build clean URL with only playlist, video, and language params
+                                    // Build URL with current state
                                     const cleanParams = new URLSearchParams();
-                                    if (urlParams.get('playlist')) cleanParams.set('playlist', urlParams.get('playlist')!);
-                                    if (urlParams.get('video')) cleanParams.set('video', urlParams.get('video')!);
-                                    if (urlParams.get('lang')) cleanParams.set('lang', urlParams.get('lang')!);
+                                    if (selectedPlaylist) cleanParams.set('playlist', selectedPlaylist.toString());
+                                    if (selectedVideo) cleanParams.set('video', selectedVideo.id.toString());
+                                    if (selectedLanguage !== 'ar') cleanParams.set('lang', selectedLanguage);
                                     
                                     const cleanUrl = cleanParams.toString() ? `${baseUrl}?${cleanParams.toString()}` : baseUrl;
                                     
@@ -779,7 +793,7 @@ export default function Landing() {
                                       await navigator.clipboard.writeText(cleanUrl);
                                       toast({
                                         title: "Link copied!",
-                                        description: "Page URL copied without timestamps",
+                                        description: `Link to ${selectedVideo?.title || 'current video'} copied`,
                                         variant: "default",
                                       });
                                     } catch (err) {
