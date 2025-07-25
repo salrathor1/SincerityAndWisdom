@@ -4,16 +4,18 @@ import { Sidebar } from "@/components/sidebar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AddVideoModal } from "@/components/add-video-modal";
 import { TranscriptEditor } from "@/components/transcript-editor";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Search, Edit, Trash2, ExternalLink } from "lucide-react";
+import { Plus, Search, Edit, Trash2, ExternalLink, ArrowUpDown } from "lucide-react";
 
 export default function Videos() {
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState("newest");
   const [isAddVideoOpen, setIsAddVideoOpen] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<any>(null);
 
@@ -45,9 +47,22 @@ export default function Videos() {
     );
   }
 
-  const filteredVideos = Array.isArray(videos) ? videos.filter((video: any) =>
-    video.title.toLowerCase().includes(searchTerm.toLowerCase())
-  ) : [];
+  const filteredVideos = Array.isArray(videos) ? videos
+    .filter((video: any) =>
+      video.title.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a: any, b: any) => {
+      const dateA = new Date(a.createdAt).getTime();
+      const dateB = new Date(b.createdAt).getTime();
+      
+      switch (sortBy) {
+        case "oldest":
+          return dateA - dateB;
+        case "newest":
+        default:
+          return dateB - dateA;
+      }
+    }) : [];
 
   const handleEditVideo = (video: any) => {
     setSelectedVideo(video);
@@ -98,6 +113,16 @@ export default function Videos() {
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-48">
+                  <ArrowUpDown size={16} className="mr-2" />
+                  <SelectValue placeholder="Sort by..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="newest">Newest to Oldest</SelectItem>
+                  <SelectItem value="oldest">Oldest to Newest</SelectItem>
+                </SelectContent>
+              </Select>
               <Button onClick={() => setIsAddVideoOpen(true)} className="flex items-center space-x-2">
                 <Plus size={16} />
                 <span>Add Video</span>

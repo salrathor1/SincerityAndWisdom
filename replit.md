@@ -6,6 +6,12 @@ The Sunnah and Wisdom is a full-stack web application for managing Islamic educa
 
 ## Recent Changes
 
+### January 25, 2025 - Added Video Sorting Functionality
+- Added sort filters to videos page with "Newest to Oldest" and "Oldest to Newest" options
+- Implemented sorting dropdown with ArrowUpDown icon in the header toolbar
+- Videos now sort by creation date with newest as default
+- Enhanced user experience with intuitive sort controls alongside search functionality
+
 ### January 23, 2025 - Enhanced Translation Management System
 - Created comprehensive Translations page (/translations) for comparing Arabic with other language translations
 - Implemented professional side-by-side interface matching transcript editor design
