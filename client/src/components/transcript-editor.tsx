@@ -1213,26 +1213,16 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
                         <div className="flex-1">
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-xs text-muted-foreground">Transcript Text</span>
-                            {canEdit && (
+                            {canEdit && segments.length > 1 && (
                               <div className="flex items-center space-x-1">
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => addNewSegment(index)}
+                                  onClick={() => deleteSegment(index)}
                                   className="h-6 px-2"
                                 >
-                                  <Plus size={12} className="text-green-600" />
+                                  <Trash2 size={12} className="text-red-600" />
                                 </Button>
-                                {segments.length > 1 && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => deleteSegment(index)}
-                                    className="h-6 px-2"
-                                  >
-                                    <Trash2 size={12} className="text-red-600" />
-                                  </Button>
-                                )}
                               </div>
                             )}
                           </div>
