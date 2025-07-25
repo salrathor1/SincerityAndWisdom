@@ -1032,61 +1032,47 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
               
               {/* Transcript Tab */}
               <TabsContent value="transcript" className="flex-1 flex flex-col mt-0">
-                <div className="mb-4">
-                  <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-4">
                     <h4 className="font-medium text-foreground">Transcript Editor</h4>
-                    {canEdit && (
-                      <Button 
-                        onClick={handleSave}
-                        disabled={updateTranscriptMutation.isPending}
-                        size="sm"
-                        className="flex items-center space-x-2"
-                      >
-                        <Save size={16} />
-                        <span>{updateTranscriptMutation.isPending ? "Saving..." : "Save"}</span>
-                      </Button>
-                    )}
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="flex items-center space-x-2">
-                        <Switch
-                          id="text-view"
-                          checked={isOpenTextView}
-                          onCheckedChange={setIsOpenTextView}
-                        />
-                        <label htmlFor="text-view" className="text-sm text-muted-foreground cursor-pointer">
-                          <FileText size={14} className="inline mr-1" />
-                          SRT Format
-                        </label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <label className="text-sm text-muted-foreground">Text Size:</label>
-                        <div className="flex items-center space-x-1">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setTextSize(Math.max(10, textSize - 2))}
-                            className="h-6 w-6 p-0"
-                            disabled={textSize <= 10}
-                          >
-                            -
-                          </Button>
-                          <span className="text-xs text-muted-foreground w-8 text-center">{textSize}px</span>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setTextSize(Math.min(24, textSize + 2))}
-                            className="h-6 w-6 p-0"
-                            disabled={textSize >= 24}
-                          >
-                            +
-                          </Button>
-                        </div>
-                      </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="text-view"
+                        checked={isOpenTextView}
+                        onCheckedChange={setIsOpenTextView}
+                      />
+                      <label htmlFor="text-view" className="text-sm text-muted-foreground cursor-pointer">
+                        <FileText size={14} className="inline mr-1" />
+                        SRT Format
+                      </label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      {canEdit && (
+                      <label className="text-sm text-muted-foreground">Text Size:</label>
+                      <div className="flex items-center space-x-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setTextSize(Math.max(10, textSize - 2))}
+                          className="h-6 w-6 p-0"
+                          disabled={textSize <= 10}
+                        >
+                          -
+                        </Button>
+                        <span className="text-xs text-muted-foreground w-8 text-center">{textSize}px</span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setTextSize(Math.min(24, textSize + 2))}
+                          className="h-6 w-6 p-0"
+                          disabled={textSize >= 24}
+                        >
+                          +
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                {canEdit && (
                   <Popover open={showSrtImport} onOpenChange={setShowSrtImport}>
                     <PopoverTrigger asChild>
                       <Button variant="outline" size="sm">
@@ -1135,10 +1121,7 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
                     </div>
                     </PopoverContent>
                   </Popover>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                )}
                 
                 {canEdit && (
                   <>
@@ -1163,9 +1146,10 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
                   </div>
                 )}
               </div>
+            </div>
 
-              <div className="flex-1 overflow-y-auto min-h-0">
-                {isOpenTextView ? (
+            <div className="flex-1 overflow-y-auto min-h-0">
+              {isOpenTextView ? (
                 <div className="h-full">
                   <div className="mb-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
                     <p className="text-sm text-blue-800 flex items-start space-x-2">
@@ -1288,7 +1272,7 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
                   )}
                 </div>
               )}
-              </div>
+            </div>
             </TabsContent>
             
             {/* Vocabulary Tab */}
