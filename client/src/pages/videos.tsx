@@ -9,13 +9,13 @@ import { AddVideoModal } from "@/components/add-video-modal";
 import { TranscriptEditor } from "@/components/transcript-editor";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Search, Edit, Trash2, ExternalLink, ArrowUpDown } from "lucide-react";
+import { Plus, Search, Edit, Trash2, ExternalLink, ArrowUpDown, Languages } from "lucide-react";
 
 export default function Videos() {
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState("newest");
+  const [sortBy, setSortBy] = useState("oldest");
   const [isAddVideoOpen, setIsAddVideoOpen] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<any>(null);
 
@@ -56,11 +56,11 @@ export default function Videos() {
       const dateB = new Date(b.createdAt).getTime();
       
       switch (sortBy) {
-        case "oldest":
-          return dateA - dateB;
         case "newest":
-        default:
           return dateB - dateA;
+        case "oldest":
+        default:
+          return dateA - dateB;
       }
     }) : [];
 
@@ -119,8 +119,8 @@ export default function Videos() {
                   <SelectValue placeholder="Sort by..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="newest">Newest to Oldest</SelectItem>
                   <SelectItem value="oldest">Oldest to Newest</SelectItem>
+                  <SelectItem value="newest">Newest to Oldest</SelectItem>
                 </SelectContent>
               </Select>
               <Button onClick={() => setIsAddVideoOpen(true)} className="flex items-center space-x-2">
@@ -192,6 +192,18 @@ export default function Videos() {
                       >
                         <Edit size={14} className="mr-1" />
                         Edit
+                      </Button>
+                      
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        asChild
+                        className="flex-1"
+                      >
+                        <a href={`/translations?videoId=${video.id}`}>
+                          <Languages size={14} className="mr-1" />
+                          Translations
+                        </a>
                       </Button>
                       
                       <Button
