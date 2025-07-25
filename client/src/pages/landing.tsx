@@ -586,7 +586,7 @@ export default function Landing() {
                       }
                       
                       // Update URL without page reload
-                      window.history.replaceState({}, '', newUrl.toString());
+                      window.history.pushState({}, '', newUrl.toString());
                     }}
                   >
                     <SelectTrigger className="w-full sm:w-80 h-9">
@@ -625,15 +625,13 @@ export default function Landing() {
                         }
                         if (selectedLanguage !== 'ar') {
                           newUrl.searchParams.set('lang', selectedLanguage);
-                        } else {
-                          newUrl.searchParams.delete('lang');
                         }
                         // Remove segment-specific parameters
                         newUrl.searchParams.delete('start');
                         newUrl.searchParams.delete('end');
                         
                         // Update URL without page reload
-                        window.history.replaceState({}, '', newUrl.toString());
+                        window.history.pushState({}, '', newUrl.toString());
                       }}
                     >
                       <SelectTrigger className="w-full min-w-0 h-9">
