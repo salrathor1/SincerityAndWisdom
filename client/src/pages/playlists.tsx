@@ -330,15 +330,7 @@ export default function Playlists() {
                           </p>
                         )}
                       </div>
-                      <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setViewingPlaylist(playlist)}
-                          title="View videos"
-                        >
-                          <Eye size={14} />
-                        </Button>
+                      <div className="flex items-center space-x-1">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -361,7 +353,7 @@ export default function Playlists() {
                   </CardHeader>
                   
                   <CardContent>
-                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                    <div className="flex items-center justify-between text-sm text-muted-foreground mb-3">
                       <div className="flex items-center space-x-1">
                         <Video size={14} />
                         <span>
@@ -370,6 +362,16 @@ export default function Playlists() {
                       </div>
                       <span>{formatTimeAgo(playlist.createdAt)}</span>
                     </div>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setViewingPlaylist(playlist)}
+                      className="w-full"
+                    >
+                      <Eye size={14} className="mr-2" />
+                      View Videos
+                    </Button>
                   </CardContent>
                 </Card>
               ))}
