@@ -1124,20 +1124,14 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
                 )}
                 
                 {canEdit && (
-                  <>
-                    <Button variant="outline" size="sm" onClick={() => addNewSegment()}>
-                      <Plus size={16} className="mr-1" />
-                      Add Segment
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      onClick={handleSave}
-                      disabled={updateTranscriptMutation.isPending}
-                    >
-                      <Save size={16} className="mr-1" />
-                      {updateTranscriptMutation.isPending ? "Saving..." : "Save"}
-                    </Button>
-                  </>
+                  <Button 
+                    size="sm" 
+                    onClick={handleSave}
+                    disabled={updateTranscriptMutation.isPending}
+                  >
+                    <Save size={16} className="mr-1" />
+                    {updateTranscriptMutation.isPending ? "Saving..." : "Save"}
+                  </Button>
                 )}
                 
                 {!canEdit && (
