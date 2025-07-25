@@ -811,7 +811,7 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
 
         <div className="flex h-[calc(90vh-120px)] overflow-hidden">
           {/* Video Player */}
-          <div className="w-1/2 p-6 border-r flex flex-col">
+          <div className="w-1/2 p-6 border-r flex flex-col min-h-0">
             <div className="aspect-video bg-slate-900 rounded-lg mb-4 relative overflow-hidden flex-shrink-0">
               <div
                 ref={playerRef}
@@ -1023,16 +1023,16 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
           </div>
 
           {/* Tabbed Editor */}
-          <div className="w-1/2 p-6 flex flex-col">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
-              <TabsList className="grid w-full grid-cols-2 mb-4">
+          <div className="w-1/2 p-6 flex flex-col min-h-0 overflow-hidden">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full min-h-0">
+              <TabsList className="grid w-full grid-cols-2 mb-4 flex-shrink-0">
                 <TabsTrigger value="transcript">Transcript</TabsTrigger>
                 <TabsTrigger value="vocabulary">Vocabulary</TabsTrigger>
               </TabsList>
               
               {/* Transcript Tab */}
-              <TabsContent value="transcript" className="flex-1 flex flex-col mt-0">
-                <div className="flex items-center justify-between mb-4">
+              <TabsContent value="transcript" className="flex-1 flex flex-col mt-0 min-h-0 overflow-hidden">
+                <div className="flex items-center justify-between mb-4 flex-shrink-0">
                   <div className="flex items-center space-x-4">
                     <h4 className="font-medium text-foreground">Transcript Editor</h4>
                     <div className="flex items-center space-x-2">
@@ -1071,7 +1071,7 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2 flex-wrap">
                 {canEdit && (
                   <Popover open={showSrtImport} onOpenChange={setShowSrtImport}>
                     <PopoverTrigger asChild>
@@ -1176,7 +1176,7 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
                   />
                 </div>
               ) : (
-                <div className="space-y-3 overflow-y-auto pr-2" style={{ maxHeight: 'calc(100vh - 400px)' }}>
+                <div className="space-y-3 overflow-y-auto pr-2 flex-1 min-h-0">
                   {segments.length > 0 ? (
                     segments.map((segment, index) => (
                       <div
@@ -1276,7 +1276,7 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
             </TabsContent>
             
             {/* Vocabulary Tab */}
-            <TabsContent value="vocabulary" className="flex-1 flex flex-col mt-0">
+            <TabsContent value="vocabulary" className="flex-1 flex flex-col mt-0 min-h-0 overflow-hidden">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="font-medium text-foreground">Vocabulary Notes</h4>
                 {canEdit && (
