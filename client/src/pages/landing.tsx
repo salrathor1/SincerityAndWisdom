@@ -570,6 +570,23 @@ export default function Landing() {
                     onValueChange={(value) => {
                       setSelectedPlaylist(parseInt(value));
                       setSelectedVideo(null);
+                      
+                      // Clear shared segment range when changing playlist
+                      setSharedSegmentRange(null);
+                      
+                      // Update URL parameters to reflect the new playlist selection
+                      const newUrl = new URL(window.location.href);
+                      newUrl.searchParams.set('playlist', value);
+                      // Remove video and segment-specific parameters
+                      newUrl.searchParams.delete('video');
+                      newUrl.searchParams.delete('start');
+                      newUrl.searchParams.delete('end');
+                      if (selectedLanguage !== 'ar') {
+                        newUrl.searchParams.set('lang', selectedLanguage);
+                      }
+                      
+                      // Update URL without page reload
+                      window.history.pushState({}, '', newUrl.toString());
                     }}
                   >
                     <SelectTrigger className="w-full sm:w-80 h-9">
@@ -594,6 +611,27 @@ export default function Landing() {
                       onValueChange={(value) => {
                         const video = playlistVideos.find((v: any) => v.id.toString() === value);
                         setSelectedVideo(video);
+                        
+                        // Clear shared segment range when manually selecting a different video
+                        setSharedSegmentRange(null);
+                        
+                        // Update URL parameters to reflect the new video selection
+                        const newUrl = new URL(window.location.href);
+                        if (selectedPlaylist) {
+                          newUrl.searchParams.set('playlist', selectedPlaylist.toString());
+                        }
+                        if (video) {
+                          newUrl.searchParams.set('video', video.id.toString());
+                        }
+                        if (selectedLanguage !== 'ar') {
+                          newUrl.searchParams.set('lang', selectedLanguage);
+                        }
+                        // Remove segment-specific parameters
+                        newUrl.searchParams.delete('start');
+                        newUrl.searchParams.delete('end');
+                        
+                        // Update URL without page reload
+                        window.history.pushState({}, '', newUrl.toString());
                       }}
                     >
                       <SelectTrigger className="w-full min-w-0 h-9">
@@ -746,7 +784,20 @@ export default function Landing() {
                         {availableLanguages.length > 0 && (
                           <div className="flex items-center space-x-1">
                             <Languages size={12} className="text-slate-500" />
-                            <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+                            <Select value={selectedLanguage} onValueChange={(value) => {
+                              setSelectedLanguage(value);
+                              
+                              // Update URL parameters to reflect language change
+                              const newUrl = new URL(window.location.href);
+                              if (value !== 'ar') {
+                                newUrl.searchParams.set('lang', value);
+                              } else {
+                                newUrl.searchParams.delete('lang');
+                              }
+                              
+                              // Update URL without page reload
+                              window.history.pushState({}, '', newUrl.toString());
+                            }}>
                               <SelectTrigger className="w-24 h-7 text-xs">
                                 <SelectValue />
                               </SelectTrigger>
