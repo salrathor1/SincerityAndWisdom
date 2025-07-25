@@ -80,7 +80,7 @@ export default function TranslationsPage() {
   const queryClient = useQueryClient();
   
   const [selectedVideoId, setSelectedVideoId] = useState<string>("");
-  const [selectedLanguage, setSelectedLanguage] = useState<string>("");
+  const [selectedLanguage, setSelectedLanguage] = useState<string>("en");
   const [translationSegments, setTranslationSegments] = useState<TranscriptSegment[]>([]);
   const [saving, setSaving] = useState(false);
   const [srtTextContent, setSrtTextContent] = useState("");
@@ -117,6 +117,18 @@ export default function TranslationsPage() {
       return;
     }
   }, [isAuthenticated, isLoading, currentUser, toast]);
+
+  // Handle URL parameter for video selection
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const videoIdParam = urlParams.get('videoId');
+    if (videoIdParam && videos.length > 0) {
+      const videoExists = videos.find(v => v.id.toString() === videoIdParam);
+      if (videoExists) {
+        setSelectedVideoId(videoIdParam);
+      }
+    }
+  }, [videos]);
 
   // Fetch videos
   const { data: videos = [] } = useQuery<any[]>({
