@@ -118,6 +118,12 @@ export default function TranslationsPage() {
     }
   }, [isAuthenticated, isLoading, currentUser, toast]);
 
+  // Fetch videos
+  const { data: videos = [] } = useQuery<any[]>({
+    queryKey: ["/api/videos"],
+    retry: false,
+  });
+
   // Handle URL parameter for video selection
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -129,12 +135,6 @@ export default function TranslationsPage() {
       }
     }
   }, [videos]);
-
-  // Fetch videos
-  const { data: videos = [] } = useQuery<any[]>({
-    queryKey: ["/api/videos"],
-    retry: false,
-  });
 
   // Fetch transcripts for selected video
   const { data: transcripts = [] } = useQuery<any[]>({
