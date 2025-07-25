@@ -27,7 +27,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
-import { Plus, Search, Edit, Trash2, Video, Eye, X } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Video, Eye, X, GripVertical } from "lucide-react";
 
 const formSchema = z.object({
   name: z.string().min(1, "Playlist name is required"),
@@ -44,6 +44,8 @@ export default function Playlists() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingPlaylist, setEditingPlaylist] = useState<any>(null);
   const [viewingPlaylist, setViewingPlaylist] = useState<any>(null);
+  const [draggedItem, setDraggedItem] = useState<number | null>(null);
+  const [dragOverItem, setDragOverItem] = useState<number | null>(null);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -211,6 +213,34 @@ export default function Playlists() {
     },
   });
 
+  const updateVideoOrderMutation = useMutation({
+    mutationFn: async ({ videoId, playlistOrder }: { videoId: number; playlistOrder: number }) => {
+      await apiRequest("PUT", `/api/videos/${videoId}`, { playlistOrder });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/playlists", viewingPlaylist?.id, "videos"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/playlists"] });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update video order",
+        variant: "destructive",
+      });
+    },
+  });
+
   if (isLoading || !isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -255,6 +285,60 @@ export default function Playlists() {
     if (confirm("Are you sure you want to remove this video from the playlist?")) {
       removeVideoFromPlaylistMutation.mutate({ videoId });
     }
+  };
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedItem(index);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDragOverItem(index);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverItem(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    
+    if (draggedItem === null || draggedItem === dropIndex) {
+      setDraggedItem(null);
+      setDragOverItem(null);
+      return;
+    }
+
+    // Create a new array with reordered items
+    const newVideos = [...playlistVideos];
+    const draggedVideo = newVideos[draggedItem];
+    
+    // Remove the dragged item
+    newVideos.splice(draggedItem, 1);
+    
+    // Insert at new position
+    newVideos.splice(dropIndex, 0, draggedVideo);
+    
+    // Update the order values
+    const updatedVideos = newVideos.map((video, index) => ({
+      ...video,
+      playlistOrder: index + 1
+    }));
+
+    // Update each video's playlist order
+    updatedVideos.forEach((video, index) => {
+      if (video.playlistOrder !== playlistVideos.find((v: any) => v.id === video.id)?.playlistOrder) {
+        updateVideoOrderMutation.mutate({ 
+          videoId: video.id, 
+          playlistOrder: index + 1 
+        });
+      }
+    });
+
+    setDraggedItem(null);
+    setDragOverItem(null);
   };
 
   const formatTimeAgo = (dateString: string) => {
@@ -492,16 +576,37 @@ export default function Playlists() {
 
           <div className="mt-4">
             {playlistVideos.length > 0 ? (
-              <div className="space-y-4">
-                {playlistVideos.map((video: any) => (
-                  <Card key={video.id} className="group hover:shadow-md transition-shadow">
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground mb-4">
+                  💡 Drag and drop videos to reorder them in the playlist
+                </p>
+                {playlistVideos
+                  .sort((a: any, b: any) => (a.playlistOrder || 0) - (b.playlistOrder || 0))
+                  .map((video: any, index: number) => (
+                  <Card 
+                    key={video.id} 
+                    className={`group hover:shadow-md transition-all cursor-move ${
+                      dragOverItem === index ? 'border-blue-500 bg-blue-50' : ''
+                    } ${draggedItem === index ? 'opacity-50 scale-95' : ''}`}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, index)}
+                    onDragOver={(e) => handleDragOver(e, index)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, index)}
+                  >
                     <CardContent className="p-4">
                       <div className="flex items-start space-x-4">
-                        <img
-                          src={video.thumbnailUrl || "/placeholder-video.jpg"}
-                          alt={video.title}
-                          className="w-32 h-18 object-cover rounded-lg flex-shrink-0"
-                        />
+                        <div className="flex items-center space-x-2">
+                          <GripVertical 
+                            size={16} 
+                            className="text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing" 
+                          />
+                          <img
+                            src={video.thumbnailUrl || "/placeholder-video.jpg"}
+                            alt={video.title}
+                            className="w-32 h-18 object-cover rounded-lg flex-shrink-0"
+                          />
+                        </div>
                         
                         <div className="flex-1 min-w-0">
                           <h4 className="font-medium text-foreground mb-2 line-clamp-2">

@@ -317,6 +317,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // Handle playlist order updates specifically
+      if (requestData.playlistOrder !== undefined) {
+        const video = await storage.updateVideoOrder(id, requestData.playlistOrder);
+        return res.json(video);
+      }
+      
       // Regular update for other fields
       const videoData = insertVideoSchema.partial().parse(requestData);
       const video = await storage.updateVideo(id, videoData);

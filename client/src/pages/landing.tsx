@@ -586,7 +586,7 @@ export default function Landing() {
                       </SelectTrigger>
                       <SelectContent className="w-full max-w-2xl">
                         {playlistVideos
-                          .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+                          .sort((a: any, b: any) => (a.playlistOrder || 0) - (b.playlistOrder || 0) || new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
                           .map((video: any) => (
                           <SelectItem key={video.id} value={video.id.toString()}>
                             <div className="flex items-center space-x-3 py-1 w-full">

@@ -15,7 +15,7 @@ import {
   type PlaylistWithVideos,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, sql } from "drizzle-orm";
+import { eq, desc, sql, asc } from "drizzle-orm";
 
 export interface IStorage {
   // User operations (required for Replit Auth)
@@ -38,6 +38,7 @@ export interface IStorage {
   getVideoByYoutubeId(youtubeId: string): Promise<VideoWithRelations | undefined>;
   getVideosByPlaylist(playlistId: number): Promise<VideoWithRelations[]>;
   updateVideo(id: number, video: Partial<InsertVideo>): Promise<Video>;
+  updateVideoOrder(id: number, playlistOrder: number): Promise<Video>;
   deleteVideo(id: number): Promise<void>;
   
   // Transcript operations
@@ -175,6 +176,15 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
+  async updateVideoOrder(id: number, playlistOrder: number): Promise<Video> {
+    const [updated] = await db
+      .update(videos)
+      .set({ playlistOrder, updatedAt: new Date() })
+      .where(eq(videos.id, id))
+      .returning();
+    return updated;
+  }
+
   async getVideosByPlaylist(playlistId: number): Promise<VideoWithRelations[]> {
     return await db.query.videos.findMany({
       where: eq(videos.playlistId, playlistId),
@@ -182,7 +192,7 @@ export class DatabaseStorage implements IStorage {
         playlist: true,
         transcripts: true,
       },
-      orderBy: [desc(videos.createdAt)],
+      orderBy: [asc(videos.playlistOrder), desc(videos.createdAt)],
     });
   }
 
