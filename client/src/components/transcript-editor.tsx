@@ -1094,7 +1094,8 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
                         value={srtContent}
                         onChange={(e) => setSrtContent(e.target.value)}
                         rows={8}
-                        className="resize-none border-2 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 rounded-lg transition-all duration-200 hover:border-gray-300 dark:hover:border-gray-600 font-mono text-sm"
+                        className="resize-none border-2 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 rounded-lg transition-all duration-200 hover:border-gray-300 dark:hover:border-gray-600"
+                        style={{ fontSize: `${textSize}px`, lineHeight: '1.6' }}
                       />
                       <div className="flex items-center space-x-2">
                         <Button 
@@ -1163,7 +1164,7 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
                     value={openTextContent}
                     onChange={canEdit ? (e) => handleOpenTextChange(e.target.value) : undefined}
                     placeholder="1&#10;00:00:01,000 --> 00:00:04,000&#10;Welcome to this video transcript...&#10;&#10;2&#10;00:00:05,000 --> 00:00:08,000&#10;Today we will be discussing the main topic...&#10;&#10;3&#10;00:00:09,000 --> 00:00:12,000&#10;Each segment shows timing and text content..."
-                    className={`resize-none h-full min-h-[400px] font-mono border-2 transition-all duration-200 rounded-lg ${
+                    className={`resize-none h-full min-h-[400px] border-2 transition-all duration-200 rounded-lg ${
                       selectedLanguage === 'ar' ? 'text-right direction-rtl' : 'text-left direction-ltr'
                     } ${!canEdit 
                       ? 'bg-gray-50 dark:bg-gray-800 cursor-not-allowed border-gray-200 dark:border-gray-700' 
