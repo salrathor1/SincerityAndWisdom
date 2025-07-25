@@ -73,6 +73,7 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
   const [player, setPlayer] = useState<any>(null);
   const [isOpenTextView, setIsOpenTextView] = useState(false);
   const [openTextContent, setOpenTextContent] = useState("");
+  const [textSize, setTextSize] = useState(14); // Default text size in pixels
   const [timeInputs, setTimeInputs] = useState<string[]>([]);
   const [videoUrl, setVideoUrl] = useState("");
   const [isEditingUrl, setIsEditingUrl] = useState(false);
@@ -1045,6 +1046,30 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
                         SRT Format
                       </label>
                     </div>
+                    <div className="flex items-center space-x-2">
+                      <label className="text-sm text-muted-foreground">Text Size:</label>
+                      <div className="flex items-center space-x-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setTextSize(Math.max(10, textSize - 2))}
+                          className="h-6 w-6 p-0"
+                          disabled={textSize <= 10}
+                        >
+                          -
+                        </Button>
+                        <span className="text-xs text-muted-foreground w-8 text-center">{textSize}px</span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setTextSize(Math.min(24, textSize + 2))}
+                          className="h-6 w-6 p-0"
+                          disabled={textSize >= 24}
+                        >
+                          +
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                   <div className="flex items-center space-x-2">
                 {canEdit && (
@@ -1138,12 +1163,13 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
                     value={openTextContent}
                     onChange={canEdit ? (e) => handleOpenTextChange(e.target.value) : undefined}
                     placeholder="1&#10;00:00:01,000 --> 00:00:04,000&#10;Welcome to this video transcript...&#10;&#10;2&#10;00:00:05,000 --> 00:00:08,000&#10;Today we will be discussing the main topic...&#10;&#10;3&#10;00:00:09,000 --> 00:00:12,000&#10;Each segment shows timing and text content..."
-                    className={`resize-none h-full min-h-[400px] font-mono text-sm border-2 transition-all duration-200 rounded-lg ${
+                    className={`resize-none h-full min-h-[400px] font-mono border-2 transition-all duration-200 rounded-lg ${
                       selectedLanguage === 'ar' ? 'text-right direction-rtl' : 'text-left direction-ltr'
                     } ${!canEdit 
                       ? 'bg-gray-50 dark:bg-gray-800 cursor-not-allowed border-gray-200 dark:border-gray-700' 
                       : 'border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 hover:border-gray-300 dark:hover:border-gray-600'
                     }`}
+                    style={{ fontSize: `${textSize}px`, lineHeight: '1.5' }}
                     readOnly={!canEdit}
                     dir={selectedLanguage === 'ar' ? 'rtl' : 'ltr'}
                   />
@@ -1213,15 +1239,22 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
                             value={segment.text}
                             onChange={canEdit ? (e) => handleTextEdit(index, e.target.value) : undefined}
                             onBlur={() => updateOpenTextFromSegments(segments)}
-                            className={`text-sm min-h-[60px] resize-none border-2 rounded-lg transition-all duration-200 ${
+                            className={`resize-none border-2 rounded-lg transition-all duration-200 ${
                               selectedLanguage === 'ar' ? 'text-right direction-rtl' : 'text-left direction-ltr'
                             } ${!canEdit 
                               ? 'bg-gray-50 dark:bg-gray-800 cursor-not-allowed border-gray-200 dark:border-gray-700' 
                               : 'border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 hover:border-gray-300 dark:hover:border-gray-600'
                             }`}
+                            style={{ 
+                              fontSize: `${textSize}px`,
+                              lineHeight: '1.5',
+                              minHeight: `${Math.max(60, textSize * 3)}px`,
+                              height: 'auto'
+                            }}
                             placeholder="Enter transcript text here..."
                             readOnly={!canEdit}
                             dir={selectedLanguage === 'ar' ? 'rtl' : 'ltr'}
+                            rows={Math.max(2, Math.ceil(segment.text.length / 50))}
                           />
                         </div>
                       </div>
