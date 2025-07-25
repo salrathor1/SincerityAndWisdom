@@ -615,23 +615,12 @@ export default function Landing() {
                         // Clear shared segment range when manually selecting a different video
                         setSharedSegmentRange(null);
                         
-                        // Update URL parameters to reflect the new video selection
+                        // Update URL to reflect the new video selection without shared segment params
                         const newUrl = new URL(window.location.href);
-                        if (selectedPlaylist) {
-                          newUrl.searchParams.set('playlist', selectedPlaylist.toString());
-                        }
-                        if (video) {
-                          newUrl.searchParams.set('video', video.id.toString());
-                        }
-                        if (selectedLanguage !== 'ar') {
-                          newUrl.searchParams.set('lang', selectedLanguage);
-                        }
-                        // Remove segment-specific parameters
+                        newUrl.searchParams.set('video', value);
                         newUrl.searchParams.delete('start');
                         newUrl.searchParams.delete('end');
-                        
-                        // Update URL without page reload
-                        window.history.pushState({}, '', newUrl.toString());
+                        window.history.replaceState({}, '', newUrl.toString());
                       }}
                     >
                       <SelectTrigger className="w-full min-w-0 h-9">

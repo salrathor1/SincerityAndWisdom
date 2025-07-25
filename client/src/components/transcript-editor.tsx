@@ -1277,8 +1277,8 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
             
             {/* Vocabulary Tab */}
             <TabsContent value="vocabulary" className="flex-1 flex flex-col mt-0">
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="font-medium text-foreground">Vocabulary Notes</h4>
+              <div className="mb-4">
+                <h4 className="font-medium text-foreground mb-3">Vocabulary Notes</h4>
                 {canEdit && (
                   <Button 
                     onClick={handleSaveVocabulary}
