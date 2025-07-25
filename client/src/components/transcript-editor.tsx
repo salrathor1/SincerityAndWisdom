@@ -1169,7 +1169,7 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
                       ? 'bg-gray-50 dark:bg-gray-800 cursor-not-allowed border-gray-200 dark:border-gray-700' 
                       : 'border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 hover:border-gray-300 dark:hover:border-gray-600'
                     }`}
-                    style={{ fontSize: `${textSize}px`, lineHeight: '1.5' }}
+                    style={{ fontSize: `${textSize}px`, lineHeight: '1.6' }}
                     readOnly={!canEdit}
                     dir={selectedLanguage === 'ar' ? 'rtl' : 'ltr'}
                   />
@@ -1247,14 +1247,14 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
                             }`}
                             style={{ 
                               fontSize: `${textSize}px`,
-                              lineHeight: '1.5',
-                              minHeight: `${Math.max(60, textSize * 3)}px`,
+                              lineHeight: '1.6',
+                              minHeight: `${Math.max(textSize * 2.5, 40)}px`,
                               height: 'auto'
                             }}
                             placeholder="Enter transcript text here..."
                             readOnly={!canEdit}
                             dir={selectedLanguage === 'ar' ? 'rtl' : 'ltr'}
-                            rows={Math.max(2, Math.ceil(segment.text.length / 50))}
+                            rows={Math.max(2, Math.ceil(segment.text.length / (40 - textSize / 2)) + 1)}
                           />
                         </div>
                       </div>
