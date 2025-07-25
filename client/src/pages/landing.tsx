@@ -585,7 +585,9 @@ export default function Landing() {
                         <SelectValue placeholder="Choose video" />
                       </SelectTrigger>
                       <SelectContent className="w-full max-w-2xl">
-                        {playlistVideos.map((video: any) => (
+                        {playlistVideos
+                          .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                          .map((video: any) => (
                           <SelectItem key={video.id} value={video.id.toString()}>
                             <div className="flex items-center space-x-3 py-1 w-full">
                               <img 
