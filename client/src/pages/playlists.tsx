@@ -27,7 +27,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
-import { Plus, Search, Edit, Trash2, Video } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Video, Eye, X } from "lucide-react";
 
 const formSchema = z.object({
   name: z.string().min(1, "Playlist name is required"),
@@ -43,6 +43,7 @@ export default function Playlists() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingPlaylist, setEditingPlaylist] = useState<any>(null);
+  const [viewingPlaylist, setViewingPlaylist] = useState<any>(null);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -69,6 +70,13 @@ export default function Playlists() {
 
   const { data: playlists, isLoading: playlistsLoading } = useQuery({
     queryKey: ["/api/playlists"],
+    retry: false,
+  });
+
+  // Fetch videos for selected playlist
+  const { data: playlistVideos = [] } = useQuery({
+    queryKey: ["/api/playlists", viewingPlaylist?.id, "videos"],
+    enabled: !!viewingPlaylist?.id,
     retry: false,
   });
 
@@ -171,6 +179,38 @@ export default function Playlists() {
     },
   });
 
+  const removeVideoFromPlaylistMutation = useMutation({
+    mutationFn: async ({ videoId }: { videoId: number }) => {
+      await apiRequest("PUT", `/api/videos/${videoId}`, { playlistId: null });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Video removed from playlist successfully!",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/playlists", viewingPlaylist?.id, "videos"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/playlists"] });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: error.message || "Failed to remove video from playlist",
+        variant: "destructive",
+      });
+    },
+  });
+
   if (isLoading || !isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -209,6 +249,12 @@ export default function Playlists() {
     setIsCreateOpen(false);
     setEditingPlaylist(null);
     form.reset();
+  };
+
+  const handleRemoveVideo = (videoId: number) => {
+    if (confirm("Are you sure you want to remove this video from the playlist?")) {
+      removeVideoFromPlaylistMutation.mutate({ videoId });
+    }
   };
 
   const formatTimeAgo = (dateString: string) => {
@@ -288,7 +334,16 @@ export default function Playlists() {
                         <Button
                           variant="ghost"
                           size="sm"
+                          onClick={() => setViewingPlaylist(playlist)}
+                          title="View videos"
+                        >
+                          <Eye size={14} />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => handleEdit(playlist)}
+                          title="Edit playlist"
                         >
                           <Edit size={14} />
                         </Button>
@@ -297,6 +352,7 @@ export default function Playlists() {
                           size="sm"
                           onClick={() => handleDelete(playlist.id)}
                           className="text-destructive hover:text-destructive"
+                          title="Delete playlist"
                         >
                           <Trash2 size={14} />
                         </Button>
@@ -406,6 +462,96 @@ export default function Playlists() {
               </div>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Playlist Videos Dialog */}
+      <Dialog open={!!viewingPlaylist} onOpenChange={() => setViewingPlaylist(null)}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle className="text-xl">
+                  {viewingPlaylist?.name}
+                </DialogTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {playlistVideos.length} video{playlistVideos.length !== 1 ? 's' : ''} in this playlist
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setViewingPlaylist(null)}
+              >
+                <X size={16} />
+              </Button>
+            </div>
+          </DialogHeader>
+
+          <div className="mt-4">
+            {playlistVideos.length > 0 ? (
+              <div className="space-y-4">
+                {playlistVideos.map((video: any) => (
+                  <Card key={video.id} className="group hover:shadow-md transition-shadow">
+                    <CardContent className="p-4">
+                      <div className="flex items-start space-x-4">
+                        <img
+                          src={video.thumbnailUrl || "/placeholder-video.jpg"}
+                          alt={video.title}
+                          className="w-32 h-18 object-cover rounded-lg flex-shrink-0"
+                        />
+                        
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-foreground mb-2 line-clamp-2">
+                            {video.title}
+                          </h4>
+                          
+                          <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-2">
+                            <span>Duration: {video.duration || 'Unknown'}</span>
+                            <span>
+                              {video.transcripts?.length || 0} transcript{video.transcripts?.length !== 1 ? 's' : ''}
+                            </span>
+                            <span>Added {formatTimeAgo(video.createdAt)}</span>
+                          </div>
+                          
+                          {video.description && (
+                            <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+                              {video.description}
+                            </p>
+                          )}
+                        </div>
+                        
+                        <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleRemoveVideo(video.id)}
+                            disabled={removeVideoFromPlaylistMutation.isPending}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 size={14} className="mr-1" />
+                            Remove
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Video size={32} className="text-muted-foreground" />
+                </div>
+                <h3 className="text-lg font-medium text-foreground mb-2">
+                  No videos in this playlist
+                </h3>
+                <p className="text-muted-foreground">
+                  Videos can be added to playlists when editing them in the transcript editor.
+                </p>
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
