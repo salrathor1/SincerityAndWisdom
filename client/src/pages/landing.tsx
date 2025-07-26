@@ -617,7 +617,14 @@ export default function Landing() {
                         
                         // Update URL to reflect the new video selection without shared segment params
                         const newUrl = new URL(window.location.href);
+                        if (selectedPlaylist) {
+                          newUrl.searchParams.set('playlist', selectedPlaylist.toString());
+                        }
                         newUrl.searchParams.set('video', value);
+                        if (selectedLanguage !== 'ar') {
+                          newUrl.searchParams.set('lang', selectedLanguage);
+                        }
+                        // Remove segment-specific parameters
                         newUrl.searchParams.delete('start');
                         newUrl.searchParams.delete('end');
                         window.history.replaceState({}, '', newUrl.toString());

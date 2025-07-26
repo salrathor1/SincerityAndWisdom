@@ -68,8 +68,7 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
 
   const [segments, setSegments] = useState<TranscriptSegment[]>([]);
   const [activeSegmentIndex, setActiveSegmentIndex] = useState(0);
-  const [srtContent, setSrtContent] = useState("");
-  const [showSrtImport, setShowSrtImport] = useState(false);
+
   const [player, setPlayer] = useState<any>(null);
   const [isOpenTextView, setIsOpenTextView] = useState(false);
   const [openTextContent, setOpenTextContent] = useState("");
@@ -248,44 +247,7 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
     },
   });
 
-  const importSrtMutation = useMutation({
-    mutationFn: async (srtContent: string) => {
-      const transcript = Array.isArray(transcripts) ? transcripts.find((t: any) => t.language === selectedLanguage) : null;
-      if (!transcript) {
-        throw new Error("No transcript found for the selected language. Create a transcript first.");
-      }
-      await apiRequest("POST", `/api/transcripts/${transcript.id}/import-srt`, {
-        srtContent,
-      });
-    },
-    onSuccess: (data: any) => {
-      toast({
-        title: "Success",
-        description: `SRT file imported successfully! ${data.segmentsCount} segments added.`,
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/videos", video?.id, "transcripts"] });
-      setSrtContent("");
-      setShowSrtImport(false);
-    },
-    onError: (error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
-      toast({
-        title: "Error",
-        description: error.message || "Failed to import SRT file",
-        variant: "destructive",
-      });
-    },
-  });
+
 
   // Helper function to extract YouTube ID from URL
   const extractYouTubeId = (url: string): string | null => {
@@ -507,17 +469,7 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
     updateVocabularyMutation.mutate(vocabulary);
   };
 
-  const handleImportSrt = () => {
-    if (!srtContent.trim()) {
-      toast({
-        title: "Error",
-        description: "Please paste SRT content first",
-        variant: "destructive",
-      });
-      return;
-    }
-    importSrtMutation.mutate(srtContent);
-  };
+
 
   // Helper function to parse time string to seconds
   const parseTimeToSeconds = (timeString: string): number => {
@@ -1072,57 +1024,6 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
-                {canEdit && (
-                  <Popover open={showSrtImport} onOpenChange={setShowSrtImport}>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" size="sm">
-                        <Upload size={16} className="mr-1" />
-                        Import SRT
-                      </Button>
-                    </PopoverTrigger>
-                  <PopoverContent className="w-96 p-4">
-                    <div className="space-y-4">
-                      <div className="flex items-center space-x-2">
-                        <FileText size={16} className="text-muted-foreground" />
-                        <h5 className="font-medium">Import SRT File</h5>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Paste your SRT subtitle content below. It will be converted to timed transcript segments.
-                      </p>
-                      <Textarea
-                        placeholder="1&#10;00:00:01,000 --> 00:00:04,000&#10;Hello and welcome to this video...&#10;&#10;2&#10;00:00:05,000 --> 00:00:08,000&#10;Today we will be discussing..."
-                        value={srtContent}
-                        onChange={(e) => setSrtContent(e.target.value)}
-                        rows={8}
-                        className="resize-none border-2 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 rounded-lg transition-all duration-200 hover:border-gray-300 dark:hover:border-gray-600"
-                        style={{ fontSize: `${textSize}px`, lineHeight: '1.6' }}
-                      />
-                      <div className="flex items-center space-x-2">
-                        <Button 
-                          size="sm" 
-                          onClick={handleImportSrt}
-                          disabled={importSrtMutation.isPending || !srtContent.trim()}
-                          className="flex-1"
-                        >
-                          <Upload size={14} className="mr-1" />
-                          {importSrtMutation.isPending ? "Importing..." : "Import SRT"}
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => {
-                            setSrtContent("");
-                            setShowSrtImport(false);
-                          }}
-                        >
-                          Cancel
-                        </Button>
-                      </div>
-                    </div>
-                    </PopoverContent>
-                  </Popover>
-                )}
-                
                 {canEdit && (
                   <>
                     <Button variant="outline" size="sm" onClick={() => addNewSegment()}>
