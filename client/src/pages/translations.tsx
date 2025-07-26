@@ -596,7 +596,7 @@ export default function TranslationsPage() {
                     {viewMode === 'segments' && (
                       <Button onClick={addNewSegment} size="sm" variant="outline">
                         <Plus size={16} className="mr-1" />
-                        Add Segment
+                        Add at End
                       </Button>
                     )}
                   </CardTitle>
