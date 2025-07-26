@@ -26,6 +26,9 @@ The Sunnah and Wisdom is a full-stack web application for managing Islamic educa
 - **Timestamp Display**: Shows "Modified" and "Saved" timestamps in the UI
 - **Auto-Save Indicator**: Visual badge showing auto-save status
 - **Change Tracking**: Automatically detects all edit actions (text, time, add/delete segments)
+- **Tabbed Interface**: Added "Draft Editor" and "Published View" tabs for comparing content
+- **Published View**: Read-only view of live content with green styling and jump-to-time functionality
+- **Visual Distinction**: Draft tab uses blue theming, Published tab uses green theming
 
 ### January 25, 2025 - Added Video Sorting Functionality
 - Added sort filters to videos page with "Oldest to Newest" and "Newest to Oldest" options

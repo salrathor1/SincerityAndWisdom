@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileText, Save, Clock, Plus, Trash2, Play, BookOpen, Edit, Upload } from "lucide-react";
 
 interface TranscriptSegment {
@@ -125,6 +126,8 @@ export default function ArabicTranscriptsPage() {
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [lastModifiedAt, setLastModifiedAt] = useState<Date | null>(null);
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
+  const [activeTab, setActiveTab] = useState<'draft' | 'published'>('draft');
+  const [publishedSegments, setPublishedSegments] = useState<TranscriptSegment[]>([]);
   const playerRef = useRef<HTMLDivElement>(null);
   const autoSaveIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -241,15 +244,22 @@ export default function ArabicTranscriptsPage() {
 
   // Load Arabic transcript when video or transcript changes
   useEffect(() => {
+    // Load published content
+    if (arabicTranscript?.content) {
+      const publishedSegs = parseSRTContent(arabicTranscript.content);
+      setPublishedSegments(publishedSegs);
+    } else {
+      setPublishedSegments([]);
+    }
+
+    // Load draft content if available, otherwise use published content
     if (arabicTranscript?.draftContent) {
-      // Load draft content if available
       const segments = parseSRTContent(arabicTranscript.draftContent);
       setArabicSegments(segments);
       setTimeInputs(segments.map(seg => seg.time));
       updateSrtTextFromSegments(segments);
       setHasDraftChanges(true);
     } else if (arabicTranscript?.content) {
-      // Load published content
       const segments = parseSRTContent(arabicTranscript.content);
       setArabicSegments(segments);
       setTimeInputs(segments.map(seg => seg.time));
@@ -681,47 +691,58 @@ export default function ArabicTranscriptsPage() {
                       <span>Arabic Transcript</span>
                     </CardTitle>
                     <div className="flex items-center space-x-2">
-                      <div className="flex items-center space-x-2">
-                        <Switch
-                          id="view-mode"
-                          checked={viewMode === 'text'}
-                          onCheckedChange={(checked) => setViewMode(checked ? 'text' : 'segments')}
-                        />
-                        <label htmlFor="view-mode" className="text-sm text-gray-600 cursor-pointer">
-                          SRT Format
-                        </label>
+                      <div className="flex flex-col items-end text-xs text-gray-500 mr-2">
+                        {lastModifiedAt && (
+                          <span>Modified: {lastModifiedAt.toLocaleTimeString()}</span>
+                        )}
+                        {lastSavedAt && (
+                          <span>Saved: {lastSavedAt.toLocaleTimeString()}</span>
+                        )}
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <div className="flex flex-col items-end text-xs text-gray-500 mr-2">
-                          {lastModifiedAt && (
-                            <span>Modified: {lastModifiedAt.toLocaleTimeString()}</span>
-                          )}
-                          {lastSavedAt && (
-                            <span>Saved: {lastSavedAt.toLocaleTimeString()}</span>
-                          )}
-                        </div>
-                        <Button 
-                          onClick={handleSaveDraft}
-                          disabled={saving}
-                          size="sm"
-                          variant="outline"
-                        >
-                          <Save className="h-4 w-4 mr-1" />
-                          {saving ? "Saving..." : "Save Draft"}
-                        </Button>
-                        <Button 
-                          onClick={handlePublish}
-                          disabled={publishing || !hasDraftChanges}
-                          size="sm"
-                        >
-                          <Upload className="h-4 w-4 mr-1" />
-                          {publishing ? "Publishing..." : "Publish"}
-                        </Button>
-                      </div>
+                      <Button 
+                        onClick={handleSaveDraft}
+                        disabled={saving}
+                        size="sm"
+                        variant="outline"
+                      >
+                        <Save className="h-4 w-4 mr-1" />
+                        {saving ? "Saving..." : "Save Draft"}
+                      </Button>
+                      <Button 
+                        onClick={handlePublish}
+                        disabled={publishing || !hasDraftChanges}
+                        size="sm"
+                      >
+                        <Upload className="h-4 w-4 mr-1" />
+                        {publishing ? "Publishing..." : "Publish"}
+                      </Button>
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent>
+                  <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'draft' | 'published')}>
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="draft" className="data-[state=active]:bg-blue-100 data-[state=active]:text-blue-800">
+                        Draft Editor
+                      </TabsTrigger>
+                      <TabsTrigger value="published" className="data-[state=active]:bg-green-100 data-[state=active]:text-green-700">
+                        Published View
+                      </TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="draft" className="mt-4">
+                      <div className="mb-4 flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            id="view-mode"
+                            checked={viewMode === 'text'}
+                            onCheckedChange={(checked) => setViewMode(checked ? 'text' : 'segments')}
+                          />
+                          <label htmlFor="view-mode" className="text-sm text-gray-600 cursor-pointer">
+                            SRT Format
+                          </label>
+                        </div>
+                      </div>
                   {viewMode === 'segments' ? (
                     <div className="space-y-4">
                       <div className="flex justify-between items-center">
@@ -838,6 +859,58 @@ export default function ArabicTranscriptsPage() {
                       />
                     </div>
                   )}
+                    </TabsContent>
+
+                    <TabsContent value="published" className="mt-4">
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600">
+                            {publishedSegments.length} published segments
+                          </span>
+                          <div className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+                            Live Content
+                          </div>
+                        </div>
+                        
+                        {publishedSegments.length > 0 ? (
+                          <div className="max-h-96 overflow-y-auto space-y-3">
+                            {publishedSegments.map((segment, index) => (
+                              <div 
+                                key={index} 
+                                className="border border-green-200 rounded-lg p-3 bg-green-50"
+                              >
+                                <div className="flex items-center justify-between mb-2">
+                                  <div className="flex items-center space-x-2">
+                                    <span className="text-xs bg-green-200 text-green-800 px-2 py-1 rounded font-mono">
+                                      {segment.time}
+                                    </span>
+                                    <Button
+                                      onClick={() => handleSegmentClick(index, segment.time)}
+                                      size="sm"
+                                      variant="outline"
+                                      className="border-green-300 text-green-700 hover:bg-green-100"
+                                    >
+                                      <Clock className="h-3 w-3 mr-1" />
+                                      Jump
+                                    </Button>
+                                  </div>
+                                </div>
+                                <div className="bg-white border border-green-200 rounded p-3 text-right direction-rtl" dir="rtl">
+                                  {segment.text || <span className="text-gray-400 italic">No content</span>}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-center py-8 text-gray-500">
+                            <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                            <p className="text-lg font-medium">No Published Content</p>
+                            <p className="text-sm">Create a draft and publish it to see content here.</p>
+                          </div>
+                        )}
+                      </div>
+                    </TabsContent>
+                  </Tabs>
                 </CardContent>
               </Card>
             </div>
