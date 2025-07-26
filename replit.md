@@ -6,6 +6,18 @@ The Sunnah and Wisdom is a full-stack web application for managing Islamic educa
 
 ## Recent Changes
 
+### January 26, 2025 - Created Arabic Transcripts Page
+- Created dedicated Arabic Transcripts page (/arabic-transcripts) for focused Arabic transcript editing
+- Implemented video selection with thumbnail preview and duration display
+- Added side-by-side layout: video player on left, transcript editor on right
+- Integrated YouTube player with jump-to-time functionality for precise editing
+- Dual view modes: "Segment View" (individual editing) and "SRT Format" (continuous text)
+- Added segment management: add/delete segments with automatic time calculations
+- Implemented Arabic text support with RTL direction and proper formatting
+- Applied role-based access control (admin/editor can access, viewers see blank page)
+- Added Arabic Transcripts menu item to sidebar navigation with BookOpen icon
+- Enhanced time format consistency matching existing transcript editor
+
 ### January 25, 2025 - Added Video Sorting Functionality
 - Added sort filters to videos page with "Oldest to Newest" and "Newest to Oldest" options
 - Implemented sorting dropdown with ArrowUpDown icon in the header toolbar
