@@ -122,7 +122,11 @@ export default function ArabicTranscriptsPage() {
   const [player, setPlayer] = useState<any>(null);
   const [activeSegmentIndex, setActiveSegmentIndex] = useState(0);
   const [hasDraftChanges, setHasDraftChanges] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [lastModifiedAt, setLastModifiedAt] = useState<Date | null>(null);
+  const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
   const playerRef = useRef<HTMLDivElement>(null);
+  const autoSaveIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const { data: currentUser } = useQuery({
     queryKey: ["/api/auth/user"],
@@ -261,6 +265,47 @@ export default function ArabicTranscriptsPage() {
     }
   }, [arabicTranscript]);
 
+  // Auto-save functionality
+  useEffect(() => {
+    if (!autoSaveEnabled || !hasDraftChanges || saving || !selectedVideoId || !arabicTranscript) {
+      return;
+    }
+
+    // Clear existing interval
+    if (autoSaveIntervalRef.current) {
+      clearInterval(autoSaveIntervalRef.current);
+    }
+
+    // Set up auto-save interval (2 minutes = 120,000ms)
+    autoSaveIntervalRef.current = setInterval(() => {
+      if (hasDraftChanges && !saving) {
+        // Auto-save the current content
+        if (viewMode === 'text') {
+          const segments = parseSrtText(srtTextContent);
+          saveDraft.mutate(segments);
+        } else {
+          saveDraft.mutate(arabicSegments);
+        }
+      }
+    }, 120000); // 2 minutes
+
+    // Cleanup interval on unmount or when dependencies change
+    return () => {
+      if (autoSaveIntervalRef.current) {
+        clearInterval(autoSaveIntervalRef.current);
+      }
+    };
+  }, [hasDraftChanges, saving, selectedVideoId, arabicTranscript, autoSaveEnabled, viewMode, srtTextContent, arabicSegments]);
+
+  // Cleanup interval on unmount
+  useEffect(() => {
+    return () => {
+      if (autoSaveIntervalRef.current) {
+        clearInterval(autoSaveIntervalRef.current);
+      }
+    };
+  }, []);
+
   // Update SRT text from segments
   const updateSrtTextFromSegments = (segments: TranscriptSegment[]) => {
     let srtText = "";
@@ -318,6 +363,8 @@ export default function ArabicTranscriptsPage() {
       }
     },
     onSuccess: () => {
+      const now = new Date();
+      setLastSavedAt(now);
       toast({
         title: "Draft Saved",
         description: "Arabic transcript draft saved successfully!",
@@ -427,8 +474,9 @@ export default function ArabicTranscriptsPage() {
     if (viewMode === 'segments') {
       updateSrtTextFromSegments(newSegments);
     }
-    // Mark as having unsaved changes
+    // Mark as having unsaved changes and update modification time
     setHasDraftChanges(true);
+    setLastModifiedAt(new Date());
   };
 
   const handleTimeEdit = (index: number, newTime: string) => {
@@ -444,6 +492,10 @@ export default function ArabicTranscriptsPage() {
     if (viewMode === 'segments') {
       updateSrtTextFromSegments(newSegments);
     }
+    
+    // Mark as having unsaved changes and update modification time
+    setHasDraftChanges(true);
+    setLastModifiedAt(new Date());
   };
 
   const formatTimeInput = (time: string): string => {
@@ -478,6 +530,10 @@ export default function ArabicTranscriptsPage() {
     if (viewMode === 'segments') {
       updateSrtTextFromSegments(newSegments);
     }
+    
+    // Mark as having unsaved changes and update modification time
+    setHasDraftChanges(true);
+    setLastModifiedAt(new Date());
   };
 
   const calculateNextTime = (timeString: string): string => {
@@ -508,13 +564,19 @@ export default function ArabicTranscriptsPage() {
       if (activeSegmentIndex >= newSegments.length) {
         setActiveSegmentIndex(Math.max(0, newSegments.length - 1));
       }
+      
+      // Mark as having unsaved changes and update modification time
+      setHasDraftChanges(true);
+      setLastModifiedAt(new Date());
     }
   };
 
   // Handle SRT text change
   const handleSrtTextChange = (newText: string) => {
     setSrtTextContent(newText);
-    // Don't auto-update segments while typing, wait for save
+    // Mark as having unsaved changes and update modification time
+    setHasDraftChanges(true);
+    setLastModifiedAt(new Date());
   };
 
   if (isLoading) {
@@ -630,6 +692,14 @@ export default function ArabicTranscriptsPage() {
                         </label>
                       </div>
                       <div className="flex items-center space-x-2">
+                        <div className="flex flex-col items-end text-xs text-gray-500 mr-2">
+                          {lastModifiedAt && (
+                            <span>Modified: {lastModifiedAt.toLocaleTimeString()}</span>
+                          )}
+                          {lastSavedAt && (
+                            <span>Saved: {lastSavedAt.toLocaleTimeString()}</span>
+                          )}
+                        </div>
                         <Button 
                           onClick={handleSaveDraft}
                           disabled={saving}
@@ -662,6 +732,11 @@ export default function ArabicTranscriptsPage() {
                           {hasDraftChanges && (
                             <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded">
                               Draft changes
+                            </span>
+                          )}
+                          {autoSaveEnabled && (
+                            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                              Auto-save: ON
                             </span>
                           )}
                         </div>
@@ -731,14 +806,28 @@ export default function ArabicTranscriptsPage() {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                        <p className="text-sm text-blue-800 flex items-start space-x-2">
-                          <FileText size={16} className="mt-0.5 flex-shrink-0" />
-                          <span>
-                            <strong>SRT Format View:</strong> Edit your Arabic transcript in standard SubRip (.srt) format. 
-                            Each segment shows: sequence number, timestamp range, and text.
-                          </span>
-                        </p>
+                      <div className="flex justify-between items-center">
+                        <div className="p-3 bg-blue-50 rounded-lg border border-blue-200 flex-1">
+                          <p className="text-sm text-blue-800 flex items-start space-x-2">
+                            <FileText size={16} className="mt-0.5 flex-shrink-0" />
+                            <span>
+                              <strong>SRT Format View:</strong> Edit your Arabic transcript in standard SubRip (.srt) format. 
+                              Each segment shows: sequence number, timestamp range, and text.
+                            </span>
+                          </p>
+                        </div>
+                        <div className="flex items-center space-x-2 ml-4">
+                          {hasDraftChanges && (
+                            <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded">
+                              Draft changes
+                            </span>
+                          )}
+                          {autoSaveEnabled && (
+                            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                              Auto-save: ON
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <Textarea
                         value={srtTextContent}
