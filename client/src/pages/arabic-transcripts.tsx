@@ -546,6 +546,29 @@ export default function ArabicTranscriptsPage() {
     setLastModifiedAt(new Date());
   };
 
+  const addSegmentAfter = (index: number) => {
+    const currentSegment = arabicSegments[index];
+    const currentTime = currentSegment?.time || "0:00";
+    const newTime = calculateNextTime(currentTime);
+    
+    const newSegment = { time: newTime, text: "" };
+    const newSegments = [...arabicSegments];
+    newSegments.splice(index + 1, 0, newSegment);
+    setArabicSegments(newSegments);
+    
+    const newTimeInputs = [...timeInputs];
+    newTimeInputs.splice(index + 1, 0, newTime);
+    setTimeInputs(newTimeInputs);
+    
+    if (viewMode === 'segments') {
+      updateSrtTextFromSegments(newSegments);
+    }
+    
+    // Mark as having unsaved changes and update modification time
+    setHasDraftChanges(true);
+    setLastModifiedAt(new Date());
+  };
+
   const calculateNextTime = (timeString: string): string => {
     const seconds = parseTimeToSeconds(timeString) + 10; // Add 10 seconds
     const minutes = Math.floor(seconds / 60);
@@ -801,6 +824,15 @@ export default function ArabicTranscriptsPage() {
                                 >
                                   <Clock className="h-3 w-3 mr-1" />
                                   Jump
+                                </Button>
+                                <Button
+                                  onClick={() => addSegmentAfter(index)}
+                                  size="sm"
+                                  variant="outline"
+                                  className="border-green-300 text-green-700 hover:bg-green-50"
+                                >
+                                  <Plus className="h-3 w-3 mr-1" />
+                                  Add
                                 </Button>
                               </div>
                               {arabicSegments.length > 1 && (
