@@ -239,6 +239,33 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
+  async updateTranscriptDraft(id: number, draftContent: any): Promise<Transcript> {
+    const [updated] = await db
+      .update(transcripts)
+      .set({ draftContent, updatedAt: new Date() })
+      .where(eq(transcripts.id, id))
+      .returning();
+    return updated;
+  }
+
+  async publishTranscriptDraft(id: number): Promise<Transcript> {
+    // Move draft content to published content
+    const transcript = await this.getTranscript(id);
+    if (!transcript || !transcript.draftContent) {
+      throw new Error("No draft content found to publish");
+    }
+    
+    const [updated] = await db
+      .update(transcripts)
+      .set({ 
+        content: transcript.draftContent,
+        updatedAt: new Date() 
+      })
+      .where(eq(transcripts.id, id))
+      .returning();
+    return updated;
+  }
+
   async deleteTranscript(id: number): Promise<void> {
     await db.delete(transcripts).where(eq(transcripts.id, id));
   }

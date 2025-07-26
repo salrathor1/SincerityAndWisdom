@@ -417,6 +417,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Draft routes
+  app.put('/api/transcripts/:id/draft', isAuthenticated, requireRole(['admin', 'editor']), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { content } = req.body;
+      
+      if (!content) {
+        return res.status(400).json({ message: "Draft content is required" });
+      }
+
+      const transcript = await storage.updateTranscriptDraft(id, content);
+      res.json(transcript);
+    } catch (error) {
+      console.error("Error saving draft:", error);
+      res.status(500).json({ message: "Failed to save draft" });
+    }
+  });
+
+  app.post('/api/transcripts/:id/publish', isAuthenticated, requireRole(['admin', 'editor']), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const transcript = await storage.publishTranscriptDraft(id);
+      res.json(transcript);
+    } catch (error) {
+      console.error("Error publishing draft:", error);
+      res.status(500).json({ message: error.message || "Failed to publish draft" });
+    }
+  });
+
   // SRT Import route
   app.post('/api/transcripts/:id/import-srt', isAuthenticated, requireRole(['admin', 'editor']), async (req, res) => {
     try {

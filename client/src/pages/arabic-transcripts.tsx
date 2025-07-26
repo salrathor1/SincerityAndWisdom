@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { FileText, Save, Clock, Plus, Trash2, Play, BookOpen, Edit } from "lucide-react";
+import { FileText, Save, Clock, Plus, Trash2, Play, BookOpen, Edit, Upload } from "lucide-react";
 
 interface TranscriptSegment {
   time: string;
@@ -115,11 +115,13 @@ export default function ArabicTranscriptsPage() {
   const [selectedVideoId, setSelectedVideoId] = useState<string>("");
   const [arabicSegments, setArabicSegments] = useState<TranscriptSegment[]>([]);
   const [saving, setSaving] = useState(false);
+  const [publishing, setPublishing] = useState(false);
   const [srtTextContent, setSrtTextContent] = useState("");
   const [viewMode, setViewMode] = useState<'segments' | 'text'>('segments');
   const [timeInputs, setTimeInputs] = useState<string[]>([]);
   const [player, setPlayer] = useState<any>(null);
   const [activeSegmentIndex, setActiveSegmentIndex] = useState(0);
+  const [hasDraftChanges, setHasDraftChanges] = useState(false);
   const playerRef = useRef<HTMLDivElement>(null);
 
   const { data: currentUser } = useQuery({
@@ -235,17 +237,27 @@ export default function ArabicTranscriptsPage() {
 
   // Load Arabic transcript when video or transcript changes
   useEffect(() => {
-    if (arabicTranscript?.content) {
+    if (arabicTranscript?.draftContent) {
+      // Load draft content if available
+      const segments = parseSRTContent(arabicTranscript.draftContent);
+      setArabicSegments(segments);
+      setTimeInputs(segments.map(seg => seg.time));
+      updateSrtTextFromSegments(segments);
+      setHasDraftChanges(true);
+    } else if (arabicTranscript?.content) {
+      // Load published content
       const segments = parseSRTContent(arabicTranscript.content);
       setArabicSegments(segments);
       setTimeInputs(segments.map(seg => seg.time));
       updateSrtTextFromSegments(segments);
+      setHasDraftChanges(false);
     } else {
       // Initialize with empty segment for new transcripts
       const emptySegments = [{ time: "0:00", text: "Click here to add your first Arabic transcript segment..." }];
       setArabicSegments(emptySegments);
       setTimeInputs(["0:00"]);
       updateSrtTextFromSegments(emptySegments);
+      setHasDraftChanges(false);
     }
   }, [arabicTranscript]);
 
@@ -288,27 +300,31 @@ export default function ArabicTranscriptsPage() {
     return segments;
   };
 
-  // Save Arabic transcript
-  const saveTranscript = useMutation({
+  // Save draft Arabic transcript
+  const saveDraft = useMutation({
     mutationFn: async (segments: TranscriptSegment[]) => {
       if (arabicTranscript) {
-        await apiRequest("PUT", `/api/transcripts/${arabicTranscript.id}`, {
+        await apiRequest("PUT", `/api/transcripts/${arabicTranscript.id}/draft`, {
           content: segments,
         });
       } else {
-        await apiRequest("POST", `/api/videos/${selectedVideoId}/transcripts`, {
+        // Create new transcript with draft content
+        const newTranscript = await apiRequest("POST", `/api/videos/${selectedVideoId}/transcripts`, {
           language: 'ar',
-          content: segments,
+          content: [], // Empty published content
+          draftContent: segments,
         });
+        return newTranscript;
       }
     },
     onSuccess: () => {
       toast({
-        title: "Success",
-        description: "Arabic transcript saved successfully!",
+        title: "Draft Saved",
+        description: "Arabic transcript draft saved successfully!",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/videos", selectedVideoId, "transcripts"] });
       setSaving(false);
+      setHasDraftChanges(true);
     },
     onError: (error) => {
       setSaving(false);
@@ -325,23 +341,66 @@ export default function ArabicTranscriptsPage() {
       }
       toast({
         title: "Error",
-        description: error.message || "Failed to save Arabic transcript",
+        description: error.message || "Failed to save draft",
         variant: "destructive",
       });
     },
   });
 
-  const handleSave = () => {
+  // Publish Arabic transcript
+  const publishTranscript = useMutation({
+    mutationFn: async () => {
+      if (!arabicTranscript) {
+        throw new Error("No transcript found to publish");
+      }
+      await apiRequest("POST", `/api/transcripts/${arabicTranscript.id}/publish`, {});
+    },
+    onSuccess: () => {
+      toast({
+        title: "Published",
+        description: "Arabic transcript published successfully!",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/videos", selectedVideoId, "transcripts"] });
+      setPublishing(false);
+      setHasDraftChanges(false);
+    },
+    onError: (error) => {
+      setPublishing(false);
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: error.message || "Failed to publish transcript",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSaveDraft = () => {
     setSaving(true);
     if (viewMode === 'text') {
       // Parse SRT text back to segments
       const segments = parseSrtText(srtTextContent);
       setArabicSegments(segments);
       setTimeInputs(segments.map(seg => seg.time));
-      saveTranscript.mutate(segments);
+      saveDraft.mutate(segments);
     } else {
-      saveTranscript.mutate(arabicSegments);
+      saveDraft.mutate(arabicSegments);
     }
+  };
+
+  const handlePublish = () => {
+    setPublishing(true);
+    publishTranscript.mutate();
   };
 
   const handleSegmentClick = (index: number, time: string) => {
@@ -368,6 +427,8 @@ export default function ArabicTranscriptsPage() {
     if (viewMode === 'segments') {
       updateSrtTextFromSegments(newSegments);
     }
+    // Mark as having unsaved changes
+    setHasDraftChanges(true);
   };
 
   const handleTimeEdit = (index: number, newTime: string) => {
@@ -568,14 +629,25 @@ export default function ArabicTranscriptsPage() {
                           SRT Format
                         </label>
                       </div>
-                      <Button 
-                        onClick={handleSave}
-                        disabled={saving}
-                        size="sm"
-                      >
-                        <Save className="h-4 w-4 mr-1" />
-                        {saving ? "Saving..." : "Save"}
-                      </Button>
+                      <div className="flex items-center space-x-2">
+                        <Button 
+                          onClick={handleSaveDraft}
+                          disabled={saving}
+                          size="sm"
+                          variant="outline"
+                        >
+                          <Save className="h-4 w-4 mr-1" />
+                          {saving ? "Saving..." : "Save Draft"}
+                        </Button>
+                        <Button 
+                          onClick={handlePublish}
+                          disabled={publishing || !hasDraftChanges}
+                          size="sm"
+                        >
+                          <Upload className="h-4 w-4 mr-1" />
+                          {publishing ? "Publishing..." : "Publish"}
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </CardHeader>
@@ -583,9 +655,16 @@ export default function ArabicTranscriptsPage() {
                   {viewMode === 'segments' ? (
                     <div className="space-y-4">
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">
-                          {arabicSegments.length} segments
-                        </span>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm text-gray-600">
+                            {arabicSegments.length} segments
+                          </span>
+                          {hasDraftChanges && (
+                            <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded">
+                              Draft changes
+                            </span>
+                          )}
+                        </div>
                         <Button
                           onClick={addNewSegment}
                           size="sm"
