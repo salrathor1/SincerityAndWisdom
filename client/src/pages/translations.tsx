@@ -184,13 +184,24 @@ export default function TranslationsPage() {
     setTranslationSegments(updatedSegments);
   };
 
-  // Add new segment
+  // Add new segment at the end
   const addNewSegment = () => {
     const newSegment = {
       time: "0:00",
       text: ""
     };
     setTranslationSegments([...translationSegments, newSegment]);
+  };
+
+  // Add new segment after a specific index
+  const addSegmentAfter = (index: number) => {
+    const newSegment = {
+      time: "0:00",
+      text: ""
+    };
+    const newSegments = [...translationSegments];
+    newSegments.splice(index + 1, 0, newSegment);
+    setTranslationSegments(newSegments);
   };
 
   // Handle SRT text changes (similar to transcript editor)
@@ -626,7 +637,7 @@ export default function TranslationsPage() {
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    onClick={() => addNewSegment()}
+                                    onClick={() => addSegmentAfter(index)}
                                     className="h-6 px-2"
                                   >
                                     <Plus size={12} className="text-green-600" />
