@@ -286,7 +286,7 @@ export default function ArabicTranscriptsPage() {
       clearInterval(autoSaveIntervalRef.current);
     }
 
-    // Set up auto-save interval (2 minutes = 120,000ms)
+    // Set up auto-save interval (1 minute = 60,000ms)
     autoSaveIntervalRef.current = setInterval(() => {
       if (hasDraftChanges && !saving) {
         // Auto-save the current content
@@ -297,7 +297,7 @@ export default function ArabicTranscriptsPage() {
           saveDraft.mutate(arabicSegments);
         }
       }
-    }, 120000); // 2 minutes
+    }, 60000); // 1 minute
 
     // Cleanup interval on unmount or when dependencies change
     return () => {

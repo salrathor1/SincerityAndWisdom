@@ -22,7 +22,7 @@ The Sunnah and Wisdom is a full-stack web application for managing Islamic educa
 - **Draft Status Indicator**: Shows "Draft changes" badge when unsaved work exists
 - **API Routes**: Added PUT /api/transcripts/:id/draft and POST /api/transcripts/:id/publish
 - **Smart Loading**: Prioritizes draft content over published content when available
-- **Auto-Save System**: Automatically saves drafts every 2 minutes when changes are detected
+- **Auto-Save System**: Automatically saves drafts every 1 minute when changes are detected
 - **Timestamp Display**: Shows "Modified" and "Saved" timestamps in the UI
 - **Auto-Save Indicator**: Visual badge showing auto-save status
 - **Change Tracking**: Automatically detects all edit actions (text, time, add/delete segments)
