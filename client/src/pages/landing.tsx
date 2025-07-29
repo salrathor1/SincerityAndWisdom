@@ -455,7 +455,7 @@ export default function Landing() {
 
 
 
-  // Auto-select first playlist only if no URL parameters are present
+  // Auto-select Khutbahs playlist by default, fallback to first playlist
   useEffect(() => {
     if (Array.isArray(playlists) && playlists.length > 0 && !selectedPlaylist) {
       const urlParams = new URLSearchParams(window.location.search);
@@ -463,7 +463,17 @@ export default function Landing() {
       
       // Only auto-select if no URL playlist parameter exists
       if (!hasUrlPlaylist) {
-        setSelectedPlaylist(playlists[0].id);
+        // Try to find "Khutbahs" playlist first
+        const khutbahsPlaylist = playlists.find((playlist: any) => 
+          playlist.name.toLowerCase().includes('khutbah')
+        );
+        
+        if (khutbahsPlaylist) {
+          setSelectedPlaylist(khutbahsPlaylist.id);
+        } else {
+          // Fallback to first playlist if Khutbahs not found
+          setSelectedPlaylist(playlists[0].id);
+        }
       }
     }
   }, [playlists, selectedPlaylist]);
