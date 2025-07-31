@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText, Save, Clock, Plus, Trash2, Play, BookOpen, Edit, Upload } from "lucide-react";
+import { FileText, Save, Clock, Plus, Trash2, Play, BookOpen, Edit, Upload, Minus, Type } from "lucide-react";
 
 interface TranscriptSegment {
   time: string;
@@ -128,6 +128,7 @@ export default function ArabicTranscriptsPage() {
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
   const [activeTab, setActiveTab] = useState<'draft' | 'published'>('draft');
   const [publishedSegments, setPublishedSegments] = useState<TranscriptSegment[]>([]);
+  const [fontSize, setFontSize] = useState(16); // Font size in pixels
   const playerRef = useRef<HTMLDivElement>(null);
   const autoSaveIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -755,15 +756,41 @@ export default function ArabicTranscriptsPage() {
                     
                     <TabsContent value="draft" className="mt-4">
                       <div className="mb-4 flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <Switch
-                            id="view-mode"
-                            checked={viewMode === 'text'}
-                            onCheckedChange={(checked) => setViewMode(checked ? 'text' : 'segments')}
-                          />
-                          <label htmlFor="view-mode" className="text-sm text-gray-600 cursor-pointer">
-                            SRT Format
-                          </label>
+                        <div className="flex items-center space-x-4">
+                          <div className="flex items-center space-x-2">
+                            <Switch
+                              id="view-mode"
+                              checked={viewMode === 'text'}
+                              onCheckedChange={(checked) => setViewMode(checked ? 'text' : 'segments')}
+                            />
+                            <label htmlFor="view-mode" className="text-sm text-gray-600 cursor-pointer">
+                              SRT Format
+                            </label>
+                          </div>
+                          
+                          {/* Font Size Controls */}
+                          <div className="flex items-center space-x-2">
+                            <Type size={16} className="text-gray-500" />
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setFontSize(Math.max(12, fontSize - 2))}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Minus size={14} />
+                            </Button>
+                            <span className="text-sm text-gray-600 min-w-[3rem] text-center">
+                              {fontSize}px
+                            </span>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setFontSize(Math.min(24, fontSize + 2))}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Plus size={14} />
+                            </Button>
+                          </div>
                         </div>
                       </div>
                   {viewMode === 'segments' ? (
@@ -852,6 +879,7 @@ export default function ArabicTranscriptsPage() {
                               placeholder="Enter Arabic transcript text..."
                               className="min-h-[80px] text-right direction-rtl"
                               dir="rtl"
+                              style={{ fontSize: `${fontSize}px` }}
                             />
                           </div>
                         ))}
@@ -886,8 +914,9 @@ export default function ArabicTranscriptsPage() {
                         value={srtTextContent}
                         onChange={(e) => handleSrtTextChange(e.target.value)}
                         placeholder="1&#10;00:00:01,000 --> 00:00:04,000&#10;مرحبا بكم في هذا الفيديو...&#10;&#10;2&#10;00:00:05,000 --> 00:00:08,000&#10;اليوم سوف نناقش الموضوع الرئيسي..."
-                        className="min-h-[400px] text-right direction-rtl font-mono text-sm"
+                        className="min-h-[400px] text-right direction-rtl font-mono"
                         dir="rtl"
+                        style={{ fontSize: `${fontSize}px` }}
                       />
                     </div>
                   )}
@@ -927,7 +956,11 @@ export default function ArabicTranscriptsPage() {
                                     </Button>
                                   </div>
                                 </div>
-                                <div className="bg-white border border-green-200 rounded p-3 text-right direction-rtl" dir="rtl">
+                                <div 
+                                  className="bg-white border border-green-200 rounded p-3 text-right direction-rtl" 
+                                  dir="rtl"
+                                  style={{ fontSize: `${fontSize}px` }}
+                                >
                                   {segment.text || <span className="text-gray-400 italic">No content</span>}
                                 </div>
                               </div>
