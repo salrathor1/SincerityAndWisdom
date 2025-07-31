@@ -679,9 +679,9 @@ export default function ArabicTranscriptsPage() {
           </Card>
 
           {selectedVideo && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Video Player */}
-              <Card>
+              <Card className="lg:col-span-1">
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     <span>Video Player</span>
@@ -706,7 +706,7 @@ export default function ArabicTranscriptsPage() {
               </Card>
 
               {/* Arabic Transcript Editor */}
-              <Card>
+              <Card className="lg:col-span-2">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="flex items-center space-x-2">
