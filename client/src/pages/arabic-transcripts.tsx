@@ -877,7 +877,7 @@ export default function ArabicTranscriptsPage() {
                               value={segment.text}
                               onChange={(e) => handleTextEdit(index, e.target.value)}
                               placeholder="Enter Arabic transcript text..."
-                              className="min-h-[80px] text-right direction-rtl"
+                              className="min-h-[80px] text-right direction-rtl arabic-font"
                               dir="rtl"
                               style={{ fontSize: `${fontSize}px` }}
                             />
@@ -914,7 +914,7 @@ export default function ArabicTranscriptsPage() {
                         value={srtTextContent}
                         onChange={(e) => handleSrtTextChange(e.target.value)}
                         placeholder="1&#10;00:00:01,000 --> 00:00:04,000&#10;مرحبا بكم في هذا الفيديو...&#10;&#10;2&#10;00:00:05,000 --> 00:00:08,000&#10;اليوم سوف نناقش الموضوع الرئيسي..."
-                        className="min-h-[400px] text-right direction-rtl font-mono"
+                        className="min-h-[400px] text-right direction-rtl arabic-font"
                         dir="rtl"
                         style={{ fontSize: `${fontSize}px` }}
                       />
@@ -957,7 +957,7 @@ export default function ArabicTranscriptsPage() {
                                   </div>
                                 </div>
                                 <div 
-                                  className="bg-white border border-green-200 rounded p-3 text-right direction-rtl" 
+                                  className="bg-white border border-green-200 rounded p-3 text-right direction-rtl arabic-font" 
                                   dir="rtl"
                                   style={{ fontSize: `${fontSize}px` }}
                                 >

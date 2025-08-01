@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Sakkal+Majallah&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -89,4 +91,9 @@
 .direction-ltr {
   direction: ltr;
   text-align: left;
+}
+
+/* Arabic font family */
+.arabic-font {
+  font-family: 'Sakkal Majallah', 'Traditional Arabic', 'Geeza Pro', 'Arabic Typesetting', 'Tahoma', sans-serif;
 }

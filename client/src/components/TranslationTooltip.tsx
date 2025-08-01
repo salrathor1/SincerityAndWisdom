@@ -23,7 +23,7 @@ export function TranslationTooltip({ word, children }: TranslationTooltipProps) 
     <TooltipProvider delayDuration={0}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <span className="cursor-help hover:bg-blue-100 dark:hover:bg-blue-900 hover:bg-opacity-40 dark:hover:bg-opacity-40 rounded px-0.5 transition-all duration-150 ease-in-out">
+          <span className="cursor-help hover:bg-blue-100 dark:hover:bg-blue-900 hover:bg-opacity-40 dark:hover:bg-opacity-40 rounded px-0.5 transition-all duration-150 ease-in-out arabic-font">
             {children}
           </span>
         </TooltipTrigger>

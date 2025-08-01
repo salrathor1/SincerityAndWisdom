@@ -1050,7 +1050,7 @@ export default function Landing() {
                               </Badge>
                               {selectedLanguage === 'ar' ? (
                                 <div 
-                                  className="leading-relaxed text-right"
+                                  className="leading-relaxed text-right arabic-font"
                                   style={{ fontSize: `${fontSize}px` }}
                                 >
                                   {searchQuery ? (

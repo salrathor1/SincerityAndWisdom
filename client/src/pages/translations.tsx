@@ -559,8 +559,8 @@ export default function TranslationsPage() {
                               </span>
                             </div>
                             <div 
-                              className="text-sm leading-relaxed"
-                              style={{ direction: 'rtl', textAlign: 'right', fontFamily: 'Arial, sans-serif' }}
+                              className="text-sm leading-relaxed arabic-font"
+                              style={{ direction: 'rtl', textAlign: 'right' }}
                             >
                               {segment.text}
                             </div>
