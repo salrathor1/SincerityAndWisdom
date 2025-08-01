@@ -132,6 +132,17 @@ export class DatabaseStorage implements IStorage {
 
   // Video operations
   async createVideo(video: InsertVideo): Promise<Video> {
+    // If this video is being added to a playlist, get the highest order number and add 1
+    if (video.playlistId) {
+      const existingVideos = await db.select()
+        .from(videos)
+        .where(eq(videos.playlistId, video.playlistId))
+        .orderBy(desc(videos.playlistOrder));
+      
+      const maxOrder = existingVideos.length > 0 ? (existingVideos[0].playlistOrder || 0) : 0;
+      video.playlistOrder = maxOrder + 1;
+    }
+    
     const [created] = await db.insert(videos).values(video).returning();
     return created;
   }
