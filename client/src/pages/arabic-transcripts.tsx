@@ -879,7 +879,7 @@ export default function ArabicTranscriptsPage() {
                               placeholder="Enter Arabic transcript text..."
                               className="min-h-[80px] text-right direction-rtl arabic-font"
                               dir="rtl"
-                              style={{ fontSize: `${fontSize}px` }}
+                              style={{ fontSize: `${fontSize}px`, lineHeight: '1.8' }}
                             />
                           </div>
                         ))}
@@ -916,7 +916,7 @@ export default function ArabicTranscriptsPage() {
                         placeholder="1&#10;00:00:01,000 --> 00:00:04,000&#10;مرحبا بكم في هذا الفيديو...&#10;&#10;2&#10;00:00:05,000 --> 00:00:08,000&#10;اليوم سوف نناقش الموضوع الرئيسي..."
                         className="min-h-[400px] text-right direction-rtl arabic-font"
                         dir="rtl"
-                        style={{ fontSize: `${fontSize}px` }}
+                        style={{ fontSize: `${fontSize}px`, lineHeight: '1.8' }}
                       />
                     </div>
                   )}
@@ -959,7 +959,7 @@ export default function ArabicTranscriptsPage() {
                                 <div 
                                   className="bg-white border border-green-200 rounded p-3 text-right direction-rtl arabic-font" 
                                   dir="rtl"
-                                  style={{ fontSize: `${fontSize}px` }}
+                                  style={{ fontSize: `${fontSize}px`, lineHeight: '1.8' }}
                                 >
                                   {segment.text || <span className="text-gray-400 italic">No content</span>}
                                 </div>

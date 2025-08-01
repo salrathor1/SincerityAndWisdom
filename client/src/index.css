@@ -96,4 +96,5 @@
 /* Arabic font family */
 .arabic-font {
   font-family: 'Sakkal Majallah', 'Traditional Arabic', 'Geeza Pro', 'Arabic Typesetting', 'Tahoma', sans-serif;
+  line-height: 1.8; /* Increased line spacing for Arabic text */
 }
