@@ -55,7 +55,10 @@ function parseSRTContent(content: any): TranscriptSegment[] {
   blocks.forEach(block => {
     const lines = block.trim().split('\n');
     if (lines.length >= 3) {
-      const timeMatch = lines[1].match(/(\d{2}:\d{2}:\d{2},\d{3})\s*-->\s*(\d{2}:\d{2}:\d{2},\d{3})/);
+      // Support both formats:
+      // 1. Standard: 00:01:23,000 --> 00:01:26,000
+      // 2. Short: 78:48,015 --> 78:52,905
+      const timeMatch = lines[1].match(/(\d{1,2}:\d{2}:\d{2},\d{3}|\d{1,3}:\d{2},\d{3})\s*-->\s*(\d{1,2}:\d{2}:\d{2},\d{3}|\d{1,3}:\d{2},\d{3})/);
       if (timeMatch) {
         const startTime = timeMatch[1];
         const text = lines.slice(2).join('\n');
@@ -70,24 +73,41 @@ function parseSRTContent(content: any): TranscriptSegment[] {
   return segments;
 }
 
-// Convert "00:01:23,000" SRT format to "1:23" format
+// Convert SRT format to simple time format
 function convertSrtToTime(srtTime: string): string {
   const timePart = srtTime.split(',')[0]; // Remove milliseconds
-  const [hours, minutes, seconds] = timePart.split(':');
+  const parts = timePart.split(':');
   
-  // If hours is 00, return minutes:seconds format
-  if (hours === '00') {
+  if (parts.length === 3) {
+    // Standard format: "00:01:23" -> "1:23" or "1:23:45"
+    const [hours, minutes, seconds] = parts;
+    if (hours === '00') {
+      return `${parseInt(minutes)}:${seconds}`;
+    }
+    return `${parseInt(hours)}:${minutes}:${seconds}`;
+  } else if (parts.length === 2) {
+    // Short format: "78:48" -> "78:48"
+    const [minutes, seconds] = parts;
     return `${parseInt(minutes)}:${seconds}`;
   }
-  return `${parseInt(hours)}:${minutes}:${seconds}`;
+  
+  return timePart;
 }
 
-// Convert "1:23" format to "00:01:23,000" SRT format
+// Convert simple time format to SRT format (prioritize short format when minutes > 59)
 function convertTimeToSrt(time: string): string {
   const parts = time.split(':');
   if (parts.length === 2) {
     const [minutes, seconds] = parts;
-    return `00:${minutes.padStart(2, '0')}:${seconds.padStart(2, '0')},000`;
+    const minutesNum = parseInt(minutes);
+    
+    // If minutes > 59, use short format: "78:48,000"
+    if (minutesNum > 59) {
+      return `${minutes.padStart(2, '0')}:${seconds.padStart(2, '0')},000`;
+    } else {
+      // Use standard format: "00:01:23,000"
+      return `00:${minutes.padStart(2, '0')}:${seconds.padStart(2, '0')},000`;
+    }
   } else if (parts.length === 3) {
     const [hours, minutes, seconds] = parts;
     return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:${seconds.padStart(2, '0')},000`;
