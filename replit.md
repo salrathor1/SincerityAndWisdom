@@ -6,7 +6,10 @@ The Sunnah and Wisdom is a full-stack web application for managing Islamic educa
 
 ## Recent Changes
 
-### January 26, 2025 - Enhanced Playlist Video Ordering
+### January 26, 2025 - UI and System Enhancements
+- **Removed Videos Panel**: Removed the Videos panel with playlist from the landing page for cleaner layout
+- **Enhanced SRT Support**: Added support for both standard (HH:MM:SS,mmm) and extended minute (MM:SS,mmm) timestamp formats
+- **Request Entity Fix**: Increased Express.js body size limits from 1MB to 50MB for large Arabic transcript drafts
 - **New Video Placement**: New videos are now automatically added at the bottom of playlists for chronological order
 - **Smart Ordering System**: When videos are added to playlists, they automatically receive the next highest `playlistOrder` value
 - **Database Logic**: Enhanced `createVideo` function to query existing playlist videos and assign proper ordering

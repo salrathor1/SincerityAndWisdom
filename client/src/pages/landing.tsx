@@ -1092,59 +1092,7 @@ export default function Landing() {
             </div>
 
             {/* Bottom Row - Playlist Panel */}
-            {selectedPlaylist && Array.isArray(playlistVideos) && playlistVideos.length > 1 && (
-              <div>
-                <Card>
-                  <CardHeader className="pb-3 px-3 sm:px-6 pt-3 sm:pt-6">
-                    <CardTitle className="text-base sm:text-lg flex items-center">
-                      <Video size={16} className="mr-2" />
-                      <span className="hidden sm:inline">Videos ({Array.isArray(playlistVideos) ? playlistVideos.length : 0})</span>
-                      <span className="sm:hidden">Videos ({Array.isArray(playlistVideos) ? playlistVideos.length : 0})</span>
-                    </CardTitle>
-                    <CardDescription className="text-xs sm:text-sm">
-                      Tap a video to play it
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
-                    <div className="grid gap-2 sm:gap-3 grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 overflow-y-auto max-h-48 sm:max-h-64 lg:max-h-80 xl:max-h-[320px]">
-                      {Array.isArray(playlistVideos) && playlistVideos.map((video: any) => (
-                        <div
-                          key={video.id}
-                          className={`p-2 sm:p-3 rounded-lg cursor-pointer transition-colors border ${
-                            selectedVideo?.id === video.id
-                              ? 'bg-blue-50 border-blue-200 shadow-sm'
-                              : 'bg-white hover:bg-slate-50 border-slate-200'
-                          }`}
-                          onClick={() => setSelectedVideo(video)}
-                        >
-                          <div className="flex flex-col space-y-1.5 sm:space-y-2">
-                            <img 
-                              src={video.thumbnailUrl} 
-                              alt={video.title}
-                              className="w-full aspect-video rounded object-cover"
-                            />
-                            <div>
-                              <h4 className="font-medium text-xs sm:text-sm text-slate-900 line-clamp-2 mb-1">
-                                {video.title}
-                              </h4>
-                              <Badge variant="secondary" className="text-xs">
-                                <Clock size={8} className="mr-1" />
-                                {video.duration}
-                              </Badge>
-                            </div>
-                          </div>
-                        </div>
-                      )) || (
-                        <div className="col-span-full text-center py-6 text-slate-500">
-                          <Video size={32} className="mx-auto mb-2 opacity-50" />
-                          <p className="text-sm">No videos in this playlist</p>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
+
           </>
         )}
       </div>
