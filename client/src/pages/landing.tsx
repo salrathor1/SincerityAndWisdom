@@ -687,8 +687,8 @@ export default function Landing() {
               {/* Video Player Column */}
               <div className="xl:col-span-2">
                 {selectedVideo ? (
-                  <Card className="shadow-md border bg-white flex flex-col min-h-[300px] sm:min-h-[400px] lg:min-h-[500px] xl:h-auto">
-                    <CardContent className="p-0 flex flex-col">
+                  <Card className="shadow-md border bg-white flex flex-col h-[600px] lg:h-[650px]">
+                    <CardContent className="p-0 flex flex-col h-full">
                       <div className="bg-slate-900 rounded-t-lg overflow-hidden relative" style={{paddingBottom: 'calc(56.25% + 25px)'}}>
                         <div ref={playerRef} className="absolute inset-0 w-full h-full" />
                       </div>
@@ -719,7 +719,7 @@ export default function Landing() {
                     </CardContent>
                   </Card>
                 ) : (
-                  <Card className="shadow-md border bg-gradient-to-br from-slate-50 to-slate-100 flex flex-col min-h-[300px] sm:min-h-[400px] lg:min-h-[500px] xl:h-auto">
+                  <Card className="shadow-md border bg-gradient-to-br from-slate-50 to-slate-100 flex flex-col h-[600px] lg:h-[650px]">
                     <CardContent className="p-6 text-center h-full flex flex-col justify-center">
                       <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center mx-auto mb-3">
                         <Video size={24} className="text-white" />
@@ -735,7 +735,7 @@ export default function Landing() {
 
               {/* Transcript & Vocabulary Column */}
               <div className="xl:col-span-1">
-                <Card className="shadow-md border bg-white flex flex-col min-h-[300px] sm:min-h-[400px] lg:min-h-[500px] xl:h-auto">
+                <Card className="shadow-md border bg-white flex flex-col h-[600px] lg:h-[650px]">
                   <CardHeader className="pb-2 px-3 sm:px-4 pt-3 sm:pt-4">
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                       <TabsList className="grid w-full grid-cols-2 mb-3">
