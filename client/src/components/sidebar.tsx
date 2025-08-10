@@ -97,15 +97,28 @@ export function Sidebar() {
               const Icon = item.icon;
               const isActive = location === item.href;
               
-              // Role-based access control for specific pages
-              if (item.href === '/arabic-transcripts' && 
-                  currentUser && !['admin', 'arabic_transcripts_editor'].includes(currentUser.role)) {
-                return null;
-              }
-              
-              if (item.href === '/translations' && 
-                  currentUser && !['admin', 'translations_editor'].includes(currentUser.role)) {
-                return null;
+              // Role-based access control for specialized editors
+              if (currentUser?.role === 'arabic_transcripts_editor') {
+                // Show only Arabic Transcripts for Arabic Transcripts Editor
+                if (item.href !== '/arabic-transcripts') {
+                  return null;
+                }
+              } else if (currentUser?.role === 'translations_editor') {
+                // Show only Translations for Translations Editor
+                if (item.href !== '/translations') {
+                  return null;
+                }
+              } else {
+                // For admin and other roles, apply standard filtering
+                if (item.href === '/arabic-transcripts' && 
+                    currentUser && !['admin', 'arabic_transcripts_editor'].includes(currentUser.role)) {
+                  return null;
+                }
+                
+                if (item.href === '/translations' && 
+                    currentUser && !['admin', 'translations_editor'].includes(currentUser.role)) {
+                  return null;
+                }
               }
               
               return (
