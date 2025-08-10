@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest } from "@/lib/queryClient";
-import { Users, Shield, Edit3, Eye, UserCog } from "lucide-react";
+import { Users, Shield, Edit3, Eye, UserCog, BookOpen, Languages } from "lucide-react";
 
 export function UserManagement() {
   const { toast } = useToast();
@@ -66,8 +66,10 @@ export function UserManagement() {
     switch (role) {
       case 'admin':
         return <Shield size={14} className="text-red-600" />;
-      case 'editor':
-        return <Edit3 size={14} className="text-blue-600" />;
+      case 'arabic_transcripts_editor':
+        return <BookOpen size={14} className="text-green-600" />;
+      case 'translations_editor':
+        return <Languages size={14} className="text-blue-600" />;
       case 'viewer':
         return <Eye size={14} className="text-gray-600" />;
       default:
@@ -79,7 +81,9 @@ export function UserManagement() {
     switch (role) {
       case 'admin':
         return 'destructive';
-      case 'editor':
+      case 'arabic_transcripts_editor':
+        return 'default';
+      case 'translations_editor':
         return 'default';
       case 'viewer':
         return 'secondary';
@@ -164,7 +168,11 @@ export function UserManagement() {
                   <div className="flex items-center space-x-3">
                     <Badge variant={getRoleBadgeVariant(user.role)} className="flex items-center space-x-1">
                       {getRoleIcon(user.role)}
-                      <span className="capitalize">{user.role}</span>
+                      <span className="capitalize">
+                        {user.role === 'arabic_transcripts_editor' ? 'Arabic Editor' 
+                         : user.role === 'translations_editor' ? 'Translations Editor'
+                         : user.role.replace('_', ' ')}
+                      </span>
                     </Badge>
                     
                     <Select
@@ -172,7 +180,7 @@ export function UserManagement() {
                       onValueChange={(newRole) => handleRoleChange(user.id, newRole)}
                       disabled={updatingUser === user.id}
                     >
-                      <SelectTrigger className="w-32">
+                      <SelectTrigger className="w-48">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -182,10 +190,16 @@ export function UserManagement() {
                             <span>Viewer</span>
                           </div>
                         </SelectItem>
-                        <SelectItem value="editor">
+                        <SelectItem value="arabic_transcripts_editor">
                           <div className="flex items-center space-x-2">
-                            <Edit3 size={14} />
-                            <span>Editor</span>
+                            <BookOpen size={14} />
+                            <span>Arabic Transcripts Editor</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="translations_editor">
+                          <div className="flex items-center space-x-2">
+                            <Languages size={14} />
+                            <span>Translations Editor</span>
                           </div>
                         </SelectItem>
                         <SelectItem value="admin">

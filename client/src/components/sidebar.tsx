@@ -97,6 +97,17 @@ export function Sidebar() {
               const Icon = item.icon;
               const isActive = location === item.href;
               
+              // Role-based access control for specific pages
+              if (item.href === '/arabic-transcripts' && 
+                  currentUser && !['admin', 'arabic_transcripts_editor'].includes(currentUser.role)) {
+                return null;
+              }
+              
+              if (item.href === '/translations' && 
+                  currentUser && !['admin', 'translations_editor'].includes(currentUser.role)) {
+                return null;
+              }
+              
               return (
                 <li key={item.name}>
                   <Link href={item.href}>

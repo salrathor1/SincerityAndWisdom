@@ -275,7 +275,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/videos/:id', isAuthenticated, requireRole(['admin', 'editor']), async (req, res) => {
+  app.put('/api/videos/:id', isAuthenticated, requireRole(['admin']), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const requestData = req.body;
@@ -359,7 +359,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/videos/:videoId/transcripts', isAuthenticated, requireRole(['admin', 'editor']), async (req, res) => {
+  app.post('/api/videos/:videoId/transcripts', isAuthenticated, requireRole(['admin', 'arabic_transcripts_editor', 'translations_editor']), async (req, res) => {
     try {
       const videoId = parseInt(req.params.videoId);
       const transcriptData = insertTranscriptSchema.parse({
@@ -391,7 +391,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/transcripts/:id', isAuthenticated, requireRole(['admin', 'editor']), async (req, res) => {
+  app.put('/api/transcripts/:id', isAuthenticated, requireRole(['admin', 'arabic_transcripts_editor', 'translations_editor']), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const transcriptData = insertTranscriptSchema.partial().parse(req.body);
@@ -418,7 +418,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Draft routes
-  app.put('/api/transcripts/:id/draft', isAuthenticated, requireRole(['admin', 'editor']), async (req, res) => {
+  app.put('/api/transcripts/:id/draft', isAuthenticated, requireRole(['admin', 'arabic_transcripts_editor']), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const { content } = req.body;
@@ -435,7 +435,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/transcripts/:id/publish', isAuthenticated, requireRole(['admin', 'editor']), async (req, res) => {
+  app.post('/api/transcripts/:id/publish', isAuthenticated, requireRole(['admin', 'arabic_transcripts_editor']), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const transcript = await storage.publishTranscriptDraft(id);
@@ -447,7 +447,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // SRT Import route
-  app.post('/api/transcripts/:id/import-srt', isAuthenticated, requireRole(['admin', 'editor']), async (req, res) => {
+  app.post('/api/transcripts/:id/import-srt', isAuthenticated, requireRole(['admin', 'arabic_transcripts_editor', 'translations_editor']), async (req, res) => {
     try {
       const transcriptId = parseInt(req.params.id);
       const { srtContent } = req.body;

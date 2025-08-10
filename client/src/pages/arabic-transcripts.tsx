@@ -171,7 +171,7 @@ export default function ArabicTranscriptsPage() {
       return;
     }
 
-    if (!isLoading && isAuthenticated && !['admin', 'editor'].includes(currentUser?.role)) {
+    if (!isLoading && isAuthenticated && !['admin', 'arabic_transcripts_editor'].includes(currentUser?.role)) {
       toast({
         title: "Access Denied",
         description: "You don't have permission to access this page.",
@@ -641,7 +641,7 @@ export default function ArabicTranscriptsPage() {
     );
   }
 
-  if (!isAuthenticated || !['admin', 'editor'].includes(currentUser?.role)) {
+  if (!isAuthenticated || !['admin', 'arabic_transcripts_editor'].includes(currentUser?.role)) {
     return null;
   }
 

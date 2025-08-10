@@ -106,7 +106,7 @@ export default function TranslationsPage() {
       return;
     }
 
-    if (!isLoading && isAuthenticated && !['admin', 'editor'].includes(currentUser?.role)) {
+    if (!isLoading && isAuthenticated && !['admin', 'translations_editor'].includes(currentUser?.role)) {
       toast({
         title: "Access Denied",
         description: "You don't have permission to access this page.",
@@ -423,7 +423,7 @@ export default function TranslationsPage() {
     );
   }
 
-  if (!isAuthenticated || !['admin', 'editor'].includes(currentUser?.role)) {
+  if (!isAuthenticated || !['admin', 'translations_editor'].includes(currentUser?.role)) {
     return null;
   }
 

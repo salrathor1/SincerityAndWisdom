@@ -15,7 +15,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // User role enum
-export const userRoleEnum = pgEnum('user_role', ['admin', 'editor', 'viewer']);
+export const userRoleEnum = pgEnum('user_role', ['admin', 'arabic_transcripts_editor', 'translations_editor', 'viewer']);
 
 // Session storage table (required for Replit Auth)
 export const sessions = pgTable(
