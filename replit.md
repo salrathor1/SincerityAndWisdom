@@ -15,6 +15,7 @@ The Sunnah and Wisdom is a full-stack web application for managing Islamic educa
 - **Database Logic**: Enhanced `createVideo` function to query existing playlist videos and assign proper ordering
 - **User Experience**: Videos now appear in proper sequence without manual reordering needed
 - **Collapsible Navigation**: Added collapsible sidebar with smooth 300ms animations and floating expand tab for more content space
+- **Translation Page Enhancements**: Added segment highlighting and cross-navigation between Arabic and translation segments
 
 ### January 26, 2025 - Created Arabic Transcripts Page with Draft System
 - Created dedicated Arabic Transcripts page (/arabic-transcripts) for focused Arabic transcript editing

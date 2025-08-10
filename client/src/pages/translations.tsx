@@ -85,6 +85,7 @@ export default function TranslationsPage() {
   const [saving, setSaving] = useState(false);
   const [srtTextContent, setSrtTextContent] = useState("");
   const [viewMode, setViewMode] = useState<'segments' | 'text'>('segments');
+  const [activeSegmentIndex, setActiveSegmentIndex] = useState<number | null>(null);
 
   const { data: currentUser } = useQuery({
     queryKey: ["/api/auth/user"],
@@ -551,12 +552,32 @@ export default function TranslationsPage() {
                     <div className="max-h-[500px] overflow-y-auto space-y-3">
                       {arabicSegments.length > 0 ? (
                         arabicSegments.map((segment, index) => (
-                          <div key={index} className="border rounded-lg p-3 bg-muted/30">
+                          <div 
+                            key={index} 
+                            className={`border rounded-lg p-3 cursor-pointer transition-all duration-200 ${
+                              activeSegmentIndex === index 
+                                ? 'bg-blue-50 border-blue-200 shadow-md' 
+                                : 'bg-muted/30 hover:bg-muted/50 hover:border-gray-300'
+                            }`}
+                            onClick={() => {
+                              setActiveSegmentIndex(index);
+                              // Scroll to corresponding translation segment if it exists
+                              if (index < translationSegments.length) {
+                                const translationElement = document.getElementById(`translation-segment-${index}`);
+                                translationElement?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                              }
+                            }}
+                          >
                             <div className="flex items-center mb-2">
                               <Clock size={14} className="mr-2 text-muted-foreground" />
                               <span className="text-sm font-mono text-muted-foreground">
                                 {segment.time}
                               </span>
+                              {activeSegmentIndex === index && (
+                                <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                  Active
+                                </span>
+                              )}
                             </div>
                             <div 
                               className="text-sm leading-relaxed arabic-font"
@@ -608,7 +629,14 @@ export default function TranslationsPage() {
                         translationSegments.map((segment, index) => (
                           <div
                             key={index}
-                            className="flex space-x-3 p-3 hover:bg-slate-50 rounded-lg transition-colors border-l-4 border-transparent hover:border-blue-200"
+                            id={`translation-segment-${index}`}
+                            className={`flex space-x-3 p-3 rounded-lg transition-colors border-l-4 ${
+                              activeSegmentIndex === index
+                                ? 'bg-blue-50 border-l-blue-400 shadow-sm'
+                                : 'hover:bg-slate-50 border-transparent hover:border-blue-200'
+                            }`}
+                            onFocus={() => setActiveSegmentIndex(index)}
+                            onClick={() => setActiveSegmentIndex(index)}
                           >
                             <div className="flex flex-col space-y-2 w-20 flex-shrink-0">
                               <div className="flex items-center space-x-1">
@@ -657,6 +685,7 @@ export default function TranslationsPage() {
                               <Textarea
                                 value={segment.text}
                                 onChange={(e) => handleSegmentTextChange(index, e.target.value)}
+                                onFocus={() => setActiveSegmentIndex(index)}
                                 placeholder={`Enter ${getLanguageName(selectedLanguage)} translation...`}
                                 className="text-sm min-h-[60px] resize-none border-2 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 rounded-lg transition-all duration-200 hover:border-gray-300 dark:hover:border-gray-600"
                               />
