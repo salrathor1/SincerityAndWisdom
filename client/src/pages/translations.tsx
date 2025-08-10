@@ -609,17 +609,9 @@ export default function TranslationsPage() {
               {/* Translation Editor */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <Languages size={20} className="mr-2" />
-                      {getLanguageName(selectedLanguage)} Translation
-                    </div>
-                    {viewMode === 'segments' && (
-                      <Button onClick={addNewSegment} size="sm" variant="outline">
-                        <Plus size={16} className="mr-1" />
-                        Add at End
-                      </Button>
-                    )}
+                  <CardTitle className="flex items-center">
+                    <Languages size={20} className="mr-2" />
+                    {getLanguageName(selectedLanguage)} Translation
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -630,74 +622,31 @@ export default function TranslationsPage() {
                           <div
                             key={index}
                             id={`translation-segment-${index}`}
-                            className={`flex space-x-3 p-3 rounded-lg transition-colors border-l-4 ${
+                            className={`border rounded-lg p-3 transition-all duration-200 ${
                               activeSegmentIndex === index
-                                ? 'bg-blue-50 border-l-blue-400 shadow-sm'
-                                : 'hover:bg-slate-50 border-transparent hover:border-blue-200'
+                                ? 'bg-blue-50 border-blue-200 shadow-md'
+                                : 'bg-muted/30 hover:bg-muted/50 hover:border-gray-300'
                             }`}
-                            onFocus={() => setActiveSegmentIndex(index)}
                             onClick={() => setActiveSegmentIndex(index)}
                           >
-                            <div className="flex flex-col space-y-2 w-20 flex-shrink-0">
-                              <div className="flex items-center space-x-1">
-                                <Clock size={12} className="text-muted-foreground" />
-                                <span className="text-xs text-muted-foreground">Time</span>
-                              </div>
-                              <input
-                                type="text"
-                                value={segment.time}
-                                onChange={(e) => {
-                                  const updatedSegments = [...translationSegments];
-                                  updatedSegments[index] = { ...updatedSegments[index], time: e.target.value };
-                                  setTranslationSegments(updatedSegments);
-                                }}
-                                className="text-xs h-8 text-center font-mono border-2 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 rounded-lg transition-all duration-200 hover:border-gray-300 dark:hover:border-gray-600"
-                                placeholder="0:00"
-                              />
-                              <button className="text-xs text-blue-600 hover:text-blue-800 transition-colors">
-                                Jump to
-                              </button>
+                            <div className="flex items-center mb-2">
+                              <Clock size={14} className="mr-2 text-muted-foreground" />
+                              <span className="text-sm font-mono text-muted-foreground">
+                                {segment.time}
+                              </span>
                             </div>
-                            <div className="flex-1">
-                              <div className="flex items-center justify-between mb-2">
-                                <span className="text-xs text-muted-foreground">Translation Text</span>
-                                <div className="flex items-center space-x-1">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => addSegmentAfter(index)}
-                                    className="h-6 px-2"
-                                  >
-                                    <Plus size={12} className="text-green-600" />
-                                  </Button>
-                                  {translationSegments.length > 1 && (
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => deleteSegment(index)}
-                                      className="h-6 px-2"
-                                    >
-                                      <Trash2 size={12} className="text-red-600" />
-                                    </Button>
-                                  )}
-                                </div>
-                              </div>
-                              <Textarea
-                                value={segment.text}
-                                onChange={(e) => handleSegmentTextChange(index, e.target.value)}
-                                onFocus={() => setActiveSegmentIndex(index)}
-                                placeholder={`Enter ${getLanguageName(selectedLanguage)} translation...`}
-                                className="text-sm min-h-[60px] resize-none border-2 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 rounded-lg transition-all duration-200 hover:border-gray-300 dark:hover:border-gray-600"
-                              />
-                            </div>
+                            <Textarea
+                              value={segment.text}
+                              onChange={(e) => handleSegmentTextChange(index, e.target.value)}
+                              onFocus={() => setActiveSegmentIndex(index)}
+                              placeholder={`Enter ${getLanguageName(selectedLanguage)} translation...`}
+                              className="text-sm leading-relaxed resize-none border-none bg-transparent focus:outline-none focus:ring-0 p-0 min-h-[40px]"
+                            />
                           </div>
                         ))
                       ) : (
                         <div className="text-center text-muted-foreground py-8">
-                          <Button onClick={addNewSegment} variant="outline">
-                            <Plus size={16} className="mr-2" />
-                            Add First Segment
-                          </Button>
+                          No translation segments available
                         </div>
                       )}
                     </div>
