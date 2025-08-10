@@ -640,7 +640,13 @@ export default function TranslationsPage() {
                               onChange={(e) => handleSegmentTextChange(index, e.target.value)}
                               onFocus={() => setActiveSegmentIndex(index)}
                               placeholder={`Enter ${getLanguageName(selectedLanguage)} translation...`}
-                              className="text-sm leading-relaxed resize-none border-none bg-transparent focus:outline-none focus:ring-0 p-0 min-h-[40px]"
+                              className="text-sm leading-relaxed resize-none border-none bg-transparent focus:outline-none focus:ring-0 p-0 min-h-[80px]"
+                              style={{ height: 'auto' }}
+                              onInput={(e) => {
+                                const target = e.target as HTMLTextAreaElement;
+                                target.style.height = 'auto';
+                                target.style.height = Math.max(80, target.scrollHeight) + 'px';
+                              }}
                             />
                           </div>
                         ))
