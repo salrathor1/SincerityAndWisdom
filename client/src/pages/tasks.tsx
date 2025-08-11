@@ -24,7 +24,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ClipboardList, Plus, ExternalLink, User, CheckCircle, Clock, Shield, BookOpen, Languages } from "lucide-react";
+import { ClipboardList, Plus, ExternalLink, User, CheckCircle, Clock, Shield, BookOpen, Languages, Edit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { apiRequest } from "@/lib/queryClient";
@@ -36,7 +36,9 @@ export default function TasksPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<"all" | "in-progress" | "complete">("all");
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<TaskWithUsers | null>(null);
 
   // Redirect to home if not authenticated
   useEffect(() => {
@@ -87,7 +89,7 @@ export default function TasksPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
-      setIsDialogOpen(false);
+      setIsCreateDialogOpen(false);
       toast({
         title: "Success",
         description: "Task created successfully",
@@ -135,6 +137,49 @@ export default function TasksPage() {
     },
   });
 
+  // Edit task mutation
+  const editTaskMutation = useMutation({
+    mutationFn: async (taskData: { id: number; description: string; assignedToUserId: string; taskLink?: string }) => {
+      try {
+        console.log("Editing task data:", taskData);
+        const { id, ...updateData } = taskData;
+        const result = await apiRequest("PUT", `/api/tasks/${id}`, updateData);
+        console.log("Edit API response:", result);
+        return result.json();
+      } catch (error) {
+        console.error("Edit API request failed:", error);
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+      setIsEditDialogOpen(false);
+      setEditingTask(null);
+      toast({
+        title: "Success",
+        description: "Task updated successfully",
+      });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update task",
+        variant: "destructive",
+      });
+    },
+  });
+
   const filteredTasks = (tasks as TaskWithUsers[]).filter((task: TaskWithUsers) => {
     if (filter === "all") return true;
     if (filter === "in-progress") return task.status === "In-Progress";
@@ -165,6 +210,28 @@ export default function TasksPage() {
 
   const handleStatusChange = (taskId: number, newStatus: string) => {
     updateTaskMutation.mutate({ id: taskId, status: newStatus });
+  };
+
+  const handleEditTask = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!editingTask) return;
+    
+    const formData = new FormData(event.currentTarget);
+    
+    const taskData = {
+      id: editingTask.id,
+      description: formData.get("description") as string,
+      assignedToUserId: formData.get("assignedToUserId") as string,
+      taskLink: formData.get("taskLink") as string || undefined,
+    };
+    
+    console.log("Editing task with data:", taskData);
+    editTaskMutation.mutate(taskData);
+  };
+
+  const openEditDialog = (task: TaskWithUsers) => {
+    setEditingTask(task);
+    setIsEditDialogOpen(true);
   };
 
   if (!user) {
@@ -208,7 +275,7 @@ export default function TasksPage() {
             </div>
 
             {user.role === "admin" && (
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                 <DialogTrigger asChild>
                   <Button className="bg-green-600 hover:bg-green-700">
                     <Plus className="h-4 w-4 mr-2" />
@@ -277,7 +344,7 @@ export default function TasksPage() {
                     </div>
 
                     <div className="flex justify-end gap-2">
-                      <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                      <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
                         Cancel
                       </Button>
                       <Button type="submit" disabled={createTaskMutation.isPending}>
@@ -285,6 +352,87 @@ export default function TasksPage() {
                       </Button>
                     </div>
                   </form>
+                </DialogContent>
+              </Dialog>
+            )}
+
+            {/* Edit Task Dialog */}
+            {user.role === "admin" && (
+              <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                <DialogContent className="sm:max-w-[500px]">
+                  <DialogHeader>
+                    <DialogTitle>Edit Task</DialogTitle>
+                    <DialogDescription>
+                      Update task details and assignment
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  {editingTask && (
+                    <form onSubmit={handleEditTask} className="space-y-4">
+                      <div>
+                        <Label htmlFor="edit-description">Task Description</Label>
+                        <Textarea
+                          id="edit-description"
+                          name="description"
+                          defaultValue={editingTask.description}
+                          placeholder="Enter task description..."
+                          required
+                          className="mt-1"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="edit-assignedToUserId">Assign to User</Label>
+                        <Select name="assignedToUserId" defaultValue={editingTask.assignedToUserId} required>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a user" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {assignableUsers.map((u: UserType) => (
+                              <SelectItem key={u.id} value={u.id}>
+                                <div className="flex items-center gap-2">
+                                  {u.role === "admin" && <Shield className="h-4 w-4 text-red-600" />}
+                                  {u.role === "arabic_transcripts_editor" && <BookOpen className="h-4 w-4 text-blue-600" />}
+                                  {u.role === "translations_editor" && <Languages className="h-4 w-4 text-green-600" />}
+                                  <span>
+                                    {u.firstName && u.lastName 
+                                      ? `${u.firstName} ${u.lastName}` 
+                                      : u.email}
+                                  </span>
+                                  <span className="text-xs text-gray-500 ml-auto">
+                                    {u.role === "admin" && "Admin"}
+                                    {u.role === "arabic_transcripts_editor" && "Arabic Editor"}
+                                    {u.role === "translations_editor" && "Translation Editor"}
+                                  </span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="edit-taskLink">Task Link (Optional)</Label>
+                        <Input
+                          id="edit-taskLink"
+                          name="taskLink"
+                          type="text"
+                          defaultValue={editingTask.taskLink || ""}
+                          placeholder="https://example.com or any URL"
+                          className="mt-1"
+                        />
+                      </div>
+
+                      <div className="flex justify-end gap-2">
+                        <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                          Cancel
+                        </Button>
+                        <Button type="submit" disabled={editTaskMutation.isPending}>
+                          {editTaskMutation.isPending ? "Updating..." : "Update Task"}
+                        </Button>
+                      </div>
+                    </form>
+                  )}
                 </DialogContent>
               </Dialog>
             )}
@@ -408,6 +556,18 @@ export default function TasksPage() {
                                   >
                                     <Clock className="h-4 w-4 mr-1" />
                                     Reopen
+                                  </Button>
+                                )}
+
+                                {/* Edit button for admin users */}
+                                {user.role === "admin" && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => openEditDialog(task)}
+                                  >
+                                    <Edit className="h-4 w-4 mr-1" />
+                                    Edit
                                   </Button>
                                 )}
                               </div>
