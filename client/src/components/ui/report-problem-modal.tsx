@@ -44,20 +44,39 @@ export function ReportProblemModal({ isOpen, onOpenChange, currentVideo, current
   // Set default values when modal opens
   useEffect(() => {
     if (isOpen) {
+      // Common logic for language detection
+      const detectLanguage = () => {
+        const currentPath = window.location.pathname;
+        const urlParams = new URLSearchParams(window.location.search);
+        const langParam = urlParams.get('language') || urlParams.get('lang');
+        
+        // Language code to display name mapping
+        const languageMap: { [key: string]: string } = {
+          'ar': 'Arabic',
+          'en': 'English',
+          'ur': 'Urdu',
+          'fr': 'French',
+          'es': 'Spanish',
+          'tr': 'Turkish',
+          'ms': 'Malay'
+        };
+        
+        if (langParam && languageMap[langParam]) {
+          return languageMap[langParam];
+        } else if (currentPath.includes('translations')) {
+          return "English"; // Default for translations page
+        } else if (currentPath.includes('arabic-transcripts')) {
+          return "Arabic";
+        } else {
+          return "Arabic"; // Global default
+        }
+      };
+
       if (currentVideo && currentPlaylist) {
         setSelectedPlaylistId(currentPlaylist.id.toString());
         setSelectedVideoId(currentVideo.id.toString());
-        
-        // Auto-detect translation language based on current path or context
-        const currentPath = window.location.pathname;
-        if (currentPath.includes('translations')) {
-          setTranslationLanguage("English");
-        } else if (currentPath.includes('arabic-transcripts')) {
-          setTranslationLanguage("Arabic");
-        } else {
-          setTranslationLanguage("Arabic"); // Default
-        }
-      } else if (isOpen) {
+        setTranslationLanguage(detectLanguage());
+      } else {
         // If modal opens without current context, try to get from current URL params
         const urlParams = new URLSearchParams(window.location.search);
         const playlistIdFromUrl = urlParams.get('playlistId');
@@ -70,15 +89,7 @@ export function ReportProblemModal({ isOpen, onOpenChange, currentVideo, current
           setSelectedVideoId(videoIdFromUrl);
         }
         
-        // Detect language from current page
-        const currentPath = window.location.pathname;
-        if (currentPath.includes('translations')) {
-          setTranslationLanguage("English");
-        } else if (currentPath.includes('arabic-transcripts')) {
-          setTranslationLanguage("Arabic");
-        } else {
-          setTranslationLanguage("Arabic");
-        }
+        setTranslationLanguage(detectLanguage());
       }
     }
   }, [isOpen, currentVideo, currentPlaylist]);
