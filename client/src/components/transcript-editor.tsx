@@ -974,241 +974,36 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
             </div>
           </div>
 
-          {/* Tabbed Editor */}
+          {/* Vocabulary Editor */}
           <div className="w-1/2 p-6 flex flex-col">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
-              <TabsList className="grid w-full grid-cols-2 mb-4">
-                <TabsTrigger value="transcript">Transcript</TabsTrigger>
-                <TabsTrigger value="vocabulary">Vocabulary</TabsTrigger>
-              </TabsList>
-              
-              {/* Transcript Tab */}
-              <TabsContent value="transcript" className="flex-1 flex flex-col mt-0">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center space-x-4">
-                    <h4 className="font-medium text-foreground">Transcript Editor</h4>
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        id="text-view"
-                        checked={isOpenTextView}
-                        onCheckedChange={setIsOpenTextView}
-                      />
-                      <label htmlFor="text-view" className="text-sm text-muted-foreground cursor-pointer">
-                        <FileText size={14} className="inline mr-1" />
-                        SRT Format
-                      </label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <label className="text-sm text-muted-foreground">Text Size:</label>
-                      <div className="flex items-center space-x-1">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setTextSize(Math.max(10, textSize - 2))}
-                          className="h-6 w-6 p-0"
-                          disabled={textSize <= 10}
-                        >
-                          -
-                        </Button>
-                        <span className="text-xs text-muted-foreground w-8 text-center">{textSize}px</span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setTextSize(Math.min(24, textSize + 2))}
-                          className="h-6 w-6 p-0"
-                          disabled={textSize >= 24}
-                        >
-                          +
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                {canEdit && (
-                  <>
-                    <Button variant="outline" size="sm" onClick={() => addNewSegment()}>
-                      <Plus size={16} className="mr-1" />
-                      Add Segment
-                    </Button>
-                    <Button 
-                      size="sm" 
-                      onClick={handleSave}
-                      disabled={updateTranscriptMutation.isPending}
-                    >
-                      <Save size={16} className="mr-1" />
-                      {updateTranscriptMutation.isPending ? "Saving..." : "Save"}
-                    </Button>
-                  </>
-                )}
-                
-                {!canEdit && (
-                  <div className="text-sm text-muted-foreground px-3 py-2 bg-gray-100 rounded-lg">
-                    View Only - Contact admin for editing permissions
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto min-h-0">
-              {isOpenTextView ? (
-                <div className="h-full">
-                  <div className="mb-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <p className="text-sm text-blue-800 flex items-start space-x-2">
-                      <FileText size={16} className="mt-0.5 flex-shrink-0" />
-                      <span>
-                        <strong>SRT Format View:</strong> Edit your transcript in standard SubRip (.srt) format. 
-                        Each segment shows: sequence number, timestamp range, and text. Modify timestamps and text directly.
-                      </span>
-                    </p>
-                  </div>
-                  <Textarea
-                    value={openTextContent}
-                    onChange={canEdit ? (e) => handleOpenTextChange(e.target.value) : undefined}
-                    placeholder="1&#10;00:00:01,000 --> 00:00:04,000&#10;Welcome to this video transcript...&#10;&#10;2&#10;00:00:05,000 --> 00:00:08,000&#10;Today we will be discussing the main topic...&#10;&#10;3&#10;00:00:09,000 --> 00:00:12,000&#10;Each segment shows timing and text content..."
-                    className={`resize-none h-full min-h-[400px] border-2 transition-all duration-200 rounded-lg ${
-                      selectedLanguage === 'ar' ? 'text-right direction-rtl' : 'text-left direction-ltr'
-                    } ${!canEdit 
-                      ? 'bg-gray-50 dark:bg-gray-800 cursor-not-allowed border-gray-200 dark:border-gray-700' 
-                      : 'border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 hover:border-gray-300 dark:hover:border-gray-600'
-                    }`}
-                    style={{ fontSize: `${textSize}px`, lineHeight: '1.6' }}
-                    readOnly={!canEdit}
-                    dir={selectedLanguage === 'ar' ? 'rtl' : 'ltr'}
-                  />
-                </div>
-              ) : (
-                <div className="space-y-3 overflow-y-auto pr-2" style={{ maxHeight: 'calc(100vh - 400px)' }}>
-                  {segments.length > 0 ? (
-                    segments.map((segment, index) => (
-                      <div
-                        key={index}
-                        className={`flex space-x-3 p-3 hover:bg-slate-50 rounded-lg transition-colors ${
-                          index === activeSegmentIndex ? "bg-blue-50 border-l-4 border-primary" : ""
-                        }`}
-                      >
-                        <div className="flex flex-col space-y-2 w-20 flex-shrink-0">
-                          <div className="flex items-center space-x-1">
-                            <Clock size={12} className="text-muted-foreground" />
-                            <span className="text-xs text-muted-foreground">Time</span>
-                          </div>
-                          <Input
-                            value={timeInputs[index] || segment.time}
-                            onChange={canEdit ? (e) => handleTimeInputChange(index, e.target.value) : undefined}
-                            onBlur={canEdit ? (e) => handleTimeEdit(index, e.target.value) : undefined}
-                            onFocus={canEdit ? (e) => e.target.select() : undefined}
-                            className={`text-xs h-8 text-center font-mono border-2 rounded-lg transition-all duration-200 ${
-                              !canEdit 
-                                ? 'bg-gray-50 dark:bg-gray-800 cursor-not-allowed border-gray-200 dark:border-gray-700' 
-                                : 'border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 hover:border-gray-300 dark:hover:border-gray-600'
-                            }`}
-                            placeholder="0:00"
-                            readOnly={!canEdit}
-                          />
-                          <button
-                            onClick={() => handleSegmentClick(index, segment.time)}
-                            className="text-xs text-blue-600 hover:text-blue-800 transition-colors"
-                          >
-                            Jump to
-                          </button>
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs text-muted-foreground">Transcript Text</span>
-                            {canEdit && (
-                              <div className="flex items-center space-x-1">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => addNewSegment(index)}
-                                  className="h-6 px-2"
-                                >
-                                  <Plus size={12} className="text-green-600" />
-                                </Button>
-                                {segments.length > 1 && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => deleteSegment(index)}
-                                    className="h-6 px-2"
-                                  >
-                                    <Trash2 size={12} className="text-red-600" />
-                                  </Button>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                          <Textarea
-                            value={segment.text}
-                            onChange={canEdit ? (e) => handleTextEdit(index, e.target.value) : undefined}
-                            onBlur={() => updateOpenTextFromSegments(segments)}
-                            className={`resize-none border-2 rounded-lg transition-all duration-200 ${
-                              selectedLanguage === 'ar' ? 'text-right direction-rtl' : 'text-left direction-ltr'
-                            } ${!canEdit 
-                              ? 'bg-gray-50 dark:bg-gray-800 cursor-not-allowed border-gray-200 dark:border-gray-700' 
-                              : 'border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 hover:border-gray-300 dark:hover:border-gray-600'
-                            }`}
-                            style={{ 
-                              fontSize: `${textSize}px`,
-                              lineHeight: '1.6',
-                              minHeight: `${Math.max(textSize * 2.5, 40)}px`,
-                              height: 'auto'
-                            }}
-                            placeholder="Enter transcript text here..."
-                            readOnly={!canEdit}
-                            dir={selectedLanguage === 'ar' ? 'rtl' : 'ltr'}
-                            rows={Math.max(2, Math.ceil(segment.text.length / (40 - textSize / 2)) + 1)}
-                          />
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-8">
-                      <p className="text-muted-foreground">No transcript segments yet.</p>
-                      {canEdit && (
-                        <Button className="mt-4" onClick={() => addNewSegment()}>
-                          Add First Segment
-                        </Button>
-                      )}
-                    </div>
-                  )}
-                </div>
+            <div className="mb-4">
+              <h4 className="font-medium text-foreground mb-3">Vocabulary Notes</h4>
+              {canEdit && (
+                <Button 
+                  onClick={handleSaveVocabulary}
+                  disabled={updateVocabularyMutation.isPending}
+                  size="sm"
+                  className="flex items-center space-x-2"
+                >
+                  <Save size={16} />
+                  <span>{updateVocabularyMutation.isPending ? "Saving..." : "Save"}</span>
+                </Button>
               )}
             </div>
-            </TabsContent>
             
-            {/* Vocabulary Tab */}
-            <TabsContent value="vocabulary" className="flex-1 flex flex-col mt-0">
-              <div className="mb-4">
-                <h4 className="font-medium text-foreground mb-3">Vocabulary Notes</h4>
-                {canEdit && (
-                  <Button 
-                    onClick={handleSaveVocabulary}
-                    disabled={updateVocabularyMutation.isPending}
-                    size="sm"
-                    className="flex items-center space-x-2"
-                  >
-                    <Save size={16} />
-                    <span>{updateVocabularyMutation.isPending ? "Saving..." : "Save"}</span>
-                  </Button>
-                )}
-              </div>
-              
-              <div className="flex-1">
-                <Textarea
-                  value={vocabulary}
-                  onChange={canEdit ? (e) => setVocabulary(e.target.value) : undefined}
-                  className={`w-full h-full min-h-[400px] resize-none border-2 rounded-lg transition-all duration-200 ${
-                    !canEdit 
-                      ? 'bg-gray-50 dark:bg-gray-800 cursor-not-allowed border-gray-200 dark:border-gray-700' 
-                      : 'border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 hover:border-gray-300 dark:hover:border-gray-600'
-                  }`}
-                  placeholder={canEdit ? "Add vocabulary notes, word definitions, and explanations here..." : "No vocabulary notes available"}
-                  readOnly={!canEdit}
-                />
-              </div>
-            </TabsContent>
-            
-            </Tabs>
+            <div className="flex-1">
+              <Textarea
+                value={vocabulary}
+                onChange={canEdit ? (e) => setVocabulary(e.target.value) : undefined}
+                className={`w-full h-full min-h-[400px] resize-none border-2 rounded-lg transition-all duration-200 ${
+                  !canEdit 
+                    ? 'bg-gray-50 dark:bg-gray-800 cursor-not-allowed border-gray-200 dark:border-gray-700' 
+                    : 'border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 hover:border-gray-300 dark:hover:border-gray-600'
+                }`}
+                placeholder={canEdit ? "Add vocabulary notes, word definitions, and explanations here..." : "No vocabulary notes available"}
+                readOnly={!canEdit}
+              />
+            </div>
           </div>
         </div>
       </DialogContent>
