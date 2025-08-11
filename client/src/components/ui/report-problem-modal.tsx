@@ -16,9 +16,10 @@ interface ReportProblemModalProps {
   currentVideo?: Video;
   currentPlaylist?: Playlist;
   initialVideoId?: string; // Add support for selected video from dropdowns
+  initialPlaylistId?: string; // Add support for selected playlist from dropdowns
 }
 
-export function ReportProblemModal({ isOpen, onOpenChange, currentVideo, currentPlaylist, initialVideoId }: ReportProblemModalProps) {
+export function ReportProblemModal({ isOpen, onOpenChange, currentVideo, currentPlaylist, initialVideoId, initialPlaylistId }: ReportProblemModalProps) {
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string>("");
   const [selectedVideoId, setSelectedVideoId] = useState<string>("");
   const [translationLanguage, setTranslationLanguage] = useState<string>("Arabic");
@@ -73,27 +74,38 @@ export function ReportProblemModal({ isOpen, onOpenChange, currentVideo, current
         }
       };
 
+      // Auto-detect from page context first
+      const urlParams = new URLSearchParams(window.location.search);
+      const playlistIdFromUrl = urlParams.get('playlistId') || urlParams.get('playlist');
+      const videoIdFromUrl = urlParams.get('videoId') || urlParams.get('video');
+
+      // Priority: currentVideo > URL params > initialVideoId
       if (currentVideo && currentPlaylist) {
         setSelectedPlaylistId(currentPlaylist.id.toString());
         setSelectedVideoId(currentVideo.id.toString());
-        setTranslationLanguage(detectLanguage());
-      } else {
-        // If modal opens without current context, try to get from URL params or initial props
-        const urlParams = new URLSearchParams(window.location.search);
-        const playlistIdFromUrl = urlParams.get('playlistId');
-        const videoIdFromUrl = urlParams.get('videoId') || initialVideoId;
-        
+      } else if (playlistIdFromUrl || videoIdFromUrl) {
         if (playlistIdFromUrl) {
           setSelectedPlaylistId(playlistIdFromUrl);
         }
         if (videoIdFromUrl) {
           setSelectedVideoId(videoIdFromUrl);
+        } else if (initialVideoId) {
+          setSelectedVideoId(initialVideoId);
         }
-        
-        setTranslationLanguage(detectLanguage());
+      } else if (initialVideoId) {
+        setSelectedVideoId(initialVideoId);
+        // Use initialPlaylistId if provided, otherwise try to find the playlist
+        if (initialPlaylistId) {
+          setSelectedPlaylistId(initialPlaylistId);
+        } else if (playlists.length > 0) {
+          // This is a simplified approach - in a real app you might want to query for the video's playlist
+          setSelectedPlaylistId(playlists[0].id.toString());
+        }
       }
+      
+      setTranslationLanguage(detectLanguage());
     }
-  }, [isOpen, currentVideo, currentPlaylist, initialVideoId]);
+  }, [isOpen, currentVideo, currentPlaylist, initialVideoId, initialPlaylistId, playlists]);
 
   const reportMutation = useMutation({
     mutationFn: async (data: {

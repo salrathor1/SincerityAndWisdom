@@ -1151,6 +1151,7 @@ export default function Landing() {
         currentVideo={selectedVideo}
         currentPlaylist={playlists?.find((p: any) => p.id === selectedPlaylist)}
         initialVideoId={selectedVideo?.id?.toString()}
+        initialPlaylistId={selectedPlaylist?.toString()}
       />
     </div>
   );
