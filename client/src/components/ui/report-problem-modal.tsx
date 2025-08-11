@@ -20,6 +20,7 @@ interface ReportProblemModalProps {
 export function ReportProblemModal({ isOpen, onOpenChange, currentVideo, currentPlaylist }: ReportProblemModalProps) {
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string>("");
   const [selectedVideoId, setSelectedVideoId] = useState<string>("");
+  const [translationLanguage, setTranslationLanguage] = useState<string>("Arabic");
   const [segmentIndex, setSegmentIndex] = useState<string>("");
   const [description, setDescription] = useState("");
   const [contactName, setContactName] = useState<string>("");
@@ -46,9 +47,38 @@ export function ReportProblemModal({ isOpen, onOpenChange, currentVideo, current
       if (currentVideo && currentPlaylist) {
         setSelectedPlaylistId(currentPlaylist.id.toString());
         setSelectedVideoId(currentVideo.id.toString());
-      } else {
-        // Clear form when opening without context
-        resetForm();
+        
+        // Auto-detect translation language based on current path or context
+        const currentPath = window.location.pathname;
+        if (currentPath.includes('translations')) {
+          setTranslationLanguage("English");
+        } else if (currentPath.includes('arabic-transcripts')) {
+          setTranslationLanguage("Arabic");
+        } else {
+          setTranslationLanguage("Arabic"); // Default
+        }
+      } else if (isOpen) {
+        // If modal opens without current context, try to get from current URL params
+        const urlParams = new URLSearchParams(window.location.search);
+        const playlistIdFromUrl = urlParams.get('playlistId');
+        const videoIdFromUrl = urlParams.get('videoId');
+        
+        if (playlistIdFromUrl) {
+          setSelectedPlaylistId(playlistIdFromUrl);
+        }
+        if (videoIdFromUrl) {
+          setSelectedVideoId(videoIdFromUrl);
+        }
+        
+        // Detect language from current page
+        const currentPath = window.location.pathname;
+        if (currentPath.includes('translations')) {
+          setTranslationLanguage("English");
+        } else if (currentPath.includes('arabic-transcripts')) {
+          setTranslationLanguage("Arabic");
+        } else {
+          setTranslationLanguage("Arabic");
+        }
       }
     }
   }, [isOpen, currentVideo, currentPlaylist]);
@@ -86,6 +116,7 @@ export function ReportProblemModal({ isOpen, onOpenChange, currentVideo, current
   const resetForm = () => {
     setSelectedPlaylistId("");
     setSelectedVideoId("");
+    setTranslationLanguage("Arabic");
     setSegmentIndex("");
     setDescription("");
     setContactName("");
@@ -109,7 +140,7 @@ export function ReportProblemModal({ isOpen, onOpenChange, currentVideo, current
       playlistId: selectedPlaylistId ? parseInt(selectedPlaylistId) : undefined,
       videoId: selectedVideoId ? parseInt(selectedVideoId) : undefined,
       segmentIndex: segmentIndex ? parseInt(segmentIndex) : undefined,
-      description: description.trim(),
+      description: `[${translationLanguage}] ${description.trim()}`, // Prefix with language
       contactName: contactName.trim() || undefined,
       contactEmail: contactEmail.trim() || undefined,
       contactMobile: contactMobile.trim() || undefined,
@@ -160,6 +191,24 @@ export function ReportProblemModal({ isOpen, onOpenChange, currentVideo, current
                     {video.title}
                   </SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="translationLanguage">Translation Language</Label>
+            <Select value={translationLanguage} onValueChange={setTranslationLanguage}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Arabic">Arabic</SelectItem>
+                <SelectItem value="English">English</SelectItem>
+                <SelectItem value="Urdu">Urdu</SelectItem>
+                <SelectItem value="French">French</SelectItem>
+                <SelectItem value="Spanish">Spanish</SelectItem>
+                <SelectItem value="Turkish">Turkish</SelectItem>
+                <SelectItem value="Malay">Malay</SelectItem>
               </SelectContent>
             </Select>
           </div>
