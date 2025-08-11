@@ -746,11 +746,7 @@ export default function Landing() {
                             </div>
                           </div>
                         </div>
-                        <div className="flex-1 overflow-auto">
-                          <p className="text-xs text-slate-600 leading-relaxed">
-                            {selectedVideo.description}
-                          </p>
-                        </div>
+
                       </div>
                     </CardContent>
                   </Card>
