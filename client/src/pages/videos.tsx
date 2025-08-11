@@ -206,15 +206,7 @@ export default function Videos() {
                         </a>
                       </Button>
                       
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        asChild
-                      >
-                        <a href={video.youtubeUrl} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink size={14} />
-                        </a>
-                      </Button>
+
                     </div>
                   </CardContent>
                 </Card>
