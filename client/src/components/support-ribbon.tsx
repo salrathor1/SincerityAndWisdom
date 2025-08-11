@@ -8,19 +8,16 @@ export function SupportRibbon() {
   const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
-    // Check if user has already dismissed the ribbon in this session
-    const sessionDismissed = sessionStorage.getItem('supportRibbonDismissed');
-    if (!sessionDismissed) {
-      // Show the ribbon after a short delay
-      setTimeout(() => {
-        setIsVisible(true);
-      }, 2000);
-    }
+    // Show the ribbon after a short delay on every page load
+    const timer = setTimeout(() => {
+      setIsVisible(true);
+    }, 2000);
+
+    return () => clearTimeout(timer);
   }, []);
 
   const handleDismiss = () => {
     setIsVisible(false);
-    sessionStorage.setItem('supportRibbonDismissed', 'true');
   };
 
   const handleSupportClick = () => {
