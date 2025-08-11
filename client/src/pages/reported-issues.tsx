@@ -138,6 +138,16 @@ export default function ReportedIssues() {
                         <p className="text-sm font-medium line-clamp-2">
                           {issue.description}
                         </p>
+
+                        {/* Contact Information in List */}
+                        {(issue.contactName || issue.contactEmail || issue.contactMobile) && (
+                          <div className="text-xs text-blue-600 bg-blue-50 dark:bg-blue-950 dark:text-blue-400 px-2 py-1 rounded">
+                            <span className="font-medium">Contact:</span>
+                            {issue.contactName && ` ${issue.contactName}`}
+                            {issue.contactEmail && ` • ${issue.contactEmail}`}
+                            {issue.contactMobile && ` • ${issue.contactMobile}`}
+                          </div>
+                        )}
                         
                         <div className="flex items-center gap-4 text-xs text-muted-foreground">
                           {issue.reportedByUser && (
