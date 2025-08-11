@@ -569,7 +569,7 @@ export default function Landing() {
               </svg>
             </div>
             <div className="min-w-0 flex-1">
-              <h1 className="text-xl sm:text-2xl font-bold text-slate-900">The Sunnah and Wisdom</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Sincerity and Wisdom</h1>
               <p className="text-xs sm:text-sm text-slate-600 truncate">Watch videos with synchronized transcripts</p>
             </div>
           </div>

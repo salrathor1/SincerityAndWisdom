@@ -1,10 +1,15 @@
-# The Sunnah and Wisdom - Islamic Video Transcript Manager
+# Sincerity and Wisdom - Islamic Video Transcript Manager
 
 ## Overview
 
-The Sunnah and Wisdom is a full-stack web application for managing Islamic educational video transcripts. It allows users to import YouTube videos, create and edit transcripts in multiple languages (Arabic and English), organize content into playlists, and manage their Islamic educational video collections with a modern, intuitive interface.
+Sincerity and Wisdom is a full-stack web application for managing Islamic educational video transcripts. It allows users to import YouTube videos, create and edit transcripts in multiple languages (Arabic and English), organize content into playlists, and manage their Islamic educational video collections with a modern, intuitive interface.
 
 ## Recent Changes
+
+### January 26, 2025 - Application Rebranding
+- **Name Change**: Updated application name from "The Sunnah and Wisdom" to "Sincerity and Wisdom"
+- **Comprehensive Update**: Changed all references in sidebar, landing page, documentation, and HTML title
+- **Consistent Branding**: All user-facing text now reflects the new "Sincerity and Wisdom" brand name
 
 ### January 26, 2025 - Enhanced Custom URL Support for Both Translation Pages
 - **Translations Page URL Support**: Added support for `videoId` and `language` URL parameters to auto-populate video and language selections

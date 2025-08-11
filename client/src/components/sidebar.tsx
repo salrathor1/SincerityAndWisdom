@@ -77,7 +77,7 @@ export function Sidebar() {
                   <path d="m11 17 4 4V15z" fill="#059669"/>
                 </svg>
               </div>
-              <h1 className="text-xl font-semibold text-foreground">The Sunnah and Wisdom</h1>
+              <h1 className="text-xl font-semibold text-foreground">Sincerity and Wisdom</h1>
             </div>
             
             {/* Collapse Button */}
