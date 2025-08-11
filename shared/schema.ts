@@ -75,6 +75,18 @@ export const transcripts = pgTable("transcripts", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Tasks table for task management
+export const tasks = pgTable("tasks", {
+  id: serial("id").primaryKey(),
+  description: varchar("description", { length: 1000 }).notNull(),
+  status: varchar("status", { length: 20 }).notNull().default("In-Progress"), // "In-Progress" or "Complete"
+  assignedToUserId: varchar("assigned_to_user_id").notNull().references(() => users.id),
+  taskLink: varchar("task_link", { length: 500 }), // Optional link to the task
+  createdByUserId: varchar("created_by_user_id").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Relations
 export const playlistsRelations = relations(playlists, ({ many }) => ({
   videos: many(videos),
@@ -93,6 +105,24 @@ export const transcriptsRelations = relations(transcripts, ({ one }) => ({
     fields: [transcripts.videoId],
     references: [videos.id],
   }),
+}));
+
+export const tasksRelations = relations(tasks, ({ one }) => ({
+  assignedToUser: one(users, {
+    fields: [tasks.assignedToUserId],
+    references: [users.id],
+    relationName: "assignedTasks",
+  }),
+  createdByUser: one(users, {
+    fields: [tasks.createdByUserId],
+    references: [users.id],
+    relationName: "createdTasks",
+  }),
+}));
+
+export const usersRelations = relations(users, ({ many }) => ({
+  assignedTasks: many(tasks, { relationName: "assignedTasks" }),
+  createdTasks: many(tasks, { relationName: "createdTasks" }),
 }));
 
 // Insert schemas
@@ -114,15 +144,28 @@ export const insertTranscriptSchema = createInsertSchema(transcripts).omit({
   updatedAt: true,
 });
 
+export const insertTaskSchema = createInsertSchema(tasks).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
+
+
+
+
+
 export type InsertPlaylist = z.infer<typeof insertPlaylistSchema>;
 export type Playlist = typeof playlists.$inferSelect;
 export type InsertVideo = z.infer<typeof insertVideoSchema>;
 export type Video = typeof videos.$inferSelect;
 export type InsertTranscript = z.infer<typeof insertTranscriptSchema>;
 export type Transcript = typeof transcripts.$inferSelect;
+export type InsertTask = z.infer<typeof insertTaskSchema>;
+export type Task = typeof tasks.$inferSelect;
 
 // Extended types for API responses
 export type VideoWithRelations = Video & {
@@ -132,4 +175,10 @@ export type VideoWithRelations = Video & {
 
 export type PlaylistWithVideos = Playlist & {
   videos?: Video[];
+};
+
+// Extended types for tasks with user information
+export type TaskWithUsers = Task & {
+  assignedToUser?: User;
+  createdByUser?: User;
 };

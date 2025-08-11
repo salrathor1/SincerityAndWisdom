@@ -487,6 +487,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Tasks routes
+  app.get('/api/tasks', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.query.userId as string;
+      const status = req.query.status as string;
+      const currentUserId = req.user.claims.sub;
+      const currentUser = await storage.getUser(currentUserId);
+      
+      // Admins can see all tasks, others only see their assigned tasks
+      const filteredUserId = currentUser?.role === 'admin' ? userId : currentUserId;
+      
+      const tasks = await storage.getTasks(filteredUserId, status);
+      res.json(tasks);
+    } catch (error) {
+      console.error("Error fetching tasks:", error);
+      res.status(500).json({ message: "Failed to fetch tasks" });
+    }
+  });
+
+  app.post('/api/tasks', isAuthenticated, async (req: any, res) => {
+    try {
+      const currentUserId = req.user.claims.sub;
+      const currentUser = await storage.getUser(currentUserId);
+      
+      // Only admins can create tasks
+      if (currentUser?.role !== 'admin') {
+        return res.status(403).json({ message: "Only admins can create tasks" });
+      }
+
+      const task = await storage.createTask({
+        ...req.body,
+        createdByUserId: currentUserId,
+      });
+      res.json(task);
+    } catch (error) {
+      console.error("Error creating task:", error);
+      res.status(500).json({ message: "Failed to create task" });
+    }
+  });
+
+  app.put('/api/tasks/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const currentUserId = req.user.claims.sub;
+      const currentUser = await storage.getUser(currentUserId);
+      
+      const existingTask = await storage.getTask(id);
+      if (!existingTask) {
+        return res.status(404).json({ message: "Task not found" });
+      }
+
+      // Admins can update any task, users can only update status of their own tasks
+      if (currentUser?.role !== 'admin' && existingTask.assignedToUserId !== currentUserId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      // If user is not admin, they can only update status
+      const updateData = currentUser?.role === 'admin' ? req.body : { status: req.body.status };
+
+      const task = await storage.updateTask(id, updateData);
+      res.json(task);
+    } catch (error) {
+      console.error("Error updating task:", error);
+      res.status(500).json({ message: "Failed to update task" });
+    }
+  });
+
+  app.delete('/api/tasks/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const currentUserId = req.user.claims.sub;
+      const currentUser = await storage.getUser(currentUserId);
+      
+      // Only admins can delete tasks
+      if (currentUser?.role !== 'admin') {
+        return res.status(403).json({ message: "Only admins can delete tasks" });
+      }
+
+      await storage.deleteTask(id);
+      res.json({ message: "Task deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting task:", error);
+      res.status(500).json({ message: "Failed to delete task" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

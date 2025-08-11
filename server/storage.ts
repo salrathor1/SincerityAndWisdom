@@ -3,6 +3,7 @@ import {
   playlists,
   videos,
   transcripts,
+  tasks,
   type User,
   type UpsertUser,
   type Playlist,
@@ -13,6 +14,9 @@ import {
   type Transcript,
   type InsertTranscript,
   type PlaylistWithVideos,
+  type Task,
+  type InsertTask,
+  type TaskWithUsers,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql, asc } from "drizzle-orm";
@@ -48,6 +52,13 @@ export interface IStorage {
   getTranscript(id: number): Promise<Transcript | undefined>;
   updateTranscript(id: number, transcript: Partial<InsertTranscript>): Promise<Transcript>;
   deleteTranscript(id: number): Promise<void>;
+  
+  // Task operations
+  createTask(task: InsertTask): Promise<Task>;
+  getTasks(userId?: string, status?: string): Promise<TaskWithUsers[]>;
+  getTask(id: number): Promise<TaskWithUsers | undefined>;
+  updateTask(id: number, task: Partial<InsertTask>): Promise<Task>;
+  deleteTask(id: number): Promise<void>;
   
   // Dashboard stats
   getDashboardStats(): Promise<{
@@ -279,6 +290,71 @@ export class DatabaseStorage implements IStorage {
 
   async deleteTranscript(id: number): Promise<void> {
     await db.delete(transcripts).where(eq(transcripts.id, id));
+  }
+
+  // Task operations
+  async createTask(taskData: InsertTask): Promise<Task> {
+    const [task] = await db.insert(tasks).values(taskData).returning();
+    return task;
+  }
+
+  async getTasks(userId?: string, status?: string): Promise<TaskWithUsers[]> {
+    // First get all tasks matching the filters
+    let baseQuery = db.select().from(tasks);
+    
+    if (userId) {
+      baseQuery = baseQuery.where(eq(tasks.assignedToUserId, userId));
+    }
+    
+    if (status) {
+      baseQuery = baseQuery.where(eq(tasks.status, status));
+    }
+    
+    const taskResults = await baseQuery.orderBy(desc(tasks.createdAt));
+    
+    // Then fetch user details for each task
+    const tasksWithUsers: TaskWithUsers[] = [];
+    
+    for (const task of taskResults) {
+      const assignedToUser = await this.getUser(task.assignedToUserId);
+      const createdByUser = await this.getUser(task.createdByUserId);
+      
+      tasksWithUsers.push({
+        ...task,
+        assignedToUser,
+        createdByUser,
+      });
+    }
+    
+    return tasksWithUsers;
+  }
+
+  async getTask(id: number): Promise<TaskWithUsers | undefined> {
+    const [task] = await db.select().from(tasks).where(eq(tasks.id, id));
+    
+    if (!task) return undefined;
+    
+    const assignedToUser = await this.getUser(task.assignedToUserId);
+    const createdByUser = await this.getUser(task.createdByUserId);
+    
+    return {
+      ...task,
+      assignedToUser,
+      createdByUser,
+    };
+  }
+
+  async updateTask(id: number, taskData: Partial<InsertTask>): Promise<Task> {
+    const [task] = await db
+      .update(tasks)
+      .set({ ...taskData, updatedAt: new Date() })
+      .where(eq(tasks.id, id))
+      .returning();
+    return task;
+  }
+
+  async deleteTask(id: number): Promise<void> {
+    await db.delete(tasks).where(eq(tasks.id, id));
   }
 
   // Dashboard stats

@@ -9,7 +9,7 @@ import {
   FileText, 
   Languages,
   BookOpen,
-
+  ClipboardList,
   LogOut,
   User,
   Shield,
@@ -25,6 +25,7 @@ const navigation = [
   { name: "Dashboard", href: "/", icon: Home },
   { name: "Videos", href: "/videos", icon: Video },
   { name: "Playlists", href: "/playlists", icon: List },
+  { name: "Tasks", href: "/tasks", icon: ClipboardList },
 
   { name: "Arabic Transcripts", href: "/arabic-transcripts", icon: BookOpen },
   { name: "Translations", href: "/translations", icon: Languages },

@@ -6,6 +6,20 @@ The Sunnah and Wisdom is a full-stack web application for managing Islamic educa
 
 ## Recent Changes
 
+### January 26, 2025 - Added Tasks Management System
+- **Created Tasks Database**: New `tasks` table with description, status, assignment, and optional links
+- **Role-Based Task Access**: Admins can create/manage all tasks, users can only view/update their assigned tasks
+- **Task Status Filtering**: Built-in filters for "All", "In-Progress", and "Complete" task views
+- **Assignment System**: Admins can assign tasks to any user in the system with user selection dropdown
+- **Status Management**: Users can mark their tasks as complete or reopen completed tasks
+- **Professional UI**: Clean tabbed interface with status badges, user information, and external link support
+- **API Implementation**: Full CRUD operations with proper authentication and authorization
+- **Navigation Integration**: Added Tasks menu item to sidebar with ClipboardList icon
+
+### January 26, 2025 - Removed Analytics Navigation
+- **Streamlined Sidebar**: Removed Analytics link from sidebar navigation for cleaner interface
+- **Focused Menu Structure**: Navigation now shows only active, working features of the application
+
 ### January 26, 2025 - Removed Edit Transcript Page
 - **Removed Transcripts Page**: Completely removed the `/transcripts` route and page component
 - **Updated Navigation**: Removed "Transcripts" menu item from sidebar navigation
