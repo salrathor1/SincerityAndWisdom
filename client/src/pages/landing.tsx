@@ -479,7 +479,13 @@ export default function Landing() {
   }, [playlists, selectedPlaylist]);
 
   // Auto-scroll to active segment
+  // Auto-scroll to active segment only when not searching
   useEffect(() => {
+    // Don't auto-scroll if user is currently searching to avoid interfering with manual navigation
+    if (searchQuery.trim() !== '') {
+      return;
+    }
+    
     if (transcriptRef.current && activeSegmentIndex >= 0) {
       const activeElement = transcriptRef.current.children[activeSegmentIndex] as HTMLElement;
       if (activeElement) {
@@ -489,7 +495,7 @@ export default function Landing() {
         });
       }
     }
-  }, [activeSegmentIndex]);
+  }, [activeSegmentIndex, searchQuery]);
 
   // Track current time for shared segment highlighting during playback
   useEffect(() => {
