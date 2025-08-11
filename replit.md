@@ -30,6 +30,7 @@ The application adopts a modern full-stack architecture, ensuring clear separati
 - **API Architecture**: Adheres to a RESTful design, organized in `/server/routes.ts`, with centralized error handling.
 
 ### Key Features and Technical Implementations
+- **Mobile Optimization**: Responsive design with hidden login button and playlist video count on mobile devices for cleaner interface.
 - **Authentication System**: Integrates Replit Auth for secure, session-based authentication, supporting user profile management and role-based access control (e.g., admin, Arabic transcript editor, translation editor).
 - **Video Management**: Supports importing YouTube videos with metadata fetching via YouTube Data API v3. New videos are automatically appended to playlists with intelligent `playlistOrder` assignment.
 - **Transcript Management**:

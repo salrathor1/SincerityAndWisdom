@@ -596,10 +596,9 @@ export default function Landing() {
                 <span className="sm:hidden">Report</span>
               </Button>
             )}
-            <Button onClick={handleLogin} variant="outline" size="sm" className="self-start sm:self-center flex-shrink-0">
+            <Button onClick={handleLogin} variant="outline" size="sm" className="self-start sm:self-center flex-shrink-0 hidden sm:flex">
               <LogIn size={16} className="mr-2" />
-              <span className="hidden sm:inline">Admin Login</span>
-              <span className="sm:hidden">Login</span>
+              <span>Admin Login</span>
             </Button>
           </div>
         </div>
@@ -709,7 +708,7 @@ export default function Landing() {
               </div>
               
               {selectedPlaylist && Array.isArray(playlistVideos) && playlistVideos.length > 0 && (
-                <Badge variant="outline" className="text-xs flex-shrink-0 self-start sm:self-center">
+                <Badge variant="outline" className="text-xs flex-shrink-0 self-start sm:self-center hidden sm:inline-flex">
                   {playlistVideos.length} videos
                 </Badge>
               )}
