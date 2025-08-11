@@ -27,12 +27,9 @@ export default function ReportedIssues() {
 
   const updateMutation = useMutation({
     mutationFn: async (data: { id: number; status?: string; adminNote?: string }) => {
-      await apiRequest(`/api/reported-issues/${data.id}`, {
-        method: "PUT",
-        body: JSON.stringify({
-          status: data.status,
-          adminNote: data.adminNote,
-        }),
+      await apiRequest("PUT", `/api/reported-issues/${data.id}`, {
+        status: data.status,
+        adminNote: data.adminNote,
       });
     },
     onSuccess: () => {
