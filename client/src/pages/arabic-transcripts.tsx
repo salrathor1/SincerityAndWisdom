@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText, Save, Clock, Plus, Trash2, Play, BookOpen, Edit, Upload, Minus, Type, Link } from "lucide-react";
+import { FileText, Save, Clock, Plus, Trash2, Play, BookOpen, Edit, Upload, Minus, Type, Link, Download } from "lucide-react";
 
 interface TranscriptSegment {
   time: string;
@@ -494,6 +494,49 @@ export default function ArabicTranscriptsPage() {
     publishTranscript.mutate();
   };
 
+  const handleDownloadSrt = () => {
+    if (!arabicSegments || arabicSegments.length === 0) {
+      toast({
+        title: "No Content",
+        description: "No transcript content available to download.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Generate SRT content
+    let srtContent = "";
+    arabicSegments.forEach((segment, index) => {
+      if (segment.time && segment.text) {
+        const startTime = convertTimeToSrt(segment.time);
+        const endTime = index < arabicSegments.length - 1 
+          ? convertTimeToSrt(arabicSegments[index + 1].time)
+          : "00:00:10,000"; // Default 10 second duration for last segment
+        
+        srtContent += `${index + 1}\n${startTime} --> ${endTime}\n${segment.text}\n\n`;
+      }
+    });
+
+    // Create and download file
+    const blob = new Blob([srtContent], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = selectedVideo 
+      ? `${selectedVideo.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_arabic.srt`
+      : 'arabic_transcript.srt';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Downloaded",
+      description: "SRT file downloaded successfully!",
+    });
+  };
+
   const handleSegmentClick = (index: number, time: string) => {
     setActiveSegmentIndex(index);
     
@@ -800,6 +843,15 @@ export default function ArabicTranscriptsPage() {
                           <span>Saved: {lastSavedAt.toLocaleTimeString()}</span>
                         )}
                       </div>
+                      <Button 
+                        onClick={handleDownloadSrt}
+                        disabled={!arabicSegments || arabicSegments.length === 0}
+                        size="sm"
+                        variant="outline"
+                      >
+                        <Download className="h-4 w-4 mr-1" />
+                        Download SRT
+                      </Button>
                       <Button 
                         onClick={handleSaveDraft}
                         disabled={saving}
