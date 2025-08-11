@@ -2,133 +2,7 @@
 
 ## Overview
 
-Sincerity and Wisdom is a full-stack web application for managing Islamic educational video transcripts. It allows users to import YouTube videos, create and edit transcripts in multiple languages (Arabic and English), organize content into playlists, and manage their Islamic educational video collections with a modern, intuitive interface.
-
-## Recent Changes
-
-### January 26, 2025 - Enhanced Dashboard for Admins and Editors
-- **Updated Dashboard**: Removed Recent Videos and User Management sections from dashboard
-- **Added Tasks Section**: Dashboard now prominently features assigned tasks with status indicators and quick access to full tasks page
-- **Role-Based Landing Page**: Dashboard now serves as the main landing page for admins, Arabic transcript editors, and translation editors
-- **Streamlined Interface**: Updated dashboard description to focus on tasks and system statistics overview
-- **Improved Navigation**: Tasks section includes "View all" button for quick access to full task management interface
-
-### January 26, 2025 - Application Rebranding
-- **Name Change**: Updated application name from "The Sunnah and Wisdom" to "Sincerity and Wisdom"
-- **Comprehensive Update**: Changed all references in sidebar, landing page, documentation, and HTML title
-- **Consistent Branding**: All user-facing text now reflects the new "Sincerity and Wisdom" brand name
-
-### January 26, 2025 - Enhanced Custom URL Support for Both Translation Pages
-- **Translations Page URL Support**: Added support for `videoId` and `language` URL parameters to auto-populate video and language selections
-- **Arabic Transcripts Page URL Support**: Added support for `videoId` parameter to auto-populate video selection for Arabic transcript editing
-- **URL Generation Feature**: Added "Copy Custom URL" buttons to both pages that generate shareable links with pre-selected content
-- **Automatic Pre-selection**: URLs like `/translations?videoId=1&language=en` and `/arabic-transcripts?videoId=1` automatically select the specified content
-- **Clipboard Integration**: Generated URLs are automatically copied to clipboard with success notifications
-- **Enhanced User Experience**: Streamlined workflow for sharing specific translation tasks and Arabic transcript editing assignments with team members
-
-### January 26, 2025 - Fixed Tasks URL Validation Issue
-- **Resolved API Call Format**: Fixed "Method is not Valid HTTP Token" error by correcting API request format in tasks creation
-- **Removed URL Validation**: Task link field now accepts any string format without strict URL validation
-- **Enhanced Error Handling**: Added comprehensive logging and debugging for task creation process
-- **Working Task System**: Tasks can now be created and assigned with any URL format in the optional link field
-
-### January 26, 2025 - Added Tasks Management System
-- **Created Tasks Database**: New `tasks` table with description, status, assignment, and optional links
-- **Role-Based Task Access**: Admins can create/manage all tasks, users can only view/update their assigned tasks
-- **Task Status Filtering**: Built-in filters for "All", "In-Progress", and "Complete" task views
-- **Assignment System**: Admins can assign tasks to any user in the system with user selection dropdown
-- **Status Management**: Users can mark their tasks as complete or reopen completed tasks
-- **Professional UI**: Clean tabbed interface with status badges, user information, and external link support
-- **API Implementation**: Full CRUD operations with proper authentication and authorization
-- **Navigation Integration**: Added Tasks menu item to sidebar with ClipboardList icon
-
-### January 26, 2025 - Removed Analytics Navigation
-- **Streamlined Sidebar**: Removed Analytics link from sidebar navigation for cleaner interface
-- **Focused Menu Structure**: Navigation now shows only active, working features of the application
-
-### January 26, 2025 - Removed Edit Transcript Page
-- **Removed Transcripts Page**: Completely removed the `/transcripts` route and page component
-- **Updated Navigation**: Removed "Transcripts" menu item from sidebar navigation
-- **Streamlined Interface**: Simplified navigation menu to focus on Arabic Transcripts and Translations pages
-- **Clean Architecture**: Removed unused transcripts.tsx file and related imports from App.tsx
-
-## Previous Changes
-
-### January 26, 2025 - UI and System Enhancements
-- **Removed Videos Panel**: Removed the Videos panel with playlist from the landing page for cleaner layout
-- **Enhanced SRT Support**: Added support for both standard (HH:MM:SS,mmm) and extended minute (MM:SS,mmm) timestamp formats
-- **Request Entity Fix**: Increased Express.js body size limits from 1MB to 50MB for large Arabic transcript drafts
-- **New Video Placement**: New videos are now automatically added at the bottom of playlists for chronological order
-- **Smart Ordering System**: When videos are added to playlists, they automatically receive the next highest `playlistOrder` value
-- **Database Logic**: Enhanced `createVideo` function to query existing playlist videos and assign proper ordering
-- **User Experience**: Videos now appear in proper sequence without manual reordering needed
-- **Collapsible Navigation**: Added collapsible sidebar with smooth 300ms animations and floating expand tab for more content space
-- **Translation Page Enhancements**: Added segment highlighting and cross-navigation between Arabic and translation segments
-
-### January 26, 2025 - Created Arabic Transcripts Page with Draft System
-- Created dedicated Arabic Transcripts page (/arabic-transcripts) for focused Arabic transcript editing
-- Implemented video selection with thumbnail preview and duration display
-- Added side-by-side layout: video player on left, transcript editor on right
-- Integrated YouTube player with jump-to-time functionality for precise editing
-- Dual view modes: "Segment View" (individual editing) and "SRT Format" (continuous text)
-- Added segment management: add/delete segments with automatic time calculations
-- Implemented Arabic text support with RTL direction and proper formatting
-- Applied role-based access control (admin/editor can access, viewers see blank page)
-- Added Arabic Transcripts menu item to sidebar navigation with BookOpen icon
-- Enhanced time format consistency matching existing transcript editor
-- **Added Draft System**: New draftContent database column for saving work-in-progress
-- **Dual Button System**: "Save Draft" (outline) and "Publish" (primary) buttons
-- **Draft Status Indicator**: Shows "Draft changes" badge when unsaved work exists
-- **API Routes**: Added PUT /api/transcripts/:id/draft and POST /api/transcripts/:id/publish
-- **Smart Loading**: Prioritizes draft content over published content when available
-- **Auto-Save System**: Automatically saves drafts every 1 minute when changes are detected
-- **Timestamp Display**: Shows "Modified" and "Saved" timestamps in the UI
-- **Auto-Save Indicator**: Visual badge showing auto-save status
-- **Change Tracking**: Automatically detects all edit actions (text, time, add/delete segments)
-- **Tabbed Interface**: Added "Draft Editor" and "Published View" tabs for comparing content
-- **Published View**: Read-only view of live content with green styling and jump-to-time functionality
-- **Visual Distinction**: Draft tab uses blue theming, Published tab uses green theming
-
-### January 25, 2025 - Added Video Sorting Functionality
-- Added sort filters to videos page with "Oldest to Newest" and "Newest to Oldest" options
-- Implemented sorting dropdown with ArrowUpDown icon in the header toolbar
-- Videos now sort by creation date with oldest as default for chronological learning
-- Added "Translations" button to each video card for direct navigation to translation page
-- Enhanced user experience with intuitive sort controls and translation access alongside search functionality
-
-### January 23, 2025 - Enhanced Translation Management System
-- Created comprehensive Translations page (/translations) for comparing Arabic with other language translations
-- Implemented professional side-by-side interface matching transcript editor design
-- Added dual view modes: "Segment View" (individual editing) and "SRT View" (continuous text format)
-- Enhanced timestamp editing with professional styling matching video transcript editor
-- Implemented simple time format (0:00, 0:11, 0:30) with automatic SRT conversion for end times
-- Added segment management: add/delete segments with proper timing calculations
-- Integrated language selector supporting English, Urdu, French, Spanish, Turkish, and Malay
-- Applied role-based access control (admin/editor can access, viewers see blank page)
-- Added Translations menu item to sidebar navigation with Languages icon
-- Supports independent translation segments not bound to Arabic timing structure
-
-### January 23, 2025 - Fixed User Role Management
-- Resolved role update functionality that was failing due to permission errors
-- Updated both admin users (salrathor1@hotmail.com, abdulmunimparray@gmail.com) to admin role
-- Fixed API call format in user management component to use correct parameters
-- Added detailed error logging for better debugging of role-based access issues
-- Role-based routing now properly blocks viewers from accessing admin features
-
-### January 23, 2025 - Added Vocabulary Management System
-- Added vocabulary field to videos database table for storing word definitions and notes
-- Created tabbed interface in admin video editing modal with Transcript and Vocabulary tabs
-- Implemented vocabulary save functionality with proper role-based permissions (admin/editor can edit)
-- Added tabbed interface on landing page with Transcript and Vocabulary tabs
-- Vocabulary content is displayed from database and shows appropriate empty states
-- Applied consistent styling and modern tab design across both admin and public interfaces
-
-### January 23, 2025 - Simplified Segment Sharing System
-- Replaced complex multi-select system with intuitive from/to two-click selection
-- Fixed end time calculation to include complete "to" segment duration
-- Enhanced shared segment playbook with proper highlighting during video play
-- Added toast notifications for successful link copying
-- Improved visual feedback with color-coded segments (green=FROM, red=TO, blue=range, orange=shared)
+Sincerity and Wisdom is a full-stack web application designed for comprehensive management of Islamic educational video transcripts. Its core purpose is to enable users to import YouTube videos, create and edit transcripts in multiple languages (Arabic and English), organize content into playlists, and efficiently manage their Islamic educational video collections through a modern and intuitive interface. The project aims to streamline the process of producing and organizing high-quality Islamic educational content, enhancing accessibility and dissemination.
 
 ## User Preferences
 
@@ -136,97 +10,48 @@ Preferred communication style: Simple, everyday language.
 
 ## System Architecture
 
-The application follows a modern full-stack architecture with clear separation between client and server:
+The application adopts a modern full-stack architecture, ensuring clear separation between client and server responsibilities.
 
 ### Frontend Architecture
-- **Framework**: React 18 with TypeScript
-- **UI Library**: Radix UI components with shadcn/ui styling system
-- **Styling**: Tailwind CSS with CSS variables for theming
-- **State Management**: TanStack React Query for server state management
-- **Routing**: Wouter for lightweight client-side routing
-- **Form Handling**: React Hook Form with Zod validation
+- **Framework**: React 18 with TypeScript for robust and type-safe development.
+- **UI/UX**: Utilizes Radix UI components for accessibility and a foundational styling system provided by shadcn/ui.
+- **Styling**: Tailwind CSS is used for utility-first styling, complemented by CSS variables for flexible theming.
+- **State Management**: TanStack React Query handles server state management efficiently.
+- **Routing**: Wouter provides lightweight client-side routing.
+- **Form Handling**: React Hook Form is used for form management, integrated with Zod for validation.
+- **Core UI/UX Decisions**: The application features a streamlined interface with a focus on task management for admins and editors, role-based landing pages, and intuitive navigation. Specific design elements include collapsible sidebars, professional tabbed interfaces with status badges, and color-coded visual distinctions for content states (e.g., draft vs. published).
 
 ### Backend Architecture
-- **Runtime**: Node.js with Express.js server framework
-- **Database**: PostgreSQL with Drizzle ORM
-- **Database Provider**: Neon serverless PostgreSQL
-- **Authentication**: Replit Auth with OpenID Connect integration
-- **Session Management**: PostgreSQL-backed session storage
+- **Runtime**: Node.js with Express.js serving as the web application framework.
+- **Database**: PostgreSQL is the chosen relational database, managed through Drizzle ORM for type-safe database interactions.
+- **Database Provider**: Neon serverless PostgreSQL provides the database infrastructure.
+- **Authentication**: Replit Auth, leveraging OpenID Connect, handles user authentication.
+- **Session Management**: Sessions are persistently stored in PostgreSQL.
+- **API Architecture**: Adheres to a RESTful design, organized in `/server/routes.ts`, with centralized error handling.
 
-## Key Components
-
-### Authentication System
-- Integrated Replit Auth using OpenID Connect protocol
-- Session-based authentication with PostgreSQL session storage
-- User profile management with automatic user creation/updates
-- Protected routes with middleware-based authentication checks
-
-### Database Schema
-- **Users**: Profile information and authentication data
-- **Videos**: YouTube video metadata (title, description, duration, thumbnails)
-- **Playlists**: Video organization and categorization
-- **Transcripts**: Multi-language transcript storage with timestamps
-- **Sessions**: Secure session management for authentication
-
-### API Architecture
-- RESTful API design with Express.js
-- Route organization in `/server/routes.ts`
-- Centralized error handling and request logging
-- YouTube API integration for video metadata fetching
-
-### Frontend Components
-- **Layout Components**: Sidebar navigation, responsive design
-- **Modal System**: Add video modal, transcript editor with SRT import
-- **Data Tables**: Videos, playlists, and transcripts listings
-- **Form Components**: Video import, playlist creation, transcript editing, SRT file import
-
-## Data Flow
-
-1. **Authentication Flow**: Users authenticate via Replit Auth, sessions stored in PostgreSQL
-2. **Video Import**: Users provide YouTube URL → API fetches metadata → Store in database
-3. **Transcript Management**: Create/edit transcripts with real-time preview and timestamp support
-4. **Playlist Organization**: Group videos into collections for better content management
-5. **Dashboard Analytics**: Aggregate statistics and recent activity display
+### Key Features and Technical Implementations
+- **Authentication System**: Integrates Replit Auth for secure, session-based authentication, supporting user profile management and role-based access control (e.g., admin, Arabic transcript editor, translation editor).
+- **Video Management**: Supports importing YouTube videos with metadata fetching via YouTube Data API v3. New videos are automatically appended to playlists with intelligent `playlistOrder` assignment.
+- **Transcript Management**:
+    - **Arabic Transcripts Page**: Dedicated interface for Arabic transcript editing with side-by-side video player, jump-to-time functionality, and dual view modes (Segment View, SRT Format).
+    - **Draft System**: Implements a robust draft system for Arabic transcripts, allowing saving work-in-progress to a `draftContent` column, with auto-save functionality, status indicators, and separate views for draft and published content.
+    - **Translation Management System**: Comprehensive page for comparing Arabic transcripts with multiple language translations (English, Urdu, French, Spanish, Turkish, Malay) in a side-by-side interface, supporting independent translation segments.
+    - **SRT Support**: Enhanced support for various SRT timestamp formats.
+- **Content Organization**: Videos can be grouped into playlists.
+- **Task Management System**: Features a `tasks` database table, allowing admins to create and manage tasks with role-based access, status filtering, and assignment capabilities.
+- **Vocabulary Management**: Integrated vocabulary field for videos, with a tabbed interface for editing and displaying definitions alongside transcripts.
+- **Segment Sharing**: Simplified two-click segment selection for sharing video portions with highlighting and toast notifications.
 
 ## External Dependencies
 
 ### Core Dependencies
-- **@neondatabase/serverless**: Serverless PostgreSQL connection
-- **drizzle-orm**: Type-safe ORM with PostgreSQL support
-- **@tanstack/react-query**: Server state management
-- **@radix-ui/react-***: Accessible UI component primitives
-- **wouter**: Lightweight React router
-- **zod**: Schema validation for forms and API
-
-### Development Dependencies
-- **Vite**: Build tool with React plugin
-- **TypeScript**: Type safety and development experience
-- **Tailwind CSS**: Utility-first styling
-- **ESBuild**: Server-side bundling for production
+- **@neondatabase/serverless**: For connecting to serverless PostgreSQL.
+- **drizzle-orm**: ORM for PostgreSQL database interactions.
+- **@tanstack/react-query**: For server state management in the frontend.
+- **@radix-ui/react-***: Provides accessible UI component primitives.
+- **wouter**: Lightweight React router.
+- **zod**: Used for schema validation.
 
 ### External APIs
-- **YouTube Data API v3**: Video metadata and information retrieval
-- **Replit Auth**: Authentication and user management service
-
-## Deployment Strategy
-
-### Development Environment
-- Vite dev server for frontend with HMR support
-- Express server with TypeScript compilation via TSX
-- Database migrations handled by Drizzle Kit
-- Replit-specific development tooling integration
-
-### Production Build Process
-1. Frontend build via Vite → static assets in `/dist/public`
-2. Backend compilation via ESBuild → Node.js bundle in `/dist`
-3. Database schema deployment via `drizzle-kit push`
-4. Environment-specific configuration handling
-
-### Environment Variables
-- `DATABASE_URL`: PostgreSQL connection string
-- `YOUTUBE_API_KEY`: YouTube Data API access
-- `SESSION_SECRET`: Session encryption key
-- `REPLIT_DOMAINS`: Allowed authentication domains
-- `ISSUER_URL`: OpenID Connect issuer endpoint
-
-The application is designed for deployment on Replit with built-in database provisioning, authentication services, and development tooling integration.
+- **YouTube Data API v3**: Utilized for fetching video metadata.
+- **Replit Auth**: Provides authentication and user management services.
