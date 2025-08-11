@@ -769,13 +769,13 @@ export default function Landing() {
                           <div className="flex items-center space-x-1 sm:space-x-2 w-full">
                         {/* Font Size Controls */}
                         {segments.length > 0 && (
-                          <div className="flex items-center space-x-1 bg-slate-100 rounded p-1 flex-1">
+                          <div className="flex items-center space-x-1 bg-slate-100 rounded p-1 flex-1 h-7">
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={decreaseFontSize}
                               disabled={fontSize <= 10}
-                              className="h-6 flex-1 p-0"
+                              className="h-5 flex-1 p-0"
                               title="Decrease font size"
                             >
                               <Minus size={10} />
@@ -788,7 +788,7 @@ export default function Landing() {
                               size="sm"
                               onClick={increaseFontSize}
                               disabled={fontSize >= 24}
-                              className="h-6 flex-1 p-0"
+                              className="h-5 flex-1 p-0"
                               title="Increase font size"
                             >
                               <Plus size={10} />
@@ -836,7 +836,7 @@ export default function Landing() {
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    className="h-6 px-2 text-xs w-full"
+                                    className="h-7 px-2 text-xs w-full"
                                   >
                                     <Share2 size={9} className="mr-1" />
                                     <span className="hidden sm:inline">Share</span>
