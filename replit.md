@@ -6,6 +6,13 @@ Sincerity and Wisdom is a full-stack web application for managing Islamic educat
 
 ## Recent Changes
 
+### January 26, 2025 - Enhanced Dashboard for Admins and Editors
+- **Updated Dashboard**: Removed Recent Videos and User Management sections from dashboard
+- **Added Tasks Section**: Dashboard now prominently features assigned tasks with status indicators and quick access to full tasks page
+- **Role-Based Landing Page**: Dashboard now serves as the main landing page for admins, Arabic transcript editors, and translation editors
+- **Streamlined Interface**: Updated dashboard description to focus on tasks and system statistics overview
+- **Improved Navigation**: Tasks section includes "View all" button for quick access to full task management interface
+
 ### January 26, 2025 - Application Rebranding
 - **Name Change**: Updated application name from "The Sunnah and Wisdom" to "Sincerity and Wisdom"
 - **Comprehensive Update**: Changed all references in sidebar, landing page, documentation, and HTML title

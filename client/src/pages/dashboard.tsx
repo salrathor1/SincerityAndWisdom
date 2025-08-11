@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AddVideoModal } from "@/components/add-video-modal";
 import { TranscriptEditor } from "@/components/transcript-editor";
-import { UserManagement } from "@/components/user-management";
+
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { isUnauthorizedError } from "@/lib/authUtils";
@@ -48,13 +48,13 @@ export default function Dashboard() {
     retry: false,
   });
 
-  const { data: recentVideos } = useQuery({
-    queryKey: ["/api/videos"],
+  const { data: currentUser } = useQuery({
+    queryKey: ["/api/auth/user"],
     retry: false,
   });
 
-  const { data: currentUser } = useQuery({
-    queryKey: ["/api/auth/user"],
+  const { data: tasks } = useQuery({
+    queryKey: ["/api/tasks"],
     retry: false,
   });
 
@@ -116,10 +116,10 @@ export default function Dashboard() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-semibold text-foreground">Dashboard</h2>
-              <p className="text-sm text-muted-foreground">Manage your YouTube video transcripts</p>
+              <p className="text-sm text-muted-foreground">Overview of your tasks and system statistics</p>
             </div>
             <div className="flex items-center space-x-4">
-              {currentUser?.role === 'admin' && (
+              {(currentUser as any)?.role === 'admin' && (
                 <Button onClick={() => setIsAddVideoOpen(true)} className="flex items-center space-x-2">
                   <Plus size={16} />
                   <span>Add Video</span>
@@ -139,7 +139,7 @@ export default function Dashboard() {
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Total Videos</p>
                     <p className="text-3xl font-bold text-foreground">
-                      {stats?.totalVideos || 0}
+                      {(stats as any)?.totalVideos || 0}
                     </p>
                   </div>
                   <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
@@ -155,7 +155,7 @@ export default function Dashboard() {
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Transcripts</p>
                     <p className="text-3xl font-bold text-foreground">
-                      {stats?.totalTranscripts || 0}
+                      {(stats as any)?.totalTranscripts || 0}
                     </p>
                   </div>
                   <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
@@ -171,7 +171,7 @@ export default function Dashboard() {
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Languages</p>
                     <p className="text-3xl font-bold text-foreground">
-                      {stats?.totalLanguages || 0}
+                      {(stats as any)?.totalLanguages || 0}
                     </p>
                   </div>
                   <div className="w-12 h-12 bg-yellow-50 rounded-lg flex items-center justify-center">
@@ -187,7 +187,7 @@ export default function Dashboard() {
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Playlists</p>
                     <p className="text-3xl font-bold text-foreground">
-                      {stats?.totalPlaylists || 0}
+                      {(stats as any)?.totalPlaylists || 0}
                     </p>
                   </div>
                   <div className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center">
@@ -198,83 +198,56 @@ export default function Dashboard() {
             </Card>
           </div>
 
-          {/* Recent Videos Section */}
+          {/* Tasks Section */}
           <Card className="mb-8">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg font-semibold">Recent Videos</CardTitle>
-                <Button variant="ghost" size="sm">
+                <CardTitle className="text-lg font-semibold">My Tasks</CardTitle>
+                <Button variant="ghost" size="sm" onClick={() => window.location.href = "/tasks"}>
                   View all
                 </Button>
               </div>
             </CardHeader>
             <CardContent className="p-6">
-              {recentVideos && recentVideos.length > 0 ? (
+              {(tasks as any) && (tasks as any).length > 0 ? (
                 <div className="space-y-4">
-                  {recentVideos.slice(0, 5).map((video: any) => (
+                  {(tasks as any).slice(0, 5).map((task: any) => (
                     <div
-                      key={video.id}
+                      key={task.id}
                       className="flex items-center space-x-4 p-4 hover:bg-slate-50 rounded-lg transition-colors"
                     >
-                      <img
-                        src={video.thumbnailUrl || "/placeholder-video.jpg"}
-                        alt={video.title}
-                        className="w-16 h-9 rounded object-cover"
-                      />
                       <div className="flex-1">
-                        <h4 className="font-medium text-foreground">{video.title}</h4>
+                        <h4 className="font-medium text-foreground">{task.description}</h4>
                         <div className="flex items-center space-x-4 mt-1 text-sm text-muted-foreground">
-                          <span>{video.duration || "N/A"}</span>
-                          <span>
-                            {video.transcripts?.length || 0} transcript{video.transcripts?.length !== 1 ? 's' : ''}
-                          </span>
-                          <span>{formatTimeAgo(video.createdAt)}</span>
+                          <span>Assigned to: {task.assignedToUser?.email || 'Unknown'}</span>
+                          <span>{formatTimeAgo(task.createdAt)}</span>
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
                         <span
-                          className={`px-2 py-1 text-xs font-medium rounded-full flex items-center space-x-1 ${getStatusColor(video.status)}`}
+                          className={`px-2 py-1 text-xs font-medium rounded-full ${
+                            task.status === 'Complete' 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-blue-100 text-blue-800'
+                          }`}
                         >
-                          {getStatusIcon(video.status)}
-                          <span className="capitalize">{video.status}</span>
+                          {task.status}
                         </span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEditVideo(video)}
-                        >
-                          <Edit size={16} />
-                        </Button>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <Video className="mx-auto h-12 w-12 text-muted-foreground" />
-                  <h3 className="mt-2 text-sm font-medium text-foreground">No videos yet</h3>
+                  <CheckCircle className="mx-auto h-12 w-12 text-muted-foreground" />
+                  <h3 className="mt-2 text-sm font-medium text-foreground">No tasks assigned</h3>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Get started by adding your first video.
+                    Tasks will appear here when they are assigned to you.
                   </p>
-                  {currentUser?.role === 'admin' && (
-                    <div className="mt-6">
-                      <Button onClick={() => setIsAddVideoOpen(true)}>
-                        <Plus className="mr-2 h-4 w-4" />
-                        Add Video
-                      </Button>
-                    </div>
-                  )}
                 </div>
               )}
             </CardContent>
           </Card>
-
-          {/* User Management Section (Admin Only) */}
-          {currentUser?.role === 'admin' && (
-            <div className="mb-8">
-              <UserManagement />
-            </div>
-          )}
         </main>
       </div>
 
