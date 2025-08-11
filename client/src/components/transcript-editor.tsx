@@ -66,15 +66,22 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
   // Check if user can edit transcripts (admin or editor)
   const canEdit = currentUser?.role === 'admin' || currentUser?.role === 'editor';
 
+  const [segments, setSegments] = useState<TranscriptSegment[]>([]);
+  const [activeSegmentIndex, setActiveSegmentIndex] = useState(0);
+
   const [player, setPlayer] = useState<any>(null);
-  const [vocabulary, setVocabulary] = useState("");
+  const [isOpenTextView, setIsOpenTextView] = useState(false);
+  const [openTextContent, setOpenTextContent] = useState("");
+  const [textSize, setTextSize] = useState(14); // Default text size in pixels
+  const [timeInputs, setTimeInputs] = useState<string[]>([]);
   const [videoUrl, setVideoUrl] = useState("");
   const [isEditingUrl, setIsEditingUrl] = useState(false);
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<number | null>(null);
   const [isEditingPlaylist, setIsEditingPlaylist] = useState(false);
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
   const [isEditingLanguages, setIsEditingLanguages] = useState(false);
-
+  const [activeTab, setActiveTab] = useState("transcript");
+  const [vocabulary, setVocabulary] = useState("");
   const playerRef = useRef<HTMLDivElement>(null);
 
   const { data: transcripts } = useQuery({
@@ -157,7 +164,6 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
     } else {
       setSelectedPlaylistId(null);
     }
-
     if (video?.vocabulary) {
       setVocabulary(video.vocabulary);
     } else {
@@ -173,23 +179,53 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
     }
   }, [transcripts]);
 
+  useEffect(() => {
+    if (transcripts && Array.isArray(transcripts) && transcripts.length > 0) {
+      const transcript = transcripts.find((t: any) => t.language === selectedLanguage);
+      if (transcript && transcript.content) {
+        const content = Array.isArray(transcript.content) ? transcript.content : [];
+        setSegments(content);
+        setTimeInputs(content.map((seg: any) => seg.time));
+        updateOpenTextFromSegments(content);
+      } else {
+        // Create empty transcript structure
+        const emptySegments = [
+          { time: "0:00", text: "Click here to add your first transcript segment..." },
+        ];
+        setSegments(emptySegments);
+        setTimeInputs(["0:00"]);
+        updateOpenTextFromSegments(emptySegments);
+      }
+    }
+  }, [transcripts, selectedLanguage]);
 
+  // Update SRT format only when SRT view is toggled (not on every segment change)
+  useEffect(() => {
+    if (segments.length > 0 && isOpenTextView) {
+      updateOpenTextFromSegments(segments);
+    }
+  }, [isOpenTextView]);
 
-  const updateVocabularyMutation = useMutation({
-    mutationFn: async (vocabularyText: string) => {
-      await apiRequest("PUT", `/api/videos/${video.id}`, {
-        vocabulary: vocabularyText,
-      });
+  const updateTranscriptMutation = useMutation({
+    mutationFn: async (content: TranscriptSegment[]) => {
+      const transcript = Array.isArray(transcripts) ? transcripts.find((t: any) => t.language === selectedLanguage) : null;
+      if (transcript) {
+        await apiRequest("PUT", `/api/transcripts/${transcript.id}`, {
+          content,
+        });
+      } else {
+        await apiRequest("POST", `/api/videos/${video.id}/transcripts`, {
+          language: selectedLanguage,
+          content,
+        });
+      }
     },
     onSuccess: () => {
       toast({
         title: "Success",
-        description: "Vocabulary updated successfully!",
+        description: "Transcript saved successfully!",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/videos"] });
-      if (video) {
-        video.vocabulary = vocabulary;
-      }
+      queryClient.invalidateQueries({ queryKey: ["/api/videos", video?.id, "transcripts"] });
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {
@@ -205,15 +241,11 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
       }
       toast({
         title: "Error",
-        description: error.message || "Failed to update vocabulary",
+        description: error.message || "Failed to save transcript",
         variant: "destructive",
       });
     },
   });
-
-  const handleSaveVocabulary = () => {
-    updateVocabularyMutation.mutate(vocabulary);
-  };
 
 
 
@@ -268,7 +300,9 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
     },
   });
 
-
+  const handleSave = () => {
+    updateTranscriptMutation.mutate(segments);
+  };
 
   const handleUpdateVideoUrl = () => {
     if (videoUrl.trim()) {
@@ -394,11 +428,172 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
     setIsEditingLanguages(false);
   };
 
+  const updateVocabularyMutation = useMutation({
+    mutationFn: async (vocabularyText: string) => {
+      await apiRequest("PUT", `/api/videos/${video.id}`, {
+        vocabulary: vocabularyText,
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Vocabulary updated successfully!",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/videos"] });
+      // Update video object to reflect changes
+      if (video) {
+        video.vocabulary = vocabulary;
+      }
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update vocabulary",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSaveVocabulary = () => {
+    updateVocabularyMutation.mutate(vocabulary);
+  };
 
 
 
+  // Helper function to parse time string to seconds
+  const parseTimeToSeconds = (timeString: string): number => {
+    const parts = timeString.split(':');
+    if (parts.length === 2) {
+      const [minutes, seconds] = parts;
+      return parseInt(minutes) * 60 + parseFloat(seconds);
+    } else if (parts.length === 3) {
+      const [hours, minutes, seconds] = parts;
+      return parseInt(hours) * 3600 + parseInt(minutes) * 60 + parseFloat(seconds);
+    }
+    return 0;
+  };
 
+  const handleSegmentClick = (index: number, time: string) => {
+    setActiveSegmentIndex(index);
+    
+    if (player && typeof player.seekTo === 'function') {
+      const seconds = parseTimeToSeconds(time);
+      player.seekTo(seconds, true);
+      toast({
+        description: `Jumped to ${time}`,
+      });
+    } else {
+      toast({
+        description: "Player not ready. Please wait for the video to load.",
+        variant: "destructive",
+      });
+    }
+  };
 
+  const handleTextEdit = (index: number, newText: string) => {
+    const newSegments = [...segments];
+    newSegments[index] = { ...newSegments[index], text: newText };
+    setSegments(newSegments);
+  };
+
+  const handleTimeInputChange = (index: number, newTime: string) => {
+    const newTimeInputs = [...timeInputs];
+    newTimeInputs[index] = newTime;
+    setTimeInputs(newTimeInputs);
+  };
+
+  const handleTimeEdit = (index: number, newTime: string) => {
+    // Format the time input (allow formats like 1:23, 01:23, 1:23:45)
+    const formattedTime = formatTimeInput(newTime);
+    const newSegments = [...segments];
+    newSegments[index] = { ...newSegments[index], time: formattedTime };
+    setSegments(newSegments);
+    
+    // Update the time inputs state to match
+    const newTimeInputs = [...timeInputs];
+    newTimeInputs[index] = formattedTime;
+    setTimeInputs(newTimeInputs);
+  };
+
+  const formatTimeInput = (time: string): string => {
+    // Remove any non-digit and non-colon characters
+    const cleanTime = time.replace(/[^\d:]/g, '');
+    
+    // If it's already in a good format, return it
+    if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(cleanTime)) {
+      return cleanTime;
+    }
+    
+    // Try to parse and format common inputs
+    const parts = cleanTime.split(':');
+    if (parts.length === 2) {
+      const [minutes, seconds] = parts;
+      return `${minutes}:${seconds.padStart(2, '0')}`;
+    } else if (parts.length === 3) {
+      const [hours, minutes, seconds] = parts;
+      return `${hours}:${minutes.padStart(2, '0')}:${seconds.padStart(2, '0')}`;
+    }
+    
+    return time; // Return original if can't format
+  };
+
+  const addNewSegment = (insertIndex?: number) => {
+    const newSegments = [...segments];
+    const newSegment = {
+      time: "0:00",
+      text: "New transcript segment...",
+    };
+    
+    const newTimeInputs = [...timeInputs];
+    
+    if (insertIndex !== undefined) {
+      newSegments.splice(insertIndex + 1, 0, newSegment);
+      newTimeInputs.splice(insertIndex + 1, 0, "0:00");
+    } else {
+      newSegments.push(newSegment);
+      newTimeInputs.push("0:00");
+    }
+    
+    setSegments(newSegments);
+    setTimeInputs(newTimeInputs);
+    updateOpenTextFromSegments(newSegments);
+  };
+
+  const deleteSegment = (index: number) => {
+    if (segments.length <= 1) {
+      toast({
+        description: "Cannot delete the last segment",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const newSegments = segments.filter((_, i) => i !== index);
+    const newTimeInputs = timeInputs.filter((_, i) => i !== index);
+    setSegments(newSegments);
+    setTimeInputs(newTimeInputs);
+    updateOpenTextFromSegments(newSegments);
+    
+    // Adjust active segment index if needed
+    if (activeSegmentIndex >= newSegments.length) {
+      setActiveSegmentIndex(Math.max(0, newSegments.length - 1));
+    }
+  };
+
+  const updateOpenTextFromSegments = (segs: TranscriptSegment[]) => {
+    // Convert segments to SRT format
+    const srtContent = segs.map((seg: TranscriptSegment, index: number) => {
       const startTime = convertTimeToSrt(seg.time);
       // Calculate end time (start time + default duration, or use next segment's start time)
       const nextSeg = segs[index + 1];
@@ -779,8 +974,16 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
             </div>
           </div>
 
-          {/* Transcript Editor */}
+          {/* Tabbed Editor */}
           <div className="w-1/2 p-6 flex flex-col">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
+              <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="transcript">Transcript</TabsTrigger>
+                <TabsTrigger value="vocabulary">Vocabulary</TabsTrigger>
+              </TabsList>
+              
+              {/* Transcript Tab */}
+              <TabsContent value="transcript" className="flex-1 flex flex-col mt-0">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-4">
                     <h4 className="font-medium text-foreground">Transcript Editor</h4>
@@ -971,6 +1174,41 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
                 </div>
               )}
             </div>
+            </TabsContent>
+            
+            {/* Vocabulary Tab */}
+            <TabsContent value="vocabulary" className="flex-1 flex flex-col mt-0">
+              <div className="mb-4">
+                <h4 className="font-medium text-foreground mb-3">Vocabulary Notes</h4>
+                {canEdit && (
+                  <Button 
+                    onClick={handleSaveVocabulary}
+                    disabled={updateVocabularyMutation.isPending}
+                    size="sm"
+                    className="flex items-center space-x-2"
+                  >
+                    <Save size={16} />
+                    <span>{updateVocabularyMutation.isPending ? "Saving..." : "Save"}</span>
+                  </Button>
+                )}
+              </div>
+              
+              <div className="flex-1">
+                <Textarea
+                  value={vocabulary}
+                  onChange={canEdit ? (e) => setVocabulary(e.target.value) : undefined}
+                  className={`w-full h-full min-h-[400px] resize-none border-2 rounded-lg transition-all duration-200 ${
+                    !canEdit 
+                      ? 'bg-gray-50 dark:bg-gray-800 cursor-not-allowed border-gray-200 dark:border-gray-700' 
+                      : 'border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 hover:border-gray-300 dark:hover:border-gray-600'
+                  }`}
+                  placeholder={canEdit ? "Add vocabulary notes, word definitions, and explanations here..." : "No vocabulary notes available"}
+                  readOnly={!canEdit}
+                />
+              </div>
+            </TabsContent>
+            
+            </Tabs>
           </div>
         </div>
       </DialogContent>
