@@ -66,14 +66,8 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
   // Check if user can edit transcripts (admin or editor)
   const canEdit = currentUser?.role === 'admin' || currentUser?.role === 'editor';
 
-  const [segments, setSegments] = useState<TranscriptSegment[]>([]);
-  const [activeSegmentIndex, setActiveSegmentIndex] = useState(0);
-
   const [player, setPlayer] = useState<any>(null);
-  const [isOpenTextView, setIsOpenTextView] = useState(false);
-  const [openTextContent, setOpenTextContent] = useState("");
-  const [textSize, setTextSize] = useState(14); // Default text size in pixels
-  const [timeInputs, setTimeInputs] = useState<string[]>([]);
+  const [vocabulary, setVocabulary] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
   const [isEditingUrl, setIsEditingUrl] = useState(false);
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<number | null>(null);
@@ -164,7 +158,12 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
       setSelectedPlaylistId(null);
     }
 
-  }, [video?.youtubeId, video?.playlistId]);
+    if (video?.vocabulary) {
+      setVocabulary(video.vocabulary);
+    } else {
+      setVocabulary("");
+    }
+  }, [video?.youtubeId, video?.playlistId, video?.vocabulary]);
 
   // Initialize selected languages when transcripts change
   useEffect(() => {
@@ -174,53 +173,23 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
     }
   }, [transcripts]);
 
-  useEffect(() => {
-    if (transcripts && Array.isArray(transcripts) && transcripts.length > 0) {
-      const transcript = transcripts.find((t: any) => t.language === selectedLanguage);
-      if (transcript && transcript.content) {
-        const content = Array.isArray(transcript.content) ? transcript.content : [];
-        setSegments(content);
-        setTimeInputs(content.map((seg: any) => seg.time));
-        updateOpenTextFromSegments(content);
-      } else {
-        // Create empty transcript structure
-        const emptySegments = [
-          { time: "0:00", text: "Click here to add your first transcript segment..." },
-        ];
-        setSegments(emptySegments);
-        setTimeInputs(["0:00"]);
-        updateOpenTextFromSegments(emptySegments);
-      }
-    }
-  }, [transcripts, selectedLanguage]);
 
-  // Update SRT format only when SRT view is toggled (not on every segment change)
-  useEffect(() => {
-    if (segments.length > 0 && isOpenTextView) {
-      updateOpenTextFromSegments(segments);
-    }
-  }, [isOpenTextView]);
 
-  const updateTranscriptMutation = useMutation({
-    mutationFn: async (content: TranscriptSegment[]) => {
-      const transcript = Array.isArray(transcripts) ? transcripts.find((t: any) => t.language === selectedLanguage) : null;
-      if (transcript) {
-        await apiRequest("PUT", `/api/transcripts/${transcript.id}`, {
-          content,
-        });
-      } else {
-        await apiRequest("POST", `/api/videos/${video.id}/transcripts`, {
-          language: selectedLanguage,
-          content,
-        });
-      }
+  const updateVocabularyMutation = useMutation({
+    mutationFn: async (vocabularyText: string) => {
+      await apiRequest("PUT", `/api/videos/${video.id}`, {
+        vocabulary: vocabularyText,
+      });
     },
     onSuccess: () => {
       toast({
         title: "Success",
-        description: "Transcript saved successfully!",
+        description: "Vocabulary updated successfully!",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/videos", video?.id, "transcripts"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/videos"] });
+      if (video) {
+        video.vocabulary = vocabulary;
+      }
     },
     onError: (error) => {
       if (isUnauthorizedError(error)) {
@@ -236,11 +205,15 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
       }
       toast({
         title: "Error",
-        description: error.message || "Failed to save transcript",
+        description: error.message || "Failed to update vocabulary",
         variant: "destructive",
       });
     },
   });
+
+  const handleSaveVocabulary = () => {
+    updateVocabularyMutation.mutate(vocabulary);
+  };
 
 
 
@@ -295,9 +268,7 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
     },
   });
 
-  const handleSave = () => {
-    updateTranscriptMutation.mutate(segments);
-  };
+
 
   const handleUpdateVideoUrl = () => {
     if (videoUrl.trim()) {
@@ -427,129 +398,7 @@ export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorPro
 
 
 
-  // Helper function to parse time string to seconds
-  const parseTimeToSeconds = (timeString: string): number => {
-    const parts = timeString.split(':');
-    if (parts.length === 2) {
-      const [minutes, seconds] = parts;
-      return parseInt(minutes) * 60 + parseFloat(seconds);
-    } else if (parts.length === 3) {
-      const [hours, minutes, seconds] = parts;
-      return parseInt(hours) * 3600 + parseInt(minutes) * 60 + parseFloat(seconds);
-    }
-    return 0;
-  };
 
-  const handleSegmentClick = (index: number, time: string) => {
-    setActiveSegmentIndex(index);
-    
-    if (player && typeof player.seekTo === 'function') {
-      const seconds = parseTimeToSeconds(time);
-      player.seekTo(seconds, true);
-      toast({
-        description: `Jumped to ${time}`,
-      });
-    } else {
-      toast({
-        description: "Player not ready. Please wait for the video to load.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleTextEdit = (index: number, newText: string) => {
-    const newSegments = [...segments];
-    newSegments[index] = { ...newSegments[index], text: newText };
-    setSegments(newSegments);
-  };
-
-  const handleTimeInputChange = (index: number, newTime: string) => {
-    const newTimeInputs = [...timeInputs];
-    newTimeInputs[index] = newTime;
-    setTimeInputs(newTimeInputs);
-  };
-
-  const handleTimeEdit = (index: number, newTime: string) => {
-    // Format the time input (allow formats like 1:23, 01:23, 1:23:45)
-    const formattedTime = formatTimeInput(newTime);
-    const newSegments = [...segments];
-    newSegments[index] = { ...newSegments[index], time: formattedTime };
-    setSegments(newSegments);
-    
-    // Update the time inputs state to match
-    const newTimeInputs = [...timeInputs];
-    newTimeInputs[index] = formattedTime;
-    setTimeInputs(newTimeInputs);
-  };
-
-  const formatTimeInput = (time: string): string => {
-    // Remove any non-digit and non-colon characters
-    const cleanTime = time.replace(/[^\d:]/g, '');
-    
-    // If it's already in a good format, return it
-    if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(cleanTime)) {
-      return cleanTime;
-    }
-    
-    // Try to parse and format common inputs
-    const parts = cleanTime.split(':');
-    if (parts.length === 2) {
-      const [minutes, seconds] = parts;
-      return `${minutes}:${seconds.padStart(2, '0')}`;
-    } else if (parts.length === 3) {
-      const [hours, minutes, seconds] = parts;
-      return `${hours}:${minutes.padStart(2, '0')}:${seconds.padStart(2, '0')}`;
-    }
-    
-    return time; // Return original if can't format
-  };
-
-  const addNewSegment = (insertIndex?: number) => {
-    const newSegments = [...segments];
-    const newSegment = {
-      time: "0:00",
-      text: "New transcript segment...",
-    };
-    
-    const newTimeInputs = [...timeInputs];
-    
-    if (insertIndex !== undefined) {
-      newSegments.splice(insertIndex + 1, 0, newSegment);
-      newTimeInputs.splice(insertIndex + 1, 0, "0:00");
-    } else {
-      newSegments.push(newSegment);
-      newTimeInputs.push("0:00");
-    }
-    
-    setSegments(newSegments);
-    setTimeInputs(newTimeInputs);
-    updateOpenTextFromSegments(newSegments);
-  };
-
-  const deleteSegment = (index: number) => {
-    if (segments.length <= 1) {
-      toast({
-        description: "Cannot delete the last segment",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    const newSegments = segments.filter((_, i) => i !== index);
-    const newTimeInputs = timeInputs.filter((_, i) => i !== index);
-    setSegments(newSegments);
-    setTimeInputs(newTimeInputs);
-    updateOpenTextFromSegments(newSegments);
-    
-    // Adjust active segment index if needed
-    if (activeSegmentIndex >= newSegments.length) {
-      setActiveSegmentIndex(Math.max(0, newSegments.length - 1));
-    }
-  };
-
-  const updateOpenTextFromSegments = (segs: TranscriptSegment[]) => {
-    // Convert segments to SRT format
-    const srtContent = segs.map((seg: TranscriptSegment, index: number) => {
       const startTime = convertTimeToSrt(seg.time);
       // Calculate end time (start time + default duration, or use next segment's start time)
       const nextSeg = segs[index + 1];
