@@ -843,15 +843,17 @@ export default function ArabicTranscriptsPage() {
                           <span>Saved: {lastSavedAt.toLocaleTimeString()}</span>
                         )}
                       </div>
-                      <Button 
-                        onClick={handleDownloadSrt}
-                        disabled={!arabicSegments || arabicSegments.length === 0}
-                        size="sm"
-                        variant="outline"
-                      >
-                        <Download className="h-4 w-4 mr-1" />
-                        Download SRT
-                      </Button>
+                      {currentUser?.role === 'admin' && (
+                        <Button 
+                          onClick={handleDownloadSrt}
+                          disabled={!arabicSegments || arabicSegments.length === 0}
+                          size="sm"
+                          variant="outline"
+                        >
+                          <Download className="h-4 w-4 mr-1" />
+                          Download SRT
+                        </Button>
+                      )}
                       <Button 
                         onClick={handleSaveDraft}
                         disabled={saving}
