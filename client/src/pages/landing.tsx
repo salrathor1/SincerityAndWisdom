@@ -724,7 +724,7 @@ export default function Landing() {
               {/* Video Player Column */}
               <div className="xl:col-span-2">
                 {selectedVideo ? (
-                  <Card className="shadow-md border bg-white flex flex-col min-h-[310px] sm:min-h-[410px] lg:min-h-[510px] xl:h-auto">
+                  <Card className="shadow-md border bg-white flex flex-col min-h-[300px] sm:min-h-[400px] lg:min-h-[500px] xl:h-auto">
                     <CardContent className="p-0 flex flex-col">
                       <div className="bg-slate-900 rounded-t-lg overflow-hidden relative" style={{paddingBottom: 'calc(56.25% + 25px)'}}>
                         <div ref={playerRef} className="absolute inset-0 w-full h-full" />
