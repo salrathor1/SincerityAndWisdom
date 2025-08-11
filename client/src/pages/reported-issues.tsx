@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Sidebar } from "@/components/sidebar";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { ReportedIssueWithRelations } from "@shared/schema";
@@ -76,16 +77,21 @@ export default function ReportedIssues() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center h-32">
-          <div className="text-muted-foreground">Loading reported issues...</div>
+      <div className="flex h-screen bg-background">
+        <Sidebar />
+        <div className="flex-1 p-6">
+          <div className="flex items-center justify-center h-32">
+            <div className="text-muted-foreground">Loading reported issues...</div>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="flex h-screen bg-background">
+      <Sidebar />
+      <div className="flex-1 p-6 space-y-6 overflow-y-auto">
       <div className="flex items-center gap-2">
         <AlertCircle className="w-6 h-6 text-red-500" />
         <div>
@@ -307,6 +313,7 @@ export default function ReportedIssues() {
             </Card>
           )}
         </div>
+      </div>
       </div>
     </div>
   );

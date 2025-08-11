@@ -43,6 +43,7 @@ The application adopts a modern full-stack architecture, ensuring clear separati
 - **Vocabulary Management**: Integrated vocabulary field for videos, with a tabbed interface for editing and displaying definitions alongside transcripts.
 - **Segment Sharing**: Simplified two-click segment selection for sharing video portions with highlighting and toast notifications.
 - **Support Us Ribbon**: Persistent ribbon component that appears on every page load to encourage community support and contributions, with modal containing contact information and donation links.
+- **Consistent Navigation**: All admin pages include the unified sidebar navigation component for seamless navigation between features.
 
 ## External Dependencies
 
