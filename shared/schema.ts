@@ -97,7 +97,7 @@ export const reportedIssues = pgTable("reported_issues", {
   description: text("description").notNull(),
   status: varchar("status", { length: 20 }).notNull().default("Pending"), // "Pending" or "Complete"
   adminNote: text("admin_note"), // Admin can add notes when resolving
-  reportedByUserId: varchar("reported_by_user_id").notNull().references(() => users.id),
+  reportedByUserId: varchar("reported_by_user_id").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

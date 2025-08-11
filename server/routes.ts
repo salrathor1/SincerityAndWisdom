@@ -622,9 +622,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Reported Issues routes
-  app.post('/api/reported-issues', isAuthenticated, async (req: any, res) => {
+  app.post('/api/reported-issues', async (req: any, res) => {
     try {
-      const userId = req.user?.claims?.sub;
+      // Allow both authenticated and anonymous users to report issues
+      const userId = req.user?.claims?.sub || null;
       const issueData = insertReportedIssueSchema.parse({
         ...req.body,
         reportedByUserId: userId,
