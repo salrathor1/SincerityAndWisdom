@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText, Save, Clock, Plus, Trash2, Play, BookOpen, Edit, Upload, Minus, Type } from "lucide-react";
+import { FileText, Save, Clock, Plus, Trash2, Play, BookOpen, Edit, Upload, Minus, Type, Link } from "lucide-react";
 
 interface TranscriptSegment {
   time: string;
@@ -189,6 +189,19 @@ export default function ArabicTranscriptsPage() {
     queryKey: ["/api/videos"],
     retry: false,
   });
+
+  // Handle URL parameter for video selection
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const videoIdParam = urlParams.get('videoId');
+    
+    if (videoIdParam && videos.length > 0) {
+      const videoExists = videos.find(v => v.id.toString() === videoIdParam);
+      if (videoExists) {
+        setSelectedVideoId(videoIdParam);
+      }
+    }
+  }, [videos]);
 
   // Fetch Arabic transcript for selected video
   const { data: transcripts = [] } = useQuery<any[]>({
@@ -633,6 +646,37 @@ export default function ArabicTranscriptsPage() {
     setLastModifiedAt(new Date());
   };
 
+  // Generate custom URL for sharing
+  const generateCustomUrl = () => {
+    if (!selectedVideoId) {
+      toast({
+        title: "Error",
+        description: "Please select a video first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const baseUrl = window.location.origin;
+    const params = new URLSearchParams();
+    params.set('videoId', selectedVideoId);
+    
+    const customUrl = `${baseUrl}/arabic-transcripts?${params.toString()}`;
+    
+    navigator.clipboard.writeText(customUrl).then(() => {
+      toast({
+        title: "Success",
+        description: "Custom URL copied to clipboard!",
+      });
+    }).catch(() => {
+      toast({
+        title: "Error", 
+        description: "Failed to copy URL to clipboard",
+        variant: "destructive",
+      });
+    });
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -652,9 +696,22 @@ export default function ArabicTranscriptsPage() {
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-6">
-            <div className="flex items-center space-x-2 mb-2">
-              <BookOpen className="h-6 w-6 text-green-600" />
-              <h1 className="text-2xl font-bold text-gray-900">Arabic Transcripts</h1>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center space-x-2">
+                <BookOpen className="h-6 w-6 text-green-600" />
+                <h1 className="text-2xl font-bold text-gray-900">Arabic Transcripts</h1>
+              </div>
+              
+              {selectedVideoId && (
+                <Button
+                  onClick={generateCustomUrl}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <Link size={16} />
+                  Copy Custom URL
+                </Button>
+              )}
             </div>
             <p className="text-gray-600">
               Create and edit Arabic transcripts with video playback and segment management.
