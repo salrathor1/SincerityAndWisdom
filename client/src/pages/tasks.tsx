@@ -55,6 +55,10 @@ export default function TasksPage() {
     u.role === "translations_editor"
   );
 
+  // Debug log to see what users we have
+  console.log("All users:", allUsers);
+  console.log("Assignable users:", assignableUsers);
+
   // Create task mutation
   const createTaskMutation = useMutation({
     mutationFn: async (taskData: { description: string; assignedToUserId: string; taskLink?: string }) => {
