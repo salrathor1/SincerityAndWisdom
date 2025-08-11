@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useLocation } from "wouter";
 import { Sidebar } from "@/components/sidebar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,7 +14,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -27,7 +27,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
-import { Plus, Search, Edit, Trash2, Video, Eye, X, GripVertical } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Eye } from "lucide-react";
 
 const formSchema = z.object({
   name: z.string().min(1, "Playlist name is required"),
@@ -40,12 +40,10 @@ export default function Playlists() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { isAuthenticated, isLoading } = useAuth();
+  const [, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingPlaylist, setEditingPlaylist] = useState<any>(null);
-  const [viewingPlaylist, setViewingPlaylist] = useState<any>(null);
-  const [draggedItem, setDraggedItem] = useState<number | null>(null);
-  const [dragOverItem, setDragOverItem] = useState<number | null>(null);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -75,12 +73,7 @@ export default function Playlists() {
     retry: false,
   });
 
-  // Fetch videos for selected playlist
-  const { data: playlistVideos = [] } = useQuery({
-    queryKey: ["/api/playlists", viewingPlaylist?.id, "videos"],
-    enabled: !!viewingPlaylist?.id,
-    retry: false,
-  });
+
 
   const createPlaylistMutation = useMutation({
     mutationFn: async (data: FormData) => {
@@ -181,65 +174,7 @@ export default function Playlists() {
     },
   });
 
-  const removeVideoFromPlaylistMutation = useMutation({
-    mutationFn: async ({ videoId }: { videoId: number }) => {
-      await apiRequest("PUT", `/api/videos/${videoId}`, { playlistId: null });
-    },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Video removed from playlist successfully!",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/playlists", viewingPlaylist?.id, "videos"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/playlists"] });
-    },
-    onError: (error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
-      toast({
-        title: "Error",
-        description: error.message || "Failed to remove video from playlist",
-        variant: "destructive",
-      });
-    },
-  });
 
-  const updateVideoOrderMutation = useMutation({
-    mutationFn: async ({ videoId, playlistOrder }: { videoId: number; playlistOrder: number }) => {
-      await apiRequest("PUT", `/api/videos/${videoId}`, { playlistOrder });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/playlists", viewingPlaylist?.id, "videos"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/playlists"] });
-    },
-    onError: (error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update video order",
-        variant: "destructive",
-      });
-    },
-  });
 
   if (isLoading || !isAuthenticated) {
     return (
@@ -279,66 +214,6 @@ export default function Playlists() {
     setIsCreateOpen(false);
     setEditingPlaylist(null);
     form.reset();
-  };
-
-  const handleRemoveVideo = (videoId: number) => {
-    if (confirm("Are you sure you want to remove this video from the playlist?")) {
-      removeVideoFromPlaylistMutation.mutate({ videoId });
-    }
-  };
-
-  const handleDragStart = (e: React.DragEvent, index: number) => {
-    setDraggedItem(index);
-    e.dataTransfer.effectAllowed = "move";
-  };
-
-  const handleDragOver = (e: React.DragEvent, index: number) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-    setDragOverItem(index);
-  };
-
-  const handleDragLeave = () => {
-    setDragOverItem(null);
-  };
-
-  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
-    e.preventDefault();
-    
-    if (draggedItem === null || draggedItem === dropIndex) {
-      setDraggedItem(null);
-      setDragOverItem(null);
-      return;
-    }
-
-    // Create a new array with reordered items
-    const newVideos = [...playlistVideos];
-    const draggedVideo = newVideos[draggedItem];
-    
-    // Remove the dragged item
-    newVideos.splice(draggedItem, 1);
-    
-    // Insert at new position
-    newVideos.splice(dropIndex, 0, draggedVideo);
-    
-    // Update the order values
-    const updatedVideos = newVideos.map((video, index) => ({
-      ...video,
-      playlistOrder: index + 1
-    }));
-
-    // Update each video's playlist order
-    updatedVideos.forEach((video, index) => {
-      if (video.playlistOrder !== playlistVideos.find((v: any) => v.id === video.id)?.playlistOrder) {
-        updateVideoOrderMutation.mutate({ 
-          videoId: video.id, 
-          playlistOrder: index + 1 
-        });
-      }
-    });
-
-    setDraggedItem(null);
-    setDragOverItem(null);
   };
 
   const formatTimeAgo = (dateString: string) => {
@@ -450,7 +325,7 @@ export default function Playlists() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setViewingPlaylist(playlist)}
+                      onClick={() => setLocation(`/playlists/${playlist.id}`)}
                       className="w-full"
                     >
                       <Eye size={14} className="mr-2" />
@@ -551,116 +426,7 @@ export default function Playlists() {
         </DialogContent>
       </Dialog>
 
-      {/* Playlist Videos Dialog */}
-      <Dialog open={!!viewingPlaylist} onOpenChange={() => setViewingPlaylist(null)}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <DialogTitle className="text-xl">
-                  {viewingPlaylist?.name}
-                </DialogTitle>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {playlistVideos.length} video{playlistVideos.length !== 1 ? 's' : ''} in this playlist
-                </p>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setViewingPlaylist(null)}
-              >
-                <X size={16} />
-              </Button>
-            </div>
-          </DialogHeader>
 
-          <div className="mt-4">
-            {playlistVideos.length > 0 ? (
-              <div className="space-y-2">
-                <p className="text-xs text-muted-foreground mb-4">
-                  💡 Drag and drop videos to reorder them in the playlist
-                </p>
-                {playlistVideos
-                  .sort((a: any, b: any) => (a.playlistOrder || 0) - (b.playlistOrder || 0))
-                  .map((video: any, index: number) => (
-                  <Card 
-                    key={video.id} 
-                    className={`group hover:shadow-md transition-all cursor-move ${
-                      dragOverItem === index ? 'border-blue-500 bg-blue-50' : ''
-                    } ${draggedItem === index ? 'opacity-50 scale-95' : ''}`}
-                    draggable
-                    onDragStart={(e) => handleDragStart(e, index)}
-                    onDragOver={(e) => handleDragOver(e, index)}
-                    onDragLeave={handleDragLeave}
-                    onDrop={(e) => handleDrop(e, index)}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-start space-x-4">
-                        <div className="flex items-center space-x-2">
-                          <GripVertical 
-                            size={16} 
-                            className="text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing" 
-                          />
-                          <img
-                            src={video.thumbnailUrl || "/placeholder-video.jpg"}
-                            alt={video.title}
-                            className="w-32 h-18 object-cover rounded-lg flex-shrink-0"
-                          />
-                        </div>
-                        
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-foreground mb-2 line-clamp-2">
-                            {video.title}
-                          </h4>
-                          
-                          <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-2">
-                            <span>Duration: {video.duration || 'Unknown'}</span>
-                            <span>
-                              {video.transcripts?.length || 0} transcript{video.transcripts?.length !== 1 ? 's' : ''}
-                            </span>
-                            <span>Added {formatTimeAgo(video.createdAt)}</span>
-                          </div>
-                          
-                          {video.description && (
-                            <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
-                              {video.description}
-                            </p>
-                          )}
-                        </div>
-                        
-                        <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleRemoveVideo(video.id)}
-                            disabled={removeVideoFromPlaylistMutation.isPending}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <Trash2 size={14} className="mr-1" />
-                            Remove
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <div className="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Video size={32} className="text-muted-foreground" />
-                </div>
-                <h3 className="text-lg font-medium text-foreground mb-2">
-                  No videos in this playlist
-                </h3>
-                <p className="text-muted-foreground">
-                  Videos can be added to playlists when editing them in the transcript editor.
-                </p>
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

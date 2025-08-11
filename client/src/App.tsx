@@ -8,6 +8,7 @@ import Landing from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
 import Videos from "@/pages/videos";
 import Playlists from "@/pages/playlists";
+import PlaylistView from "@/pages/playlist-view";
 import TasksPage from "@/pages/tasks";
 import TranslationsPage from "@/pages/translations";
 import ArabicTranscriptsPage from "@/pages/arabic-transcripts";
@@ -41,6 +42,7 @@ function Router() {
           <Route path="/" component={UserBlank} />
           <Route path="/videos" component={UserBlank} />
           <Route path="/playlists" component={UserBlank} />
+          <Route path="/playlists/:id" component={UserBlank} />
           <Route path="/tasks" component={UserBlank} />
           <Route path="/translations" component={UserBlank} />
           <Route path="/arabic-transcripts" component={UserBlank} />
@@ -52,6 +54,7 @@ function Router() {
           <Route path="/" component={Dashboard} />
           <Route path="/videos" component={Videos} />
           <Route path="/playlists" component={Playlists} />
+          <Route path="/playlists/:id" component={PlaylistView} />
           <Route path="/tasks" component={TasksPage} />
           <Route path="/translations" component={TranslationsPage} />
           <Route path="/arabic-transcripts" component={ArabicTranscriptsPage} />
