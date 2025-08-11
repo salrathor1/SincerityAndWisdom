@@ -487,6 +487,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Debug authentication endpoint
+  app.get('/api/debug-auth', async (req: any, res) => {
+    res.json({
+      isAuthenticated: req.isAuthenticated ? req.isAuthenticated() : false,
+      user: req.user,
+      sessionId: req.sessionID,
+      session: req.session,
+      headers: req.headers.cookie || 'No cookies'
+    });
+  });
+
   // Tasks routes
   app.get('/api/tasks', isAuthenticated, async (req: any, res) => {
     try {

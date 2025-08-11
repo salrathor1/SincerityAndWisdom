@@ -66,7 +66,7 @@ export default function TasksPage() {
   });
 
   // Filter users to only show admins and editors
-  const assignableUsers = allUsers.filter((u: UserType) => 
+  const assignableUsers = (allUsers as UserType[]).filter((u: UserType) => 
     u.role === "admin" || 
     u.role === "arabic_transcripts_editor" || 
     u.role === "translations_editor"
@@ -77,13 +77,9 @@ export default function TasksPage() {
     mutationFn: async (taskData: { description: string; assignedToUserId: string; taskLink?: string }) => {
       try {
         console.log("Sending task data to API:", taskData);
-        const result = await apiRequest("/api/tasks", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(taskData),
-        });
+        const result = await apiRequest("POST", "/api/tasks", taskData);
         console.log("API response:", result);
-        return result;
+        return result.json();
       } catch (error) {
         console.error("API request failed:", error);
         throw error;
@@ -120,11 +116,8 @@ export default function TasksPage() {
   // Update task mutation (for status changes)
   const updateTaskMutation = useMutation({
     mutationFn: async ({ id, status }: { id: number; status: string }) => {
-      return await apiRequest(`/api/tasks/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
-      });
+      const result = await apiRequest("PUT", `/api/tasks/${id}`, { status });
+      return result.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
@@ -142,7 +135,7 @@ export default function TasksPage() {
     },
   });
 
-  const filteredTasks = tasks.filter((task: TaskWithUsers) => {
+  const filteredTasks = (tasks as TaskWithUsers[]).filter((task: TaskWithUsers) => {
     if (filter === "all") return true;
     if (filter === "in-progress") return task.status === "In-Progress";
     if (filter === "complete") return task.status === "Complete";
@@ -160,6 +153,13 @@ export default function TasksPage() {
     };
     
     console.log("Creating task with data:", taskData);
+    
+    // Debug: Let's also check authentication status
+    fetch('/api/debug-auth', { credentials: 'include' })
+      .then(r => r.json())
+      .then(auth => console.log('Auth status:', auth))
+      .catch(e => console.error('Auth check failed:', e));
+    
     createTaskMutation.mutate(taskData);
   };
 
@@ -347,7 +347,7 @@ export default function TasksPage() {
                                   </span>
                                 </div>
                                 
-                                <span>Created {format(new Date(task.createdAt), 'MMM d, yyyy')}</span>
+                                <span>Created {format(new Date(task.createdAt!), 'MMM d, yyyy')}</span>
                               </div>
                             </div>
 
