@@ -24,9 +24,11 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 
-import { Video, FileText, Play, Clock, Languages, LogIn, ChevronLeft, ChevronRight, Search, X, Plus, Minus, List, Share2, Copy, CheckCircle, Link, Scissors, ChevronDown } from "lucide-react";
+import { Video, FileText, Play, Clock, Languages, LogIn, ChevronLeft, ChevronRight, Search, X, Plus, Minus, List, Share2, Copy, CheckCircle, Link, Scissors, ChevronDown, AlertTriangle } from "lucide-react";
 import { TranslatedText } from "@/components/TranslatedText";
 import { useToast } from "@/hooks/use-toast";
+import { ReportProblemModal } from "@/components/ui/report-problem-modal";
+import { useAuth } from "@/hooks/useAuth";
 
 interface TranscriptSegment {
   time: string;
@@ -53,6 +55,7 @@ export default function Landing() {
   const [searchResults, setSearchResults] = useState<number[]>([]);
   const [currentSearchIndex, setCurrentSearchIndex] = useState(-1);
   const [fontSize, setFontSize] = useState(14); // Base font size in pixels
+  const [showReportModal, setShowReportModal] = useState(false);
   const [fromSegment, setFromSegment] = useState<number | null>(null);
   const [toSegment, setToSegment] = useState<number | null>(null);
   const [isSelecting, setIsSelecting] = useState(false);
@@ -62,6 +65,7 @@ export default function Landing() {
   const playerRef = useRef<HTMLDivElement>(null);
   const transcriptRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
 
   // Fetch playlists for public viewing
   const { data: playlists } = useQuery({
@@ -573,11 +577,25 @@ export default function Landing() {
               <p className="text-xs sm:text-sm text-slate-600 truncate">Watch videos with synchronized transcripts</p>
             </div>
           </div>
-          <Button onClick={handleLogin} variant="outline" size="sm" className="self-start sm:self-center flex-shrink-0">
-            <LogIn size={16} className="mr-2" />
-            <span className="hidden sm:inline">Admin Login</span>
-            <span className="sm:hidden">Login</span>
-          </Button>
+          <div className="flex items-center space-x-2">
+            {isAuthenticated && (
+              <Button 
+                onClick={() => setShowReportModal(true)} 
+                variant="outline" 
+                size="sm" 
+                className="flex-shrink-0"
+              >
+                <AlertTriangle size={16} className="mr-2" />
+                <span className="hidden sm:inline">Report Problem</span>
+                <span className="sm:hidden">Report</span>
+              </Button>
+            )}
+            <Button onClick={handleLogin} variant="outline" size="sm" className="self-start sm:self-center flex-shrink-0">
+              <LogIn size={16} className="mr-2" />
+              <span className="hidden sm:inline">Admin Login</span>
+              <span className="sm:hidden">Login</span>
+            </Button>
+          </div>
         </div>
 
         {/* Playlist and Video Selectors */}
@@ -1108,6 +1126,12 @@ export default function Landing() {
       </div>
 
 
+      <ReportProblemModal 
+        isOpen={showReportModal} 
+        onOpenChange={setShowReportModal}
+        currentVideo={selectedVideo}
+        currentPlaylist={playlists?.find((p: any) => p.id === selectedPlaylist)}
+      />
     </div>
   );
 }

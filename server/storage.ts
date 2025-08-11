@@ -17,6 +17,10 @@ import {
   type Task,
   type InsertTask,
   type TaskWithUsers,
+  reportedIssues,
+  type ReportedIssue,
+  type InsertReportedIssue,
+  type ReportedIssueWithRelations,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql, asc, and, or, isNull } from "drizzle-orm";
@@ -59,6 +63,13 @@ export interface IStorage {
   getTask(id: number): Promise<TaskWithUsers | undefined>;
   updateTask(id: number, task: Partial<InsertTask>): Promise<Task>;
   deleteTask(id: number): Promise<void>;
+  
+  // Reported issues operations
+  createReportedIssue(issue: InsertReportedIssue): Promise<ReportedIssue>;
+  getReportedIssues(): Promise<ReportedIssueWithRelations[]>;
+  getReportedIssue(id: number): Promise<ReportedIssueWithRelations | undefined>;
+  updateReportedIssue(id: number, issue: Partial<InsertReportedIssue>): Promise<ReportedIssue>;
+  deleteReportedIssue(id: number): Promise<void>;
   
   // Dashboard stats
   getDashboardStats(): Promise<{
@@ -368,6 +379,64 @@ export class DatabaseStorage implements IStorage {
 
   async deleteTask(id: number): Promise<void> {
     await db.delete(tasks).where(eq(tasks.id, id));
+  }
+
+  // Reported issues operations
+  async createReportedIssue(issue: InsertReportedIssue): Promise<ReportedIssue> {
+    const [reportedIssue] = await db
+      .insert(reportedIssues)
+      .values(issue)
+      .returning();
+    return reportedIssue;
+  }
+
+  async getReportedIssues(): Promise<ReportedIssueWithRelations[]> {
+    return await db.query.reportedIssues.findMany({
+      with: {
+        playlist: true,
+        video: {
+          with: {
+            playlist: true,
+            transcripts: true,
+          },
+        },
+        reportedByUser: true,
+      },
+      orderBy: desc(reportedIssues.createdAt),
+    });
+  }
+
+  async getReportedIssue(id: number): Promise<ReportedIssueWithRelations | undefined> {
+    const [issue] = await db.query.reportedIssues.findMany({
+      where: eq(reportedIssues.id, id),
+      with: {
+        playlist: true,
+        video: {
+          with: {
+            playlist: true,
+            transcripts: true,
+          },
+        },
+        reportedByUser: true,
+      },
+    });
+    return issue;
+  }
+
+  async updateReportedIssue(id: number, issue: Partial<InsertReportedIssue>): Promise<ReportedIssue> {
+    const [updatedIssue] = await db
+      .update(reportedIssues)
+      .set({
+        ...issue,
+        updatedAt: new Date(),
+      })
+      .where(eq(reportedIssues.id, id))
+      .returning();
+    return updatedIssue;
+  }
+
+  async deleteReportedIssue(id: number): Promise<void> {
+    await db.delete(reportedIssues).where(eq(reportedIssues.id, id));
   }
 
   // Dashboard stats

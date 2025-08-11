@@ -15,7 +15,8 @@ import {
   Shield,
   ChevronLeft,
   ChevronRight,
-  Menu
+  Menu,
+  AlertTriangle
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -29,7 +30,7 @@ const navigation = [
 
   { name: "Arabic Transcripts", href: "/arabic-transcripts", icon: BookOpen },
   { name: "Translations", href: "/translations", icon: Languages },
-
+  { name: "Reported Issues", href: "/reported-issues", icon: AlertTriangle },
 ];
 
 export function Sidebar() {
@@ -118,6 +119,11 @@ export function Sidebar() {
                 
                 if (item.href === '/translations' && 
                     currentUser && !['admin', 'translations_editor'].includes(currentUser.role)) {
+                  return null;
+                }
+                
+                if (item.href === '/reported-issues' && 
+                    currentUser && currentUser.role !== 'admin') {
                   return null;
                 }
               }

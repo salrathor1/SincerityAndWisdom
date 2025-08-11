@@ -13,6 +13,7 @@ import TasksPage from "@/pages/tasks";
 import TranslationsPage from "@/pages/translations";
 import ArabicTranscriptsPage from "@/pages/arabic-transcripts";
 import AdminPanel from "@/pages/admin";
+import ReportedIssues from "@/pages/reported-issues";
 import UserBlank from "@/pages/user-blank";
 import NotFound from "@/pages/not-found";
 
@@ -47,6 +48,7 @@ function Router() {
           <Route path="/translations" component={UserBlank} />
           <Route path="/arabic-transcripts" component={UserBlank} />
           <Route path="/admin" component={UserBlank} />
+          <Route path="/reported-issues" component={UserBlank} />
         </>
       ) : (
         /* Normal routes for editors and admins */
@@ -59,6 +61,7 @@ function Router() {
           <Route path="/translations" component={TranslationsPage} />
           <Route path="/arabic-transcripts" component={ArabicTranscriptsPage} />
           <Route path="/admin" component={AdminPanel} />
+          <Route path="/reported-issues" component={ReportedIssues} />
         </>
       )}
       <Route component={NotFound} />

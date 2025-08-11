@@ -88,6 +88,20 @@ export const tasks = pgTable("tasks", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Reported issues table
+export const reportedIssues = pgTable("reported_issues", {
+  id: serial("id").primaryKey(),
+  playlistId: integer("playlist_id").references(() => playlists.id),
+  videoId: integer("video_id").references(() => videos.id),
+  segmentIndex: integer("segment_index"), // Index of the segment in the transcript
+  description: text("description").notNull(),
+  status: varchar("status", { length: 20 }).notNull().default("Pending"), // "Pending" or "Complete"
+  adminNote: text("admin_note"), // Admin can add notes when resolving
+  reportedByUserId: varchar("reported_by_user_id").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Relations
 export const playlistsRelations = relations(playlists, ({ many }) => ({
   videos: many(videos),
@@ -124,6 +138,22 @@ export const tasksRelations = relations(tasks, ({ one }) => ({
 export const usersRelations = relations(users, ({ many }) => ({
   assignedTasks: many(tasks, { relationName: "assignedTasks" }),
   createdTasks: many(tasks, { relationName: "createdTasks" }),
+  reportedIssues: many(reportedIssues),
+}));
+
+export const reportedIssuesRelations = relations(reportedIssues, ({ one }) => ({
+  playlist: one(playlists, {
+    fields: [reportedIssues.playlistId],
+    references: [playlists.id],
+  }),
+  video: one(videos, {
+    fields: [reportedIssues.videoId],
+    references: [videos.id],
+  }),
+  reportedByUser: one(users, {
+    fields: [reportedIssues.reportedByUserId],
+    references: [users.id],
+  }),
 }));
 
 // Insert schemas
@@ -153,6 +183,12 @@ export const insertTaskSchema = createInsertSchema(tasks).omit({
   taskLink: z.string().optional().or(z.literal("")).transform(val => val === "" ? undefined : val),
 });
 
+export const insertReportedIssueSchema = createInsertSchema(reportedIssues).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -169,6 +205,8 @@ export type InsertTranscript = z.infer<typeof insertTranscriptSchema>;
 export type Transcript = typeof transcripts.$inferSelect;
 export type InsertTask = z.infer<typeof insertTaskSchema>;
 export type Task = typeof tasks.$inferSelect;
+export type InsertReportedIssue = z.infer<typeof insertReportedIssueSchema>;
+export type ReportedIssue = typeof reportedIssues.$inferSelect;
 
 // Extended types for API responses
 export type VideoWithRelations = Video & {
@@ -184,4 +222,10 @@ export type PlaylistWithVideos = Playlist & {
 export type TaskWithUsers = Task & {
   assignedToUser?: User;
   createdByUser?: User;
+};
+
+export type ReportedIssueWithRelations = ReportedIssue & {
+  playlist?: Playlist | null;
+  video?: VideoWithRelations | null;
+  reportedByUser?: User | null;
 };

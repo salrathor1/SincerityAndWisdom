@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { youtubeService } from "./services/youtube";
 import { srtService } from "./services/srt";
-import { insertVideoSchema, insertPlaylistSchema, insertTranscriptSchema } from "@shared/schema";
+import { insertVideoSchema, insertPlaylistSchema, insertTranscriptSchema, insertReportedIssueSchema } from "@shared/schema";
 import { z } from "zod";
 
 // Role-based authentication middleware
@@ -618,6 +618,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching users:", error);
       res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  // Reported Issues routes
+  app.post('/api/reported-issues', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      const issueData = insertReportedIssueSchema.parse({
+        ...req.body,
+        reportedByUserId: userId,
+      });
+      const issue = await storage.createReportedIssue(issueData);
+      res.json(issue);
+    } catch (error) {
+      console.error("Error creating reported issue:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid issue data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create reported issue" });
+    }
+  });
+
+  app.get('/api/reported-issues', isAuthenticated, requireRole(['admin']), async (req, res) => {
+    try {
+      const issues = await storage.getReportedIssues();
+      res.json(issues);
+    } catch (error) {
+      console.error("Error fetching reported issues:", error);
+      res.status(500).json({ message: "Failed to fetch reported issues" });
+    }
+  });
+
+  app.get('/api/reported-issues/:id', isAuthenticated, requireRole(['admin']), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const issue = await storage.getReportedIssue(id);
+      if (!issue) {
+        return res.status(404).json({ message: "Issue not found" });
+      }
+      res.json(issue);
+    } catch (error) {
+      console.error("Error fetching reported issue:", error);
+      res.status(500).json({ message: "Failed to fetch reported issue" });
+    }
+  });
+
+  app.put('/api/reported-issues/:id', isAuthenticated, requireRole(['admin']), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const issueData = insertReportedIssueSchema.partial().parse(req.body);
+      const issue = await storage.updateReportedIssue(id, issueData);
+      res.json(issue);
+    } catch (error) {
+      console.error("Error updating reported issue:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid issue data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to update reported issue" });
+    }
+  });
+
+  app.delete('/api/reported-issues/:id', isAuthenticated, requireRole(['admin']), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteReportedIssue(id);
+      res.json({ message: "Issue deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting reported issue:", error);
+      res.status(500).json({ message: "Failed to delete reported issue" });
     }
   });
 
