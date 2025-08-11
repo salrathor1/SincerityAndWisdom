@@ -22,6 +22,9 @@ export function ReportProblemModal({ isOpen, onOpenChange, currentVideo, current
   const [selectedVideoId, setSelectedVideoId] = useState<string>("");
   const [segmentIndex, setSegmentIndex] = useState<string>("");
   const [description, setDescription] = useState("");
+  const [contactName, setContactName] = useState<string>("");
+  const [contactEmail, setContactEmail] = useState<string>("");
+  const [contactMobile, setContactMobile] = useState<string>("");
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -51,6 +54,9 @@ export function ReportProblemModal({ isOpen, onOpenChange, currentVideo, current
       videoId?: number;
       segmentIndex?: number;
       description: string;
+      contactName?: string;
+      contactEmail?: string;
+      contactMobile?: string;
     }) => {
       await apiRequest("POST", "/api/reported-issues", data);
     },
@@ -77,6 +83,9 @@ export function ReportProblemModal({ isOpen, onOpenChange, currentVideo, current
     setSelectedVideoId("");
     setSegmentIndex("");
     setDescription("");
+    setContactName("");
+    setContactEmail("");
+    setContactMobile("");
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -96,6 +105,9 @@ export function ReportProblemModal({ isOpen, onOpenChange, currentVideo, current
       videoId: selectedVideoId ? parseInt(selectedVideoId) : undefined,
       segmentIndex: segmentIndex ? parseInt(segmentIndex) : undefined,
       description: description.trim(),
+      contactName: contactName.trim() || undefined,
+      contactEmail: contactEmail.trim() || undefined,
+      contactMobile: contactMobile.trim() || undefined,
     });
   };
 
@@ -167,6 +179,46 @@ export function ReportProblemModal({ isOpen, onOpenChange, currentVideo, current
               rows={4}
               required
             />
+          </div>
+
+          {/* Contact Information - Optional */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium text-muted-foreground border-b pb-2">
+              Contact Information (Optional)
+            </h3>
+            
+            <div className="grid grid-cols-1 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="contactName">Name</Label>
+                <Input
+                  id="contactName"
+                  placeholder="Your name (optional)"
+                  value={contactName}
+                  onChange={(e) => setContactName(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="contactEmail">Email</Label>
+                <Input
+                  id="contactEmail"
+                  type="email"
+                  placeholder="your.email@example.com (optional)"
+                  value={contactEmail}
+                  onChange={(e) => setContactEmail(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="contactMobile">Mobile Number</Label>
+                <Input
+                  id="contactMobile"
+                  placeholder="+1 (555) 123-4567 (optional)"
+                  value={contactMobile}
+                  onChange={(e) => setContactMobile(e.target.value)}
+                />
+              </div>
+            </div>
           </div>
 
           <DialogFooter>

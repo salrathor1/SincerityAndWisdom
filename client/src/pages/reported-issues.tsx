@@ -148,7 +148,7 @@ export default function ReportedIssues() {
                           )}
                           <div className="flex items-center gap-1">
                             <Clock className="w-3 h-3" />
-                            {formatDistanceToNow(new Date(issue.createdAt), { addSuffix: true })}
+                            {issue.createdAt && formatDistanceToNow(new Date(issue.createdAt), { addSuffix: true })}
                           </div>
                         </div>
                       </div>
@@ -172,7 +172,7 @@ export default function ReportedIssues() {
                   </CardTitle>
                 </div>
                 <CardDescription>
-                  Reported {formatDistanceToNow(new Date(selectedIssue.createdAt), { addSuffix: true })}
+                  Reported {selectedIssue.createdAt && formatDistanceToNow(new Date(selectedIssue.createdAt), { addSuffix: true })}
                   {selectedIssue.reportedByUser && ` by ${selectedIssue.reportedByUser.email}`}
                 </CardDescription>
               </CardHeader>
@@ -214,6 +214,33 @@ export default function ReportedIssues() {
                     {selectedIssue.description}
                   </div>
                 </div>
+
+                {/* Contact Information */}
+                {(selectedIssue.contactName || selectedIssue.contactEmail || selectedIssue.contactMobile) && (
+                  <>
+                    <Separator />
+                    <div className="space-y-2">
+                      <h4 className="font-medium">Contact Information</h4>
+                      <div className="bg-muted p-3 rounded text-sm space-y-1">
+                        {selectedIssue.contactName && (
+                          <div>
+                            <span className="font-medium">Name:</span> {selectedIssue.contactName}
+                          </div>
+                        )}
+                        {selectedIssue.contactEmail && (
+                          <div>
+                            <span className="font-medium">Email:</span> {selectedIssue.contactEmail}
+                          </div>
+                        )}
+                        {selectedIssue.contactMobile && (
+                          <div>
+                            <span className="font-medium">Mobile:</span> {selectedIssue.contactMobile}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 <Separator />
 

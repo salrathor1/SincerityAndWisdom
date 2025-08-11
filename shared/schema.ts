@@ -98,6 +98,9 @@ export const reportedIssues = pgTable("reported_issues", {
   status: varchar("status", { length: 20 }).notNull().default("Pending"), // "Pending" or "Complete"
   adminNote: text("admin_note"), // Admin can add notes when resolving
   reportedByUserId: varchar("reported_by_user_id").references(() => users.id),
+  contactName: varchar("contact_name", { length: 255 }), // Optional contact name
+  contactEmail: varchar("contact_email", { length: 255 }), // Optional contact email
+  contactMobile: varchar("contact_mobile", { length: 50 }), // Optional contact mobile
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
