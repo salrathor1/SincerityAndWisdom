@@ -15,9 +15,10 @@ interface ReportProblemModalProps {
   onOpenChange: (open: boolean) => void;
   currentVideo?: Video;
   currentPlaylist?: Playlist;
+  initialVideoId?: string; // Add support for selected video from dropdowns
 }
 
-export function ReportProblemModal({ isOpen, onOpenChange, currentVideo, currentPlaylist }: ReportProblemModalProps) {
+export function ReportProblemModal({ isOpen, onOpenChange, currentVideo, currentPlaylist, initialVideoId }: ReportProblemModalProps) {
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string>("");
   const [selectedVideoId, setSelectedVideoId] = useState<string>("");
   const [translationLanguage, setTranslationLanguage] = useState<string>("Arabic");
@@ -77,10 +78,10 @@ export function ReportProblemModal({ isOpen, onOpenChange, currentVideo, current
         setSelectedVideoId(currentVideo.id.toString());
         setTranslationLanguage(detectLanguage());
       } else {
-        // If modal opens without current context, try to get from current URL params
+        // If modal opens without current context, try to get from URL params or initial props
         const urlParams = new URLSearchParams(window.location.search);
         const playlistIdFromUrl = urlParams.get('playlistId');
-        const videoIdFromUrl = urlParams.get('videoId');
+        const videoIdFromUrl = urlParams.get('videoId') || initialVideoId;
         
         if (playlistIdFromUrl) {
           setSelectedPlaylistId(playlistIdFromUrl);
@@ -92,7 +93,7 @@ export function ReportProblemModal({ isOpen, onOpenChange, currentVideo, current
         setTranslationLanguage(detectLanguage());
       }
     }
-  }, [isOpen, currentVideo, currentPlaylist]);
+  }, [isOpen, currentVideo, currentPlaylist, initialVideoId]);
 
   const reportMutation = useMutation({
     mutationFn: async (data: {

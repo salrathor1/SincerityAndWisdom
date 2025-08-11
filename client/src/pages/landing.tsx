@@ -1150,6 +1150,7 @@ export default function Landing() {
         onOpenChange={setShowReportModal}
         currentVideo={selectedVideo}
         currentPlaylist={playlists?.find((p: any) => p.id === selectedPlaylist)}
+        initialVideoId={selectedVideo?.id?.toString()}
       />
     </div>
   );
