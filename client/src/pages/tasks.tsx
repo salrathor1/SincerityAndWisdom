@@ -55,9 +55,9 @@ export default function TasksPage() {
     }
   }, [isAuthenticated, isLoading, toast]);
   
-  // Fetch tasks based on user role
+  // Fetch all tasks (filtering will be done client-side)
   const { data: tasks = [], isLoading: tasksLoading } = useQuery({
-    queryKey: ["/api/tasks", filter === "all" ? undefined : filter],
+    queryKey: ["/api/tasks"],
     enabled: !!user,
   });
 
