@@ -765,11 +765,7 @@ export default function Landing() {
                       {/* Transcript Tab */}
                       <TabsContent value="transcript" className="mt-0 space-y-0">
                         <div className="flex items-center justify-between mb-2 sm:mb-3">
-                          <CardTitle className="text-base sm:text-lg flex items-center font-bold text-slate-900">
-                            <FileText size={16} className="text-indigo-600 mr-2 sm:mr-2" />
-                            <span className="hidden sm:inline">Transcript</span>
-                            <span className="sm:hidden">Text</span>
-                          </CardTitle>
+                          <div></div>
                           <div className="flex items-center space-x-1 sm:space-x-2">
                         {/* Font Size Controls */}
                         {segments.length > 0 && (
