@@ -29,6 +29,7 @@ import { TranslatedText } from "@/components/TranslatedText";
 import { useToast } from "@/hooks/use-toast";
 import { ReportProblemModal } from "@/components/ui/report-problem-modal";
 import { useAuth } from "@/hooks/useAuth";
+import { SupportRibbon } from "@/components/support-ribbon";
 
 interface TranscriptSegment {
   time: string;
@@ -1149,6 +1150,8 @@ export default function Landing() {
         initialVideoId={selectedVideo?.id?.toString()}
         initialPlaylistId={selectedPlaylist?.toString()}
       />
+      
+      <SupportRibbon />
     </div>
   );
 }
