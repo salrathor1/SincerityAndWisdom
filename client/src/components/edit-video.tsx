@@ -39,7 +39,7 @@ interface TranscriptSegment {
   text: string;
 }
 
-interface TranscriptEditorProps {
+interface EditVideoProps {
   video: any;
   isOpen: boolean;
   onClose: () => void;
@@ -53,7 +53,7 @@ declare global {
   }
 }
 
-export function TranscriptEditor({ video, isOpen, onClose }: TranscriptEditorProps) {
+export function EditVideo({ video, isOpen, onClose }: EditVideoProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedLanguage, setSelectedLanguage] = useState("ar");

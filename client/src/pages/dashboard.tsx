@@ -4,7 +4,7 @@ import { Sidebar } from "@/components/sidebar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AddVideoModal } from "@/components/add-video-modal";
-import { TranscriptEditor } from "@/components/transcript-editor";
+import { EditVideo } from "@/components/edit-video";
 
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -257,7 +257,7 @@ export default function Dashboard() {
       />
       
       {selectedVideo && (
-        <TranscriptEditor
+        <EditVideo
           video={selectedVideo}
           isOpen={!!selectedVideo}
           onClose={() => setSelectedVideo(null)}

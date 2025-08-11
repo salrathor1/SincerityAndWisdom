@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AddVideoModal } from "@/components/add-video-modal";
-import { TranscriptEditor } from "@/components/transcript-editor";
+import { EditVideo } from "@/components/edit-video";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Search, Edit, Trash2, ExternalLink, ArrowUpDown, Languages } from "lucide-react";
@@ -253,7 +253,7 @@ export default function Videos() {
       />
       
       {selectedVideo && (
-        <TranscriptEditor
+        <EditVideo
           video={selectedVideo}
           isOpen={!!selectedVideo}
           onClose={() => setSelectedVideo(null)}
