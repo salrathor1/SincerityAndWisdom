@@ -23,7 +23,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ClipboardList, Plus, ExternalLink, User, CheckCircle, Clock } from "lucide-react";
+import { ClipboardList, Plus, ExternalLink, User, CheckCircle, Clock, Shield, BookOpen, Languages } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { apiRequest } from "@/lib/queryClient";
@@ -42,11 +42,18 @@ export default function TasksPage() {
     enabled: !!user,
   });
 
-  // Fetch all users for admin task assignment
-  const { data: users = [] } = useQuery({
+  // Fetch all users for admin task assignment (only editors and admins)
+  const { data: allUsers = [] } = useQuery({
     queryKey: ["/api/users"],
     enabled: user?.role === "admin",
   });
+
+  // Filter users to only show admins and editors
+  const assignableUsers = allUsers.filter((u: UserType) => 
+    u.role === "admin" || 
+    u.role === "arabic_transcripts_editor" || 
+    u.role === "translations_editor"
+  );
 
   // Create task mutation
   const createTaskMutation = useMutation({
@@ -193,11 +200,23 @@ export default function TasksPage() {
                       <SelectValue placeholder="Select a user" />
                     </SelectTrigger>
                     <SelectContent>
-                      {users.map((u: UserType) => (
+                      {assignableUsers.map((u: UserType) => (
                         <SelectItem key={u.id} value={u.id}>
-                          {u.firstName && u.lastName 
-                            ? `${u.firstName} ${u.lastName}` 
-                            : u.email}
+                          <div className="flex items-center gap-2">
+                            {u.role === "admin" && <Shield className="h-4 w-4 text-red-600" />}
+                            {u.role === "arabic_transcripts_editor" && <BookOpen className="h-4 w-4 text-blue-600" />}
+                            {u.role === "translations_editor" && <Languages className="h-4 w-4 text-green-600" />}
+                            <span>
+                              {u.firstName && u.lastName 
+                                ? `${u.firstName} ${u.lastName}` 
+                                : u.email}
+                            </span>
+                            <span className="text-xs text-gray-500 ml-auto">
+                              {u.role === "admin" && "Admin"}
+                              {u.role === "arabic_transcripts_editor" && "Arabic Editor"}
+                              {u.role === "translations_editor" && "Translation Editor"}
+                            </span>
+                          </div>
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -277,10 +296,20 @@ export default function TasksPage() {
                         
                         <div className="flex items-center gap-4 text-sm text-gray-500">
                           <div className="flex items-center gap-1">
-                            <User className="h-4 w-4" />
-                            {task.assignedToUser?.firstName && task.assignedToUser?.lastName
-                              ? `${task.assignedToUser.firstName} ${task.assignedToUser.lastName}`
-                              : task.assignedToUser?.email}
+                            {task.assignedToUser?.role === "admin" && <Shield className="h-4 w-4 text-red-600" />}
+                            {task.assignedToUser?.role === "arabic_transcripts_editor" && <BookOpen className="h-4 w-4 text-blue-600" />}
+                            {task.assignedToUser?.role === "translations_editor" && <Languages className="h-4 w-4 text-green-600" />}
+                            {!task.assignedToUser?.role && <User className="h-4 w-4" />}
+                            <span>
+                              {task.assignedToUser?.firstName && task.assignedToUser?.lastName
+                                ? `${task.assignedToUser.firstName} ${task.assignedToUser.lastName}`
+                                : task.assignedToUser?.email}
+                            </span>
+                            <span className="text-xs">
+                              {task.assignedToUser?.role === "admin" && "(Admin)"}
+                              {task.assignedToUser?.role === "arabic_transcripts_editor" && "(Arabic Editor)"}
+                              {task.assignedToUser?.role === "translations_editor" && "(Translation Editor)"}
+                            </span>
                           </div>
                           
                           <span>Created {format(new Date(task.createdAt), 'MMM d, yyyy')}</span>
