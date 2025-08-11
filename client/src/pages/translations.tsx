@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Languages, Save, Clock, Plus, Trash2 } from "lucide-react";
+import { Languages, Save, Clock, Plus, Trash2, Link } from "lucide-react";
 
 interface TranscriptSegment {
   time: string;
@@ -125,14 +125,23 @@ export default function TranslationsPage() {
     retry: false,
   });
 
-  // Handle URL parameter for video selection
+  // Handle URL parameters for video and language selection
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const videoIdParam = urlParams.get('videoId');
+    const languageParam = urlParams.get('language');
+    
     if (videoIdParam && videos.length > 0) {
       const videoExists = videos.find(v => v.id.toString() === videoIdParam);
       if (videoExists) {
         setSelectedVideoId(videoIdParam);
+      }
+    }
+    
+    if (languageParam) {
+      const validLanguages = ['en', 'ur', 'fr', 'es', 'tr', 'ms'];
+      if (validLanguages.includes(languageParam)) {
+        setSelectedLanguage(languageParam);
       }
     }
   }, [videos]);
@@ -412,6 +421,37 @@ export default function TranslationsPage() {
     saveTranslationMutation.mutate();
   };
 
+  const generateCustomUrl = () => {
+    if (!selectedVideoId || !selectedLanguage) {
+      toast({
+        title: "Error",
+        description: "Please select a video and language first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const baseUrl = window.location.origin;
+    const params = new URLSearchParams();
+    params.set('videoId', selectedVideoId);
+    params.set('language', selectedLanguage);
+    
+    const customUrl = `${baseUrl}/translations?${params.toString()}`;
+    
+    navigator.clipboard.writeText(customUrl).then(() => {
+      toast({
+        title: "Success",
+        description: "Custom URL copied to clipboard!",
+      });
+    }).catch(() => {
+      toast({
+        title: "Error", 
+        description: "Failed to copy URL to clipboard",
+        variant: "destructive",
+      });
+    });
+  };
+
   if (isLoading) {
     return (
       <div className="flex h-screen bg-background">
@@ -442,6 +482,17 @@ export default function TranslationsPage() {
                 Compare Arabic transcripts with translations and edit them
               </p>
             </div>
+            
+            {selectedVideoId && selectedLanguage && (
+              <Button
+                onClick={generateCustomUrl}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Link size={16} />
+                Copy Custom URL
+              </Button>
+            )}
           </div>
 
           {/* Selection Controls */}

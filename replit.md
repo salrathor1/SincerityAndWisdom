@@ -6,6 +6,19 @@ The Sunnah and Wisdom is a full-stack web application for managing Islamic educa
 
 ## Recent Changes
 
+### January 26, 2025 - Enhanced Translations Page with Custom URL Support
+- **Custom URL Parameters**: Added support for `videoId` and `language` URL parameters to auto-populate video and language selections
+- **URL Generation Feature**: Added "Copy Custom URL" button that generates shareable links with pre-selected video and language
+- **Automatic Pre-selection**: When accessing URLs like `/translations?videoId=1&language=en`, the page automatically selects the specified video and language
+- **Clipboard Integration**: Generated URLs are automatically copied to clipboard with success notifications
+- **Enhanced User Experience**: Streamlined workflow for sharing specific translation tasks with team members
+
+### January 26, 2025 - Fixed Tasks URL Validation Issue
+- **Resolved API Call Format**: Fixed "Method is not Valid HTTP Token" error by correcting API request format in tasks creation
+- **Removed URL Validation**: Task link field now accepts any string format without strict URL validation
+- **Enhanced Error Handling**: Added comprehensive logging and debugging for task creation process
+- **Working Task System**: Tasks can now be created and assigned with any URL format in the optional link field
+
 ### January 26, 2025 - Added Tasks Management System
 - **Created Tasks Database**: New `tasks` table with description, status, assignment, and optional links
 - **Role-Based Task Access**: Admins can create/manage all tasks, users can only view/update their assigned tasks
