@@ -366,6 +366,13 @@ export default function Landing() {
 
   // Handle segment selection for sharing - simplified from/to system
   const handleSegmentClick = (segmentIndex: number, time?: string, event?: React.MouseEvent) => {
+    // Clear search when user clicks on a segment (if currently searching)
+    if (searchQuery.trim() !== '') {
+      setSearchQuery('');
+      setSearchResults([]);
+      setCurrentSearchIndex(-1);
+    }
+    
     if (isSelecting) {
       event?.preventDefault();
       
