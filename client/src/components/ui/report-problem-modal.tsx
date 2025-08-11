@@ -42,9 +42,14 @@ export function ReportProblemModal({ isOpen, onOpenChange, currentVideo, current
 
   // Set default values when modal opens
   useEffect(() => {
-    if (isOpen && currentVideo && currentPlaylist) {
-      setSelectedPlaylistId(currentPlaylist.id.toString());
-      setSelectedVideoId(currentVideo.id.toString());
+    if (isOpen) {
+      if (currentVideo && currentPlaylist) {
+        setSelectedPlaylistId(currentPlaylist.id.toString());
+        setSelectedVideoId(currentVideo.id.toString());
+      } else {
+        // Clear form when opening without context
+        resetForm();
+      }
     }
   }, [isOpen, currentVideo, currentPlaylist]);
 
@@ -113,7 +118,7 @@ export function ReportProblemModal({ isOpen, onOpenChange, currentVideo, current
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>Report Problem</DialogTitle>
           <DialogDescription>
@@ -121,7 +126,8 @@ export function ReportProblemModal({ isOpen, onOpenChange, currentVideo, current
           </DialogDescription>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="overflow-y-auto flex-1 pr-2">
+          <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="playlist">Playlist (Optional)</Label>
             <Select value={selectedPlaylistId} onValueChange={setSelectedPlaylistId}>
@@ -221,23 +227,24 @@ export function ReportProblemModal({ isOpen, onOpenChange, currentVideo, current
             </div>
           </div>
 
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={reportMutation.isPending}
-            >
-              Cancel
-            </Button>
-            <Button 
-              type="submit" 
-              disabled={reportMutation.isPending || !description.trim()}
-            >
-              {reportMutation.isPending ? "Submitting..." : "Submit Report"}
-            </Button>
-          </DialogFooter>
-        </form>
+            <DialogFooter className="mt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={reportMutation.isPending}
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={reportMutation.isPending || !description.trim()}
+              >
+                {reportMutation.isPending ? "Submitting..." : "Submit Report"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </div>
       </DialogContent>
     </Dialog>
   );
