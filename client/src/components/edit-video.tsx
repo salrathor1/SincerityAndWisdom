@@ -718,7 +718,7 @@ export function EditVideo({ video, isOpen, onClose }: EditVideoProps) {
         <DialogHeader className="px-6 py-4 border-b relative flex-shrink-0">
           <div className="flex items-center justify-between">
             <DialogTitle className="text-lg font-semibold">
-              Edit Transcript - {video.title}
+              Edit Video - {video.title}
             </DialogTitle>
             <div className="flex items-center space-x-3">
               <div className="flex items-center space-x-2">
