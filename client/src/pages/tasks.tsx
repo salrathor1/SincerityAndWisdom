@@ -75,11 +75,19 @@ export default function TasksPage() {
   // Create task mutation
   const createTaskMutation = useMutation({
     mutationFn: async (taskData: { description: string; assignedToUserId: string; taskLink?: string }) => {
-      return await apiRequest("/api/tasks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(taskData),
-      });
+      try {
+        console.log("Sending task data to API:", taskData);
+        const result = await apiRequest("/api/tasks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(taskData),
+        });
+        console.log("API response:", result);
+        return result;
+      } catch (error) {
+        console.error("API request failed:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
@@ -145,11 +153,14 @@ export default function TasksPage() {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     
-    createTaskMutation.mutate({
+    const taskData = {
       description: formData.get("description") as string,
       assignedToUserId: formData.get("assignedToUserId") as string,
       taskLink: formData.get("taskLink") as string || undefined,
-    });
+    };
+    
+    console.log("Creating task with data:", taskData);
+    createTaskMutation.mutate(taskData);
   };
 
   const handleStatusChange = (taskId: number, newStatus: string) => {

@@ -508,6 +508,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/tasks', isAuthenticated, async (req: any, res) => {
     try {
+      console.log("POST /api/tasks - Request body:", JSON.stringify(req.body, null, 2));
+      console.log("POST /api/tasks - Headers:", JSON.stringify(req.headers, null, 2));
+      
       const currentUserId = req.user.claims.sub;
       const currentUser = await storage.getUser(currentUserId);
       
@@ -524,11 +527,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         createdByUserId: currentUserId,
       };
 
+      console.log("POST /api/tasks - Processed task data:", JSON.stringify(taskData, null, 2));
+
       const task = await storage.createTask(taskData);
       res.json(task);
     } catch (error) {
-      console.error("Error creating task:", error);
-      res.status(500).json({ message: "Failed to create task" });
+      console.error("Error creating task - Full error:", error);
+      console.error("Error stack:", error instanceof Error ? error.stack : "No stack trace");
+      res.status(500).json({ message: "Failed to create task", error: error instanceof Error ? error.message : "Unknown error" });
     }
   });
 
