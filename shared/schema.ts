@@ -148,6 +148,8 @@ export const insertTaskSchema = createInsertSchema(tasks).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  taskLink: z.string().optional().or(z.literal("")).transform(val => val === "" ? undefined : val),
 });
 
 // Types

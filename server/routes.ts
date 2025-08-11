@@ -516,10 +516,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Only admins can create tasks" });
       }
 
-      const task = await storage.createTask({
-        ...req.body,
+      // Validate and sanitize input
+      const taskData = {
+        description: req.body.description,
+        assignedToUserId: req.body.assignedToUserId,
+        taskLink: req.body.taskLink || null,
         createdByUserId: currentUserId,
-      });
+      };
+
+      const task = await storage.createTask(taskData);
       res.json(task);
     } catch (error) {
       console.error("Error creating task:", error);

@@ -259,8 +259,8 @@ export default function TasksPage() {
                       <Input
                         id="taskLink"
                         name="taskLink"
-                        type="url"
-                        placeholder="https://example.com"
+                        type="text"
+                        placeholder="https://example.com or any URL"
                         className="mt-1"
                       />
                     </div>
