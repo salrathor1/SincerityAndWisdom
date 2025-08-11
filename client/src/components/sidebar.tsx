@@ -9,7 +9,7 @@ import {
   FileText, 
   Languages,
   BookOpen,
-  BarChart3, 
+
   LogOut,
   User,
   Shield,
@@ -28,7 +28,7 @@ const navigation = [
 
   { name: "Arabic Transcripts", href: "/arabic-transcripts", icon: BookOpen },
   { name: "Translations", href: "/translations", icon: Languages },
-  { name: "Analytics", href: "/analytics", icon: BarChart3 },
+
 ];
 
 export function Sidebar() {
