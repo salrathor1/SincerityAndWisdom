@@ -83,7 +83,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/playlists/:id/videos', async (req, res) => {
     try {
       const playlistId = parseInt(req.params.id);
-      const videos = await storage.getVideosByPlaylist(playlistId);
+      const includeHidden = req.query.includeHidden === 'true';
+      const videos = await storage.getVideosByPlaylist(playlistId, includeHidden);
       res.json(videos);
     } catch (error) {
       console.error("Error fetching playlist videos:", error);
@@ -320,6 +321,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Handle playlist order updates specifically
       if (requestData.playlistOrder !== undefined) {
         const video = await storage.updateVideoOrder(id, requestData.playlistOrder);
+        return res.json(video);
+      }
+      
+      // Handle visibility toggle updates specifically
+      if (requestData.isPublic !== undefined) {
+        const video = await storage.updateVideo(id, { isPublic: requestData.isPublic });
         return res.json(video);
       }
       

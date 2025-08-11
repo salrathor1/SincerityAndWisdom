@@ -60,6 +60,7 @@ export const videos = pgTable("videos", {
   playlistOrder: integer("playlist_order").default(0), // Order within playlist
   vocabulary: text("vocabulary"), // vocabulary notes and definitions
   status: varchar("status", { length: 20 }).default("processing"), // processing, complete, error
+  isPublic: boolean("is_public").default(true), // Controls visibility in landing page dropdown
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

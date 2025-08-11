@@ -19,7 +19,7 @@ import {
   type TaskWithUsers,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, sql, asc } from "drizzle-orm";
+import { eq, desc, sql, asc, and, or, isNull } from "drizzle-orm";
 
 export interface IStorage {
   // User operations (required for Replit Auth)
@@ -40,7 +40,7 @@ export interface IStorage {
   getVideos(limit?: number): Promise<VideoWithRelations[]>;
   getVideo(id: number): Promise<VideoWithRelations | undefined>;
   getVideoByYoutubeId(youtubeId: string): Promise<VideoWithRelations | undefined>;
-  getVideosByPlaylist(playlistId: number): Promise<VideoWithRelations[]>;
+  getVideosByPlaylist(playlistId: number, includeHidden?: boolean): Promise<VideoWithRelations[]>;
   updateVideo(id: number, video: Partial<InsertVideo>): Promise<Video>;
   updateVideoOrder(id: number, playlistOrder: number): Promise<Video>;
   deleteVideo(id: number): Promise<void>;
@@ -207,9 +207,22 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
-  async getVideosByPlaylist(playlistId: number): Promise<VideoWithRelations[]> {
+  async getVideosByPlaylist(playlistId: number, includeHidden?: boolean): Promise<VideoWithRelations[]> {
+    let whereCondition = eq(videos.playlistId, playlistId);
+    
+    // Add isPublic filter unless includeHidden is true
+    if (!includeHidden) {
+      whereCondition = and(
+        eq(videos.playlistId, playlistId),
+        or(
+          eq(videos.isPublic, true),
+          isNull(videos.isPublic)
+        )
+      );
+    }
+    
     return await db.query.videos.findMany({
-      where: eq(videos.playlistId, playlistId),
+      where: whereCondition,
       with: {
         playlist: true,
         transcripts: true,

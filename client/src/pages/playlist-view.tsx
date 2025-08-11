@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
-import { ArrowLeft, Video, Trash2, GripVertical } from "lucide-react";
+import { ArrowLeft, Video, Trash2, GripVertical, Eye, EyeOff } from "lucide-react";
 
 export default function PlaylistView() {
   const [location] = useLocation();
@@ -43,9 +43,10 @@ export default function PlaylistView() {
     retry: false,
   });
 
-  // Fetch playlist videos
+  // Fetch playlist videos (including hidden ones for admin view)
   const { data: playlistVideos = [], isLoading: videosLoading } = useQuery({
     queryKey: [`/api/playlists/${playlistId}/videos`],
+    queryFn: () => fetch(`/api/playlists/${playlistId}/videos?includeHidden=true`).then(res => res.json()),
     enabled: !!playlistId,
     retry: false,
   });
@@ -106,10 +107,46 @@ export default function PlaylistView() {
     },
   });
 
+  // Toggle video visibility mutation
+  const toggleVideoVisibilityMutation = useMutation({
+    mutationFn: async ({ videoId, isPublic }: { videoId: number; isPublic: boolean }) => {
+      await apiRequest("PUT", `/api/videos/${videoId}`, { isPublic });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/playlists/${playlistId}/videos`] });
+      toast({
+        title: "Success",
+        description: "Video visibility updated",
+      });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: "Failed to update video visibility",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleRemoveVideo = (videoId: number) => {
     if (confirm("Are you sure you want to remove this video from the playlist?")) {
       removeVideoFromPlaylistMutation.mutate({ videoId });
     }
+  };
+
+  const handleToggleVisibility = (videoId: number, currentVisibility: boolean) => {
+    toggleVideoVisibilityMutation.mutate({ videoId, isPublic: !currentVisibility });
   };
 
   const handleDragStart = (e: React.DragEvent, index: number) => {
@@ -283,6 +320,17 @@ export default function PlaylistView() {
                       </div>
                       
                       <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleToggleVisibility(video.id, video.isPublic !== false)}
+                          disabled={toggleVideoVisibilityMutation.isPending}
+                          className={`${video.isPublic !== false ? 'text-green-600 hover:text-green-700' : 'text-gray-500 hover:text-gray-600'}`}
+                          title={video.isPublic !== false ? 'Video is visible on landing page' : 'Video is hidden from landing page'}
+                        >
+                          {video.isPublic !== false ? <Eye size={14} className="mr-1" /> : <EyeOff size={14} className="mr-1" />}
+                          {video.isPublic !== false ? 'Public' : 'Hidden'}
+                        </Button>
                         <Button
                           variant="outline"
                           size="sm"
