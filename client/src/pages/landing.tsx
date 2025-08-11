@@ -769,16 +769,30 @@ export default function Landing() {
                 <Card className="shadow-md border bg-white flex flex-col min-h-[300px] sm:min-h-[400px] lg:min-h-[500px] xl:h-auto">
                   <CardHeader className="pb-2 px-3 sm:px-4 pt-3 sm:pt-4">
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                      <TabsList className="grid w-full grid-cols-2 mb-3">
-                        <TabsTrigger value="transcript" className="flex items-center space-x-1">
-                          <FileText size={14} />
-                          <span>Transcript</span>
-                        </TabsTrigger>
-                        <TabsTrigger value="vocabulary" className="flex items-center space-x-1">
-                          <Languages size={14} />
-                          <span>Vocabulary</span>
-                        </TabsTrigger>
-                      </TabsList>
+                      <div className="flex items-center justify-between mb-3">
+                        <TabsList className="grid grid-cols-2 flex-1 mr-2">
+                          <TabsTrigger value="transcript" className="flex items-center space-x-1">
+                            <FileText size={14} />
+                            <span>Transcript</span>
+                          </TabsTrigger>
+                          <TabsTrigger value="vocabulary" className="flex items-center space-x-1">
+                            <Languages size={14} />
+                            <span>Vocabulary</span>
+                          </TabsTrigger>
+                        </TabsList>
+                        
+                        {/* Report Problem Button */}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleReportProblem}
+                          className="h-8 px-3 text-xs border-orange-200 hover:bg-orange-50 hover:text-orange-700 hover:border-orange-300 transition-colors"
+                          title="Report an issue with this content"
+                        >
+                          <AlertTriangle size={12} className="mr-1 text-orange-600" />
+                          <span className="hidden sm:inline">Report</span>
+                        </Button>
+                      </div>
                       
                       {/* Transcript Tab */}
                       <TabsContent value="transcript" className="mt-0 space-y-0">
