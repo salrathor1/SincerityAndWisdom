@@ -6,6 +6,14 @@ The Sunnah and Wisdom is a full-stack web application for managing Islamic educa
 
 ## Recent Changes
 
+### January 26, 2025 - Removed Edit Transcript Page
+- **Removed Transcripts Page**: Completely removed the `/transcripts` route and page component
+- **Updated Navigation**: Removed "Transcripts" menu item from sidebar navigation
+- **Streamlined Interface**: Simplified navigation menu to focus on Arabic Transcripts and Translations pages
+- **Clean Architecture**: Removed unused transcripts.tsx file and related imports from App.tsx
+
+## Previous Changes
+
 ### January 26, 2025 - UI and System Enhancements
 - **Removed Videos Panel**: Removed the Videos panel with playlist from the landing page for cleaner layout
 - **Enhanced SRT Support**: Added support for both standard (HH:MM:SS,mmm) and extended minute (MM:SS,mmm) timestamp formats
