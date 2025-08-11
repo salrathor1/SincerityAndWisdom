@@ -52,10 +52,7 @@ export function ReportProblemModal({ isOpen, onOpenChange, currentVideo, current
       segmentIndex?: number;
       description: string;
     }) => {
-      await apiRequest("/api/reported-issues", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      await apiRequest("POST", "/api/reported-issues", data);
     },
     onSuccess: () => {
       toast({
