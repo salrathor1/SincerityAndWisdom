@@ -368,6 +368,11 @@ export default function Landing() {
     setFontSize(14); // Reset to default
   };
 
+  // Handle report problem
+  const handleReportProblem = () => {
+    setShowReportModal(true);
+  };
+
   // Handle segment selection for sharing - simplified from/to system
   const handleSegmentClick = (segmentIndex: number, time?: string, event?: React.MouseEvent) => {
     // Clear search when user clicks on a segment (if currently searching)
