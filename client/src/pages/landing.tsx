@@ -766,21 +766,21 @@ export default function Landing() {
                       <TabsContent value="transcript" className="mt-0 space-y-0">
                         <div className="flex items-center justify-between mb-2 sm:mb-3">
                           <div></div>
-                          <div className="flex items-center space-x-1 sm:space-x-2">
+                          <div className="flex items-center space-x-1 sm:space-x-2 w-full">
                         {/* Font Size Controls */}
                         {segments.length > 0 && (
-                          <div className="flex items-center space-x-1 bg-slate-100 rounded p-1">
+                          <div className="flex items-center space-x-1 bg-slate-100 rounded p-1 flex-1">
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={decreaseFontSize}
                               disabled={fontSize <= 10}
-                              className="h-5 w-5 p-0"
+                              className="h-6 flex-1 p-0"
                               title="Decrease font size"
                             >
-                              <Minus size={8} />
+                              <Minus size={10} />
                             </Button>
-                            <span className="text-xs font-medium text-slate-700 w-5 text-center">
+                            <span className="text-xs font-medium text-slate-700 px-2 text-center">
                               {fontSize}
                             </span>
                             <Button
@@ -788,17 +788,17 @@ export default function Landing() {
                               size="sm"
                               onClick={increaseFontSize}
                               disabled={fontSize >= 24}
-                              className="h-5 w-5 p-0"
+                              className="h-6 flex-1 p-0"
                               title="Increase font size"
                             >
-                              <Plus size={8} />
+                              <Plus size={10} />
                             </Button>
                           </div>
                         )}
                         
                         {availableLanguages.length > 0 && (
-                          <div className="flex items-center space-x-1">
-                            <Languages size={12} className="text-slate-500" />
+                          <div className="flex items-center space-x-1 flex-1">
+                            <Languages size={12} className="text-slate-500 flex-shrink-0" />
                             <Select value={selectedLanguage} onValueChange={(value) => {
                               setSelectedLanguage(value);
                               
@@ -813,7 +813,7 @@ export default function Landing() {
                               // Update URL without page reload
                               window.history.pushState({}, '', newUrl.toString());
                             }}>
-                              <SelectTrigger className="w-24 h-7 text-xs">
+                              <SelectTrigger className="w-full h-7 text-xs">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
@@ -829,17 +829,18 @@ export default function Landing() {
                         
                         {/* Selection and Share Controls */}
                         {segments.length > 0 && (
-                          <div className="flex items-center space-x-1">
+                          <div className="flex items-center space-x-1 flex-1">
                             {!isSelecting ? (
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    className="h-6 px-1.5 text-xs min-w-0"
+                                    className="h-6 px-2 text-xs w-full"
                                   >
-                                    <Share2 size={9} className="mr-0.5" />
-                                    <ChevronDown size={7} />
+                                    <Share2 size={9} className="mr-1" />
+                                    <span className="hidden sm:inline">Share</span>
+                                    <ChevronDown size={7} className="ml-auto" />
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end" className="w-28 text-xs">
