@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Languages, Save, Clock, Plus, Trash2, Link } from "lucide-react";
+import { Languages, Save, Clock, Plus, Trash2, Link, Download } from "lucide-react";
 
 interface TranscriptSegment {
   time: string;
@@ -452,6 +452,54 @@ export default function TranslationsPage() {
     });
   };
 
+  const downloadTranslationSRT = () => {
+    if (!selectedVideoId || !selectedLanguage || translationSegments.length === 0) {
+      toast({
+        title: "Error",
+        description: "No translation content to download",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const video = videos.find(v => v.id.toString() === selectedVideoId);
+    const videoTitle = video?.title || 'Unknown Video';
+    
+    // Generate SRT content from translation segments
+    const srtContent = translationSegments
+      .map((segment, index) => {
+        if (!segment.text.trim()) return null;
+        return `${index + 1}\n${segment.time} --> ${segment.time}\n${segment.text.trim()}\n`;
+      })
+      .filter(Boolean)
+      .join('\n');
+
+    if (!srtContent.trim()) {
+      toast({
+        title: "Error",
+        description: "No translation content to download",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Create and download file
+    const blob = new Blob([srtContent], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${videoTitle}_${getLanguageName(selectedLanguage)}.srt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Success",
+      description: `Downloaded ${getLanguageName(selectedLanguage)} translation SRT file`,
+    });
+  };
+
   if (isLoading) {
     return (
       <div className="flex h-screen bg-background">
@@ -484,14 +532,28 @@ export default function TranslationsPage() {
             </div>
             
             {selectedVideoId && selectedLanguage && (
-              <Button
-                onClick={generateCustomUrl}
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                <Link size={16} />
-                Copy Custom URL
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={generateCustomUrl}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <Link size={16} />
+                  Copy Custom URL
+                </Button>
+                
+                {currentUser?.role === 'admin' && (
+                  <Button
+                    onClick={downloadTranslationSRT}
+                    variant="outline"
+                    className="flex items-center gap-2"
+                    disabled={translationSegments.length === 0 || translationSegments.every(s => !s.text.trim())}
+                  >
+                    <Download size={16} />
+                    Download SRT
+                  </Button>
+                )}
+              </div>
             )}
           </div>
 
