@@ -648,7 +648,7 @@ export default function TranslationsPage() {
                     <div className="max-h-[500px] overflow-y-auto">
                       <div 
                         className="p-3 text-sm font-mono leading-relaxed whitespace-pre-wrap bg-muted/20 rounded"
-                        style={{ direction: 'ltr', textAlign: 'left' }}
+                        style={{ direction: 'rtl', textAlign: 'right' }}
                       >
                         {getSRTFromSegments(arabicSegments, true)}
                       </div>
