@@ -502,11 +502,10 @@ export default function TranslationsPage() {
 
   // Update approval status
   const updateApprovalStatusMutation = useMutation({
-    mutationFn: async ({ transcriptId, approvalStatus }: { transcriptId: number, approvalStatus: string }) => {
-      return apiRequest(`/api/transcripts/${transcriptId}/approval-status`, {
-        method: 'PUT',
-        body: JSON.stringify({ approvalStatus }),
-        headers: { 'Content-Type': 'application/json' }
+    mutationFn: async ({ transcriptId, approvalStatus, language }: { transcriptId: number, approvalStatus: string, language: string }) => {
+      return apiRequest('PUT', `/api/transcripts/${transcriptId}/approval-status`, {
+        approvalStatus,
+        language
       });
     },
     onSuccess: () => {
@@ -526,12 +525,27 @@ export default function TranslationsPage() {
   });
 
   const handleApprovalStatusUpdate = (approvalStatus: string) => {
-    if (!selectedTranscript) return;
+    if (!selectedTranscript || !selectedLanguage) return;
     
     updateApprovalStatusMutation.mutate({
       transcriptId: selectedTranscript.id,
       approvalStatus,
+      language: selectedLanguage,
     });
+  };
+
+  // Get language-specific approval status
+  const getApprovalStatus = (transcript: any, language: string): string => {
+    const approvalStatusMap: { [key: string]: string } = {
+      'ar': transcript.approvalStatusAr || 'unchecked',
+      'en': transcript.approvalStatusEn || 'unchecked',
+      'ur': transcript.approvalStatusUr || 'unchecked',
+      'fr': transcript.approvalStatusFr || 'unchecked',
+      'es': transcript.approvalStatusEs || 'unchecked',
+      'tr': transcript.approvalStatusTr || 'unchecked',
+      'ms': transcript.approvalStatusMs || 'unchecked'
+    };
+    return approvalStatusMap[language] || 'unchecked';
   };
 
   if (isLoading) {
@@ -650,24 +664,24 @@ export default function TranslationsPage() {
                   {!selectedTranscript && (
                     <Badge variant="outline">New Translation</Badge>
                   )}
-                  {selectedTranscript && (
+                  {selectedTranscript && selectedLanguage && (
                     <div className="flex items-center space-x-2">
                       <Badge 
-                        variant={selectedTranscript.approvalStatus === 'approved' ? 'default' : 'destructive'}
+                        variant={getApprovalStatus(selectedTranscript, selectedLanguage) === 'approved' ? 'default' : 'destructive'}
                         className={`text-xs ${
-                          selectedTranscript.approvalStatus === 'approved' 
+                          getApprovalStatus(selectedTranscript, selectedLanguage) === 'approved' 
                             ? 'bg-green-100 text-green-800 border-green-300' 
                             : 'bg-red-100 text-red-800 border-red-300'
                         }`}
                       >
-                        {selectedTranscript.approvalStatus === 'approved' ? 'Approved' : 'Unchecked'}
+                        {getApprovalStatus(selectedTranscript, selectedLanguage) === 'approved' ? 'Approved' : 'Unchecked'}
                       </Badge>
                       
                       {currentUser?.role === 'admin' && (
                         <div className="flex items-center space-x-1">
                           <Button
                             size="sm"
-                            variant={selectedTranscript.approvalStatus === 'approved' ? 'default' : 'outline'}
+                            variant={getApprovalStatus(selectedTranscript, selectedLanguage) === 'approved' ? 'default' : 'outline'}
                             onClick={() => handleApprovalStatusUpdate('approved')}
                             disabled={updateApprovalStatusMutation.isPending}
                             className="h-6 px-2 text-xs"
@@ -677,7 +691,7 @@ export default function TranslationsPage() {
                           </Button>
                           <Button
                             size="sm"
-                            variant={selectedTranscript.approvalStatus === 'unchecked' ? 'destructive' : 'outline'}
+                            variant={getApprovalStatus(selectedTranscript, selectedLanguage) === 'unchecked' ? 'destructive' : 'outline'}
                             onClick={() => handleApprovalStatusUpdate('unchecked')}
                             disabled={updateApprovalStatusMutation.isPending}
                             className="h-6 px-2 text-xs"

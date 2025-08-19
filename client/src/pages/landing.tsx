@@ -68,6 +68,20 @@ export default function Landing() {
   const { toast } = useToast();
   const { isAuthenticated } = useAuth();
 
+  // Get language-specific approval status
+  const getApprovalStatusForLanguage = (transcript: any, language: string): string => {
+    const approvalStatusMap: { [key: string]: string } = {
+      'ar': transcript.approvalStatusAr || 'unchecked',
+      'en': transcript.approvalStatusEn || 'unchecked',
+      'ur': transcript.approvalStatusUr || 'unchecked',
+      'fr': transcript.approvalStatusFr || 'unchecked',
+      'es': transcript.approvalStatusEs || 'unchecked',
+      'tr': transcript.approvalStatusTr || 'unchecked',
+      'ms': transcript.approvalStatusMs || 'unchecked'
+    };
+    return approvalStatusMap[language] || 'unchecked';
+  };
+
   // Fetch playlists for public viewing
   const { data: playlists } = useQuery({
     queryKey: ["/api/playlists"],
@@ -864,14 +878,14 @@ export default function Landing() {
                         {currentTranscript && (
                           <div className="flex items-center">
                             <Badge 
-                              variant={currentTranscript.approvalStatus === 'approved' ? 'default' : 'destructive'}
+                              variant={getApprovalStatusForLanguage(currentTranscript, selectedLanguage) === 'approved' ? 'default' : 'destructive'}
                               className={`text-xs ${
-                                currentTranscript.approvalStatus === 'approved' 
+                                getApprovalStatusForLanguage(currentTranscript, selectedLanguage) === 'approved' 
                                   ? 'bg-green-100 text-green-800 border-green-300' 
                                   : 'bg-red-100 text-red-800 border-red-300'
                               }`}
                             >
-                              {currentTranscript.approvalStatus === 'approved' ? 'Approved' : 'Unchecked'}
+                              {getApprovalStatusForLanguage(currentTranscript, selectedLanguage) === 'approved' ? 'Approved' : 'Unchecked'}
                             </Badge>
                           </div>
                         )}

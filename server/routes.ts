@@ -428,13 +428,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/transcripts/:id/approval-status', isAuthenticated, requireRole(['admin']), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const { approvalStatus } = req.body;
+      const { approvalStatus, language } = req.body;
       
       if (!approvalStatus || !['unchecked', 'approved'].includes(approvalStatus)) {
         return res.status(400).json({ message: "Invalid approval status. Must be 'unchecked' or 'approved'" });
       }
 
-      const transcript = await storage.updateTranscript(id, { approvalStatus });
+      if (!language) {
+        return res.status(400).json({ message: "Language is required" });
+      }
+
+      // Map language to the correct column
+      const approvalColumnMap: { [key: string]: string } = {
+        'ar': 'approvalStatusAr',
+        'en': 'approvalStatusEn', 
+        'ur': 'approvalStatusUr',
+        'fr': 'approvalStatusFr',
+        'es': 'approvalStatusEs',
+        'tr': 'approvalStatusTr',
+        'ms': 'approvalStatusMs'
+      };
+
+      const approvalColumn = approvalColumnMap[language];
+      if (!approvalColumn) {
+        return res.status(400).json({ message: "Invalid language code" });
+      }
+
+      const updateData: any = {};
+      updateData[approvalColumn] = approvalStatus;
+
+      const transcript = await storage.updateTranscript(id, updateData);
       res.json(transcript);
     } catch (error) {
       console.error("Error updating approval status:", error);
