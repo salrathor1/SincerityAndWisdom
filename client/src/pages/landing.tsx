@@ -876,16 +876,21 @@ export default function Landing() {
                         
                         {/* Approval Status Badge */}
                         {currentTranscript && (
-                          <div className="flex items-center">
+                          <div className="flex items-center flex-shrink-0">
                             <Badge 
                               variant={getApprovalStatusForLanguage(currentTranscript, selectedLanguage) === 'approved' ? 'default' : 'destructive'}
-                              className={`text-xs ${
+                              className={`text-xs px-2 py-1 ${
                                 getApprovalStatusForLanguage(currentTranscript, selectedLanguage) === 'approved' 
                                   ? 'bg-green-100 text-green-800 border-green-300' 
                                   : 'bg-red-100 text-red-800 border-red-300'
                               }`}
                             >
-                              {getApprovalStatusForLanguage(currentTranscript, selectedLanguage) === 'approved' ? 'Checked' : 'Unchecked'}
+                              <span className="hidden sm:inline">
+                                {getApprovalStatusForLanguage(currentTranscript, selectedLanguage) === 'approved' ? 'Checked' : 'Unchecked'}
+                              </span>
+                              <span className="sm:hidden">
+                                {getApprovalStatusForLanguage(currentTranscript, selectedLanguage) === 'approved' ? '✓' : '✗'}
+                              </span>
                             </Badge>
                           </div>
                         )}
