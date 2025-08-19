@@ -56,6 +56,7 @@ export default function Landing() {
   const [searchResults, setSearchResults] = useState<number[]>([]);
   const [currentSearchIndex, setCurrentSearchIndex] = useState(-1);
   const [fontSize, setFontSize] = useState(14); // Base font size in pixels
+  const [vocabularyFontSize, setVocabularyFontSize] = useState(14); // Vocabulary font size in pixels
   const [showReportModal, setShowReportModal] = useState(false);
   const [fromSegment, setFromSegment] = useState<number | null>(null);
   const [toSegment, setToSegment] = useState<number | null>(null);
@@ -381,6 +382,19 @@ export default function Landing() {
 
   const resetFontSize = () => {
     setFontSize(14); // Reset to default
+  };
+
+  // Vocabulary font size controls
+  const increaseVocabularyFontSize = () => {
+    setVocabularyFontSize(prev => Math.min(prev + 2, 24)); // Max 24px
+  };
+
+  const decreaseVocabularyFontSize = () => {
+    setVocabularyFontSize(prev => Math.max(prev - 2, 10)); // Min 10px
+  };
+
+  const resetVocabularyFontSize = () => {
+    setVocabularyFontSize(14); // Reset to default
   };
 
   // Handle report problem
@@ -1039,13 +1053,44 @@ export default function Landing() {
                       {/* Vocabulary Tab */}
                       <TabsContent value="vocabulary" className="mt-0 space-y-0">
                         <CardContent className="flex-1 pt-0 px-3 sm:px-4 pb-3 sm:pb-4">
+                          {/* Vocabulary Font Size Controls */}
+                          {selectedVideo?.vocabulary && (
+                            <div className="flex items-center justify-center mb-3">
+                              <div className="flex items-center space-x-1 bg-slate-100 rounded p-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={decreaseVocabularyFontSize}
+                                  disabled={vocabularyFontSize <= 10}
+                                  className="h-5 flex-1 p-0"
+                                  title="Decrease vocabulary font size"
+                                >
+                                  <Minus size={10} />
+                                </Button>
+                                <span className="text-xs font-medium text-slate-700 px-2 text-center min-w-[2rem]">
+                                  {vocabularyFontSize}
+                                </span>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={increaseVocabularyFontSize}
+                                  disabled={vocabularyFontSize >= 24}
+                                  className="h-5 flex-1 p-0"
+                                  title="Increase vocabulary font size"
+                                >
+                                  <Plus size={10} />
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                          
                           <div className="h-[240px] sm:h-[320px] lg:h-[400px] xl:h-[450px]">
                             {selectedVideo?.vocabulary ? (
                               <div className="h-full overflow-y-auto px-2 py-3">
                                 <div className="prose prose-sm max-w-none">
                                   <p 
                                     className="whitespace-pre-wrap leading-relaxed text-slate-700"
-                                    style={{ fontSize: '18px' }}
+                                    style={{ fontSize: `${vocabularyFontSize}px` }}
                                   >
                                     {selectedVideo.vocabulary}
                                   </p>
