@@ -138,6 +138,7 @@ export default function ArabicTranscriptsPage() {
     return transcript?.approvalStatusAr || 'unchecked';
   };
   
+  const [selectedPlaylistId, setSelectedPlaylistId] = useState<string>("");
   const [selectedVideoId, setSelectedVideoId] = useState<string>("");
   const [arabicSegments, setArabicSegments] = useState<TranscriptSegment[]>([]);
   const [saving, setSaving] = useState(false);
@@ -189,9 +190,16 @@ export default function ArabicTranscriptsPage() {
     }
   }, [isAuthenticated, isLoading, currentUser, toast]);
 
-  // Fetch videos
-  const { data: videos = [] } = useQuery<any[]>({
-    queryKey: ["/api/videos"],
+  // Fetch playlists
+  const { data: playlists = [] } = useQuery<any[]>({
+    queryKey: ["/api/playlists"],
+    retry: false,
+  });
+
+  // Fetch videos for selected playlist
+  const { data: playlistVideos = [] } = useQuery<any[]>({
+    queryKey: ["/api/playlists", selectedPlaylistId, "videos"],
+    enabled: !!selectedPlaylistId,
     retry: false,
   });
 
@@ -200,13 +208,13 @@ export default function ArabicTranscriptsPage() {
     const urlParams = new URLSearchParams(window.location.search);
     const videoIdParam = urlParams.get('videoId');
     
-    if (videoIdParam && videos.length > 0) {
-      const videoExists = videos.find(v => v.id.toString() === videoIdParam);
+    if (videoIdParam && playlistVideos.length > 0) {
+      const videoExists = playlistVideos.find(v => v.id.toString() === videoIdParam);
       if (videoExists) {
         setSelectedVideoId(videoIdParam);
       }
     }
-  }, [videos]);
+  }, [playlistVideos]);
 
   // Fetch Arabic transcript for selected video
   const { data: transcripts = [] } = useQuery<any[]>({
@@ -216,7 +224,7 @@ export default function ArabicTranscriptsPage() {
   });
 
   // Get selected video data
-  const selectedVideo = videos.find(v => v.id.toString() === selectedVideoId);
+  const selectedVideo = playlistVideos.find(v => v.id.toString() === selectedVideoId);
   const arabicTranscript = transcripts.find(t => t.language === 'ar');
 
   // Initialize YouTube player
@@ -810,41 +818,76 @@ export default function ArabicTranscriptsPage() {
             </p>
           </div>
 
-          {/* Video Selector */}
+          {/* Playlist and Video Selector */}
           <Card className="mb-6">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Play className="h-5 w-5" />
-                <span>Select Video</span>
+                <span>Select Playlist & Video</span>
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <Select value={selectedVideoId} onValueChange={setSelectedVideoId}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Choose a video to edit Arabic transcript" />
-                </SelectTrigger>
-                <SelectContent>
-                  {videos.map((video) => (
-                    <SelectItem key={video.id} value={video.id.toString()}>
-                      <div className="flex items-center space-x-3 py-1">
-                        <img 
-                          src={video.thumbnailUrl} 
-                          alt={video.title}
-                          className="w-12 h-9 rounded object-cover flex-shrink-0"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium text-sm truncate">
-                            {video.title}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            {video.duration}
-                          </div>
+            <CardContent className="space-y-4">
+              {/* Playlist Selector */}
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Select Playlist
+                </label>
+                <Select value={selectedPlaylistId} onValueChange={(value) => {
+                  setSelectedPlaylistId(value);
+                  setSelectedVideoId(""); // Reset video selection when playlist changes
+                }}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Choose a playlist" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {playlists.map((playlist) => (
+                      <SelectItem key={playlist.id} value={playlist.id.toString()}>
+                        <div className="flex items-center space-x-2">
+                          <span className="font-medium">{playlist.name}</span>
+                          <span className="text-xs text-gray-500">
+                            ({playlist.videoCount || 0} videos)
+                          </span>
                         </div>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Video Selector */}
+              {selectedPlaylistId && (
+                <div>
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">
+                    Select Video
+                  </label>
+                  <Select value={selectedVideoId} onValueChange={setSelectedVideoId}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Choose a video to edit Arabic transcript" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {playlistVideos.map((video) => (
+                        <SelectItem key={video.id} value={video.id.toString()}>
+                          <div className="flex items-center space-x-3 py-1">
+                            <img 
+                              src={video.thumbnailUrl} 
+                              alt={video.title}
+                              className="w-12 h-9 rounded object-cover flex-shrink-0"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-sm truncate">
+                                {video.title}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {video.duration}
+                              </div>
+                            </div>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </CardContent>
           </Card>
 
