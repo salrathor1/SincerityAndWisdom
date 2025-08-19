@@ -845,7 +845,7 @@ export default function ArabicTranscriptsPage() {
                         <div className="flex items-center space-x-2">
                           <span className="font-medium">{playlist.name}</span>
                           <span className="text-xs text-gray-500">
-                            ({playlist.videoCount || 0} videos)
+                            ({playlist.videoCount || playlist.videos?.length || 0} videos)
                           </span>
                         </div>
                       </SelectItem>

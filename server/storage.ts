@@ -122,12 +122,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPlaylists(): Promise<PlaylistWithVideos[]> {
-    return await db.query.playlists.findMany({
+    const playlistsWithVideos = await db.query.playlists.findMany({
       with: {
         videos: true,
       },
       orderBy: [desc(playlists.createdAt)],
     });
+
+    // Add video count to each playlist
+    return playlistsWithVideos.map(playlist => ({
+      ...playlist,
+      videoCount: playlist.videos.length
+    }));
   }
 
   async getPlaylist(id: number): Promise<PlaylistWithVideos | undefined> {
