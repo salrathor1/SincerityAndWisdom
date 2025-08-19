@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText, Save, Clock, Plus, Trash2, Play, BookOpen, Edit, Upload, Minus, Type, Link, Download } from "lucide-react";
+import { FileText, Save, Clock, Plus, Trash2, Play, BookOpen, Edit, Upload, Minus, Type, Link, Download, Check, X } from "lucide-react";
 
 interface TranscriptSegment {
   time: string;
@@ -132,6 +132,11 @@ export default function ArabicTranscriptsPage() {
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
   const queryClient = useQueryClient();
+
+  // Get language-specific approval status for Arabic
+  const getApprovalStatus = (transcript: any): string => {
+    return transcript?.approvalStatusAr || 'unchecked';
+  };
   
   const [selectedVideoId, setSelectedVideoId] = useState<string>("");
   const [arabicSegments, setArabicSegments] = useState<TranscriptSegment[]>([]);
@@ -475,6 +480,50 @@ export default function ArabicTranscriptsPage() {
       });
     },
   });
+
+  // Update approval status
+  const updateApprovalStatusMutation = useMutation({
+    mutationFn: async ({ transcriptId, approvalStatus }: { transcriptId: number, approvalStatus: string }) => {
+      return apiRequest('PUT', `/api/transcripts/${transcriptId}/approval-status`, {
+        approvalStatus,
+        language: 'ar'
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/videos", selectedVideoId, "transcripts"] });
+      toast({
+        title: "Success",
+        description: `Arabic transcript marked as ${updateApprovalStatusMutation.variables?.approvalStatus === 'approved' ? 'checked' : 'unchecked'}`,
+      });
+    },
+    onError: (error: any) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Session Expired",
+          description: "Please log in again",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 1000);
+      } else {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to update approval status",
+          variant: "destructive",
+        });
+      }
+    },
+  });
+
+  const handleApprovalStatusUpdate = (approvalStatus: string) => {
+    if (!arabicTranscript) return;
+    
+    updateApprovalStatusMutation.mutate({
+      transcriptId: arabicTranscript.id,
+      approvalStatus,
+    });
+  };
 
   const handleSaveDraft = () => {
     setSaving(true);
@@ -843,6 +892,48 @@ export default function ArabicTranscriptsPage() {
                           <span>Saved: {lastSavedAt.toLocaleTimeString()}</span>
                         )}
                       </div>
+                      
+                      {/* Approval Status Badge and Controls */}
+                      {arabicTranscript && (
+                        <div className="flex items-center space-x-2">
+                          <Badge 
+                            variant={getApprovalStatus(arabicTranscript) === 'approved' ? 'default' : 'destructive'}
+                            className={`text-xs ${
+                              getApprovalStatus(arabicTranscript) === 'approved' 
+                                ? 'bg-green-100 text-green-800 border-green-300' 
+                                : 'bg-red-100 text-red-800 border-red-300'
+                            }`}
+                          >
+                            {getApprovalStatus(arabicTranscript) === 'approved' ? 'Checked' : 'Unchecked'}
+                          </Badge>
+                          
+                          {currentUser?.role === 'admin' && (
+                            <div className="flex items-center space-x-1">
+                              <Button
+                                size="sm"
+                                variant={getApprovalStatus(arabicTranscript) === 'approved' ? 'default' : 'outline'}
+                                onClick={() => handleApprovalStatusUpdate('approved')}
+                                disabled={updateApprovalStatusMutation.isPending}
+                                className="h-6 px-2 text-xs"
+                              >
+                                <Check size={12} className="mr-1" />
+                                Check
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant={getApprovalStatus(arabicTranscript) === 'unchecked' ? 'destructive' : 'outline'}
+                                onClick={() => handleApprovalStatusUpdate('unchecked')}
+                                disabled={updateApprovalStatusMutation.isPending}
+                                className="h-6 px-2 text-xs"
+                              >
+                                <X size={12} className="mr-1" />
+                                Unchecked
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      
                       {currentUser?.role === 'admin' && (
                         <Button 
                           onClick={handleDownloadSrt}

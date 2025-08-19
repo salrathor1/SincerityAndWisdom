@@ -674,7 +674,7 @@ export default function TranslationsPage() {
                             : 'bg-red-100 text-red-800 border-red-300'
                         }`}
                       >
-                        {getApprovalStatus(selectedTranscript, selectedLanguage) === 'approved' ? 'Approved' : 'Unchecked'}
+                        {getApprovalStatus(selectedTranscript, selectedLanguage) === 'approved' ? 'Checked' : 'Unchecked'}
                       </Badge>
                       
                       {currentUser?.role === 'admin' && (
@@ -687,7 +687,7 @@ export default function TranslationsPage() {
                             className="h-6 px-2 text-xs"
                           >
                             <Check size={12} className="mr-1" />
-                            Approve
+                            Check
                           </Button>
                           <Button
                             size="sm"

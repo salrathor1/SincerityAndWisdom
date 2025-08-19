@@ -885,7 +885,7 @@ export default function Landing() {
                                   : 'bg-red-100 text-red-800 border-red-300'
                               }`}
                             >
-                              {getApprovalStatusForLanguage(currentTranscript, selectedLanguage) === 'approved' ? 'Approved' : 'Unchecked'}
+                              {getApprovalStatusForLanguage(currentTranscript, selectedLanguage) === 'approved' ? 'Checked' : 'Unchecked'}
                             </Badge>
                           </div>
                         )}
