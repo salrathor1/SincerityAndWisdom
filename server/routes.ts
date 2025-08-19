@@ -424,6 +424,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update transcript approval status
+  app.put('/api/transcripts/:id/approval-status', isAuthenticated, requireRole(['admin']), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { approvalStatus } = req.body;
+      
+      if (!approvalStatus || !['unchecked', 'approved'].includes(approvalStatus)) {
+        return res.status(400).json({ message: "Invalid approval status. Must be 'unchecked' or 'approved'" });
+      }
+
+      const transcript = await storage.updateTranscript(id, { approvalStatus });
+      res.json(transcript);
+    } catch (error) {
+      console.error("Error updating approval status:", error);
+      res.status(500).json({ message: "Failed to update approval status" });
+    }
+  });
+
   // Draft routes
   app.put('/api/transcripts/:id/draft', isAuthenticated, requireRole(['admin', 'arabic_transcripts_editor']), async (req, res) => {
     try {

@@ -860,6 +860,22 @@ export default function Landing() {
                           </div>
                         )}
                         
+                        {/* Approval Status Badge */}
+                        {currentTranscript && (
+                          <div className="flex items-center">
+                            <Badge 
+                              variant={currentTranscript.approvalStatus === 'approved' ? 'default' : 'destructive'}
+                              className={`text-xs ${
+                                currentTranscript.approvalStatus === 'approved' 
+                                  ? 'bg-green-100 text-green-800 border-green-300' 
+                                  : 'bg-red-100 text-red-800 border-red-300'
+                              }`}
+                            >
+                              {currentTranscript.approvalStatus === 'approved' ? 'Approved' : 'Unchecked'}
+                            </Badge>
+                          </div>
+                        )}
+                        
                         {/* English Translation Warning */}
                         {selectedLanguage === 'en' && (
                           <div className="text-red-600 text-xs font-medium mt-2">
@@ -1155,7 +1171,7 @@ export default function Landing() {
         isOpen={showReportModal} 
         onOpenChange={setShowReportModal}
         currentVideo={selectedVideo}
-        currentPlaylist={playlists?.find((p: any) => p.id === selectedPlaylist)}
+        currentPlaylist={Array.isArray(playlists) ? playlists.find((p: any) => p.id === selectedPlaylist) : null}
         initialVideoId={selectedVideo?.id?.toString()}
         initialPlaylistId={selectedPlaylist?.toString()}
       />

@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Languages, Save, Clock, Plus, Trash2, Link, Download } from "lucide-react";
+import { Languages, Save, Clock, Plus, Trash2, Link, Download, Check, X } from "lucide-react";
 
 interface TranscriptSegment {
   time: string;
@@ -500,6 +500,40 @@ export default function TranslationsPage() {
     });
   };
 
+  // Update approval status
+  const updateApprovalStatusMutation = useMutation({
+    mutationFn: async ({ transcriptId, approvalStatus }: { transcriptId: number, approvalStatus: string }) => {
+      return apiRequest(`/api/transcripts/${transcriptId}/approval-status`, {
+        method: 'PUT',
+        body: JSON.stringify({ approvalStatus }),
+        headers: { 'Content-Type': 'application/json' }
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/videos', selectedVideoId, 'transcripts'] });
+      toast({
+        title: "Success",
+        description: "Approval status updated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update approval status",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleApprovalStatusUpdate = (approvalStatus: string) => {
+    if (!selectedTranscript) return;
+    
+    updateApprovalStatusMutation.mutate({
+      transcriptId: selectedTranscript.id,
+      approvalStatus,
+    });
+  };
+
   if (isLoading) {
     return (
       <div className="flex h-screen bg-background">
@@ -615,6 +649,45 @@ export default function TranslationsPage() {
                   )}
                   {!selectedTranscript && (
                     <Badge variant="outline">New Translation</Badge>
+                  )}
+                  {selectedTranscript && (
+                    <div className="flex items-center space-x-2">
+                      <Badge 
+                        variant={selectedTranscript.approvalStatus === 'approved' ? 'default' : 'destructive'}
+                        className={`text-xs ${
+                          selectedTranscript.approvalStatus === 'approved' 
+                            ? 'bg-green-100 text-green-800 border-green-300' 
+                            : 'bg-red-100 text-red-800 border-red-300'
+                        }`}
+                      >
+                        {selectedTranscript.approvalStatus === 'approved' ? 'Approved' : 'Unchecked'}
+                      </Badge>
+                      
+                      {currentUser?.role === 'admin' && (
+                        <div className="flex items-center space-x-1">
+                          <Button
+                            size="sm"
+                            variant={selectedTranscript.approvalStatus === 'approved' ? 'default' : 'outline'}
+                            onClick={() => handleApprovalStatusUpdate('approved')}
+                            disabled={updateApprovalStatusMutation.isPending}
+                            className="h-6 px-2 text-xs"
+                          >
+                            <Check size={12} className="mr-1" />
+                            Approve
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant={selectedTranscript.approvalStatus === 'unchecked' ? 'destructive' : 'outline'}
+                            onClick={() => handleApprovalStatusUpdate('unchecked')}
+                            disabled={updateApprovalStatusMutation.isPending}
+                            className="h-6 px-2 text-xs"
+                          >
+                            <X size={12} className="mr-1" />
+                            Unchecked
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
               )}
