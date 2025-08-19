@@ -687,7 +687,7 @@ export default function TranslationsPage() {
                             className="h-6 px-2 text-xs"
                           >
                             <Check size={12} className="mr-1" />
-                            Check
+                            Checked
                           </Button>
                           <Button
                             size="sm"
