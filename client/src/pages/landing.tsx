@@ -986,7 +986,7 @@ export default function Landing() {
 
                     {/* Search Interface */}
                     {segments.length > 0 && (
-                      <div className="flex items-center space-x-2 mb-2">
+                      <div className="flex items-center space-x-2 mb-2 mt-4">
                         <div className="relative flex-1">
                           <Search size={12} className="absolute left-2 top-1/2 transform -translate-y-1/2 text-slate-400" />
                           <Input
