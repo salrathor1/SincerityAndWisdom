@@ -878,13 +878,15 @@ export default function ArabicTranscriptsPage() {
               {/* Arabic Transcript Editor */}
               <Card className="lg:col-span-2">
                 <CardHeader>
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                     <CardTitle className="flex items-center space-x-2">
                       <FileText className="h-5 w-5" />
                       <span>Arabic Transcript</span>
                     </CardTitle>
-                    <div className="flex items-center space-x-2">
-                      <div className="flex flex-col items-end text-xs text-gray-500 mr-2">
+                    
+                    {/* Status and timestamps */}
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                      <div className="flex flex-col text-xs text-gray-500">
                         {lastModifiedAt && (
                           <span>Modified: {lastModifiedAt.toLocaleTimeString()}</span>
                         )}
@@ -917,7 +919,7 @@ export default function ArabicTranscriptsPage() {
                                 className="h-6 px-2 text-xs"
                               >
                                 <Check size={12} className="mr-1" />
-                                Checked
+                                <span className="hidden sm:inline">Checked</span>
                               </Button>
                               <Button
                                 size="sm"
@@ -927,22 +929,27 @@ export default function ArabicTranscriptsPage() {
                                 className="h-6 px-2 text-xs"
                               >
                                 <X size={12} className="mr-1" />
-                                Unchecked
+                                <span className="hidden sm:inline">Unchecked</span>
                               </Button>
                             </div>
                           )}
                         </div>
                       )}
-                      
+                    </div>
+                    
+                    {/* Action buttons */}
+                    <div className="flex flex-wrap items-center gap-2">
                       {currentUser?.role === 'admin' && (
                         <Button 
                           onClick={handleDownloadSrt}
                           disabled={!arabicSegments || arabicSegments.length === 0}
                           size="sm"
                           variant="outline"
+                          className="h-8"
                         >
                           <Download className="h-4 w-4 mr-1" />
-                          Download SRT
+                          <span className="hidden sm:inline">Download SRT</span>
+                          <span className="sm:hidden">SRT</span>
                         </Button>
                       )}
                       <Button 
@@ -950,17 +957,21 @@ export default function ArabicTranscriptsPage() {
                         disabled={saving}
                         size="sm"
                         variant="outline"
+                        className="h-8"
                       >
                         <Save className="h-4 w-4 mr-1" />
-                        {saving ? "Saving..." : "Save Draft"}
+                        <span className="hidden sm:inline">{saving ? "Saving..." : "Save Draft"}</span>
+                        <span className="sm:hidden">{saving ? "..." : "Save"}</span>
                       </Button>
                       <Button 
                         onClick={handlePublish}
                         disabled={publishing || !hasDraftChanges}
                         size="sm"
+                        className="h-8"
                       >
                         <Upload className="h-4 w-4 mr-1" />
-                        {publishing ? "Publishing..." : "Publish"}
+                        <span className="hidden sm:inline">{publishing ? "Publishing..." : "Publish"}</span>
+                        <span className="sm:hidden">{publishing ? "..." : "Pub"}</span>
                       </Button>
                     </div>
                   </div>
