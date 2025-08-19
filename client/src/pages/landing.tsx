@@ -1016,7 +1016,10 @@ export default function Landing() {
                             {selectedVideo?.vocabulary ? (
                               <div className="h-full overflow-y-auto px-2 py-3">
                                 <div className="prose prose-sm max-w-none">
-                                  <p className="whitespace-pre-wrap leading-relaxed text-slate-700">
+                                  <p 
+                                    className="whitespace-pre-wrap leading-relaxed text-slate-700"
+                                    style={{ fontSize: '18px' }}
+                                  >
                                     {selectedVideo.vocabulary}
                                   </p>
                                 </div>
