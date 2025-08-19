@@ -890,12 +890,7 @@ export default function Landing() {
                           </div>
                         )}
                         
-                        {/* English Translation Warning */}
-                        {selectedLanguage === 'en' && (
-                          <div className="text-red-600 text-xs font-medium mt-2">
-                            English translations pending verification
-                          </div>
-                        )}
+
                         
                         {/* Selection and Share Controls */}
                         {segments.length > 0 && (
