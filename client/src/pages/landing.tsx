@@ -873,24 +873,6 @@ export default function Landing() {
                             </Select>
                           </div>
                         )}
-                          </div>
-                          
-                          {/* Approval Status Badge - Full Width under Language Selection */}
-                          {currentTranscript && availableLanguages.length > 0 && (
-                            <div className="w-full px-2">
-                              <Badge 
-                                variant={getApprovalStatusForLanguage(currentTranscript, selectedLanguage) === 'approved' ? 'default' : 'destructive'}
-                                className={`w-full justify-center text-xs py-1 ${
-                                  getApprovalStatusForLanguage(currentTranscript, selectedLanguage) === 'approved' 
-                                    ? 'bg-green-100 text-green-800 border-green-300' 
-                                    : 'bg-red-100 text-red-800 border-red-300'
-                                }`}
-                              >
-                                {getApprovalStatusForLanguage(currentTranscript, selectedLanguage) === 'approved' ? 'Checked' : 'Unchecked'}
-                              </Badge>
-                            </div>
-                          )}
-                          <div>
                         
 
                         
@@ -983,6 +965,22 @@ export default function Landing() {
                         <p className="text-xs text-blue-800">
                           <strong>Create Segment:</strong> First click selects FROM segment, second click selects TO segment. The shareable link will be automatically copied to your clipboard.
                         </p>
+                      </div>
+                    )}
+                    
+                    {/* Approval Status Badge - Full Width under all controls */}
+                    {currentTranscript && (
+                      <div className="w-full px-2 mb-2">
+                        <Badge 
+                          variant={getApprovalStatusForLanguage(currentTranscript, selectedLanguage) === 'approved' ? 'default' : 'destructive'}
+                          className={`w-full justify-center text-xs py-1 ${
+                            getApprovalStatusForLanguage(currentTranscript, selectedLanguage) === 'approved' 
+                              ? 'bg-green-100 text-green-800 border-green-300' 
+                              : 'bg-red-100 text-red-800 border-red-300'
+                          }`}
+                        >
+                          {getApprovalStatusForLanguage(currentTranscript, selectedLanguage) === 'approved' ? 'Checked' : 'Unchecked'}
+                        </Badge>
                       </div>
                     )}
 
