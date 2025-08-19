@@ -970,7 +970,7 @@ export default function Landing() {
                     
                     {/* Approval Status Badge - Full Width under all controls */}
                     {currentTranscript && (
-                      <div className="w-full px-2 mb-2">
+                      <div className="w-full px-2 mb-4">
                         <Badge 
                           variant={getApprovalStatusForLanguage(currentTranscript, selectedLanguage) === 'approved' ? 'default' : 'destructive'}
                           className={`w-full justify-center text-xs py-1 ${
