@@ -79,6 +79,7 @@ export default function TranslationsPage() {
   const { isAuthenticated, isLoading } = useAuth();
   const queryClient = useQueryClient();
   
+  const [selectedPlaylistId, setSelectedPlaylistId] = useState<string>("");
   const [selectedVideoId, setSelectedVideoId] = useState<string>("");
   const [selectedLanguage, setSelectedLanguage] = useState<string>("en");
   const [translationSegments, setTranslationSegments] = useState<TranscriptSegment[]>([]);
@@ -119,9 +120,16 @@ export default function TranslationsPage() {
     }
   }, [isAuthenticated, isLoading, currentUser, toast]);
 
-  // Fetch videos
-  const { data: videos = [] } = useQuery<any[]>({
-    queryKey: ["/api/videos"],
+  // Fetch playlists
+  const { data: playlists = [] } = useQuery<any[]>({
+    queryKey: ["/api/playlists"],
+    retry: false,
+  });
+
+  // Fetch videos for selected playlist
+  const { data: playlistVideos = [] } = useQuery<any[]>({
+    queryKey: ["/api/playlists", selectedPlaylistId, "videos"],
+    enabled: !!selectedPlaylistId,
     retry: false,
   });
 
@@ -131,8 +139,8 @@ export default function TranslationsPage() {
     const videoIdParam = urlParams.get('videoId');
     const languageParam = urlParams.get('language');
     
-    if (videoIdParam && videos.length > 0) {
-      const videoExists = videos.find(v => v.id.toString() === videoIdParam);
+    if (videoIdParam && playlistVideos.length > 0) {
+      const videoExists = playlistVideos.find(v => v.id.toString() === videoIdParam);
       if (videoExists) {
         setSelectedVideoId(videoIdParam);
       }
@@ -144,7 +152,7 @@ export default function TranslationsPage() {
         setSelectedLanguage(languageParam);
       }
     }
-  }, [videos]);
+  }, [playlistVideos]);
 
   // Fetch transcripts for selected video
   const { data: transcripts = [] } = useQuery<any[]>({
@@ -611,15 +619,45 @@ export default function TranslationsPage() {
               <CardTitle>Select Content</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Playlist Selector */}
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Playlist</label>
+                  <Select value={selectedPlaylistId} onValueChange={(value) => {
+                    setSelectedPlaylistId(value);
+                    setSelectedVideoId(""); // Reset video selection when playlist changes
+                  }}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a playlist" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {playlists.map((playlist) => (
+                        <SelectItem key={playlist.id} value={playlist.id.toString()}>
+                          <div className="flex items-center space-x-2">
+                            <span>{playlist.name}</span>
+                            <span className="text-xs text-gray-500">
+                              ({playlist.videoCount || playlist.videos?.length || 0} videos)
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Video Selector */}
                 <div>
                   <label className="text-sm font-medium mb-2 block">Video</label>
-                  <Select value={selectedVideoId} onValueChange={setSelectedVideoId}>
+                  <Select 
+                    value={selectedVideoId} 
+                    onValueChange={setSelectedVideoId}
+                    disabled={!selectedPlaylistId}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select a video" />
                     </SelectTrigger>
                     <SelectContent>
-                      {videos.map((video) => (
+                      {playlistVideos.map((video) => (
                         <SelectItem key={video.id} value={video.id.toString()}>
                           {video.title}
                         </SelectItem>
@@ -628,6 +666,7 @@ export default function TranslationsPage() {
                   </Select>
                 </div>
 
+                {/* Language Selector */}
                 <div>
                   <label className="text-sm font-medium mb-2 block">Translation Language</label>
                   <Select 
@@ -653,7 +692,7 @@ export default function TranslationsPage() {
               {selectedVideoId && selectedLanguage && (
                 <div className="flex items-center space-x-2">
                   <Badge variant="outline">
-                    Video: {videos.find(v => v.id.toString() === selectedVideoId)?.title}
+                    Video: {playlistVideos.find(v => v.id.toString() === selectedVideoId)?.title}
                   </Badge>
                   <Badge variant="outline">
                     Language: {getLanguageName(selectedLanguage)}
