@@ -970,10 +970,10 @@ export default function Landing() {
                     
                     {/* Approval Status Badge - Full Width under all controls */}
                     {currentTranscript && (
-                      <div className="w-full px-2 mb-6">
+                      <div className="w-full px-2 mb-2">
                         <Badge 
                           variant={getApprovalStatusForLanguage(currentTranscript, selectedLanguage) === 'approved' ? 'default' : 'destructive'}
-                          className={`w-full justify-center text-xs py-2 ${
+                          className={`w-full justify-center text-xs py-1 ${
                             getApprovalStatusForLanguage(currentTranscript, selectedLanguage) === 'approved' 
                               ? 'bg-green-100 text-green-800 border-green-300' 
                               : 'bg-red-100 text-red-800 border-red-300'
@@ -986,7 +986,7 @@ export default function Landing() {
 
                     {/* Search Interface */}
                     {segments.length > 0 && (
-                      <div className="flex items-center space-x-2 mb-2 mt-4">
+                      <div className="flex items-center space-x-2 mb-2">
                         <div className="relative flex-1">
                           <Search size={12} className="absolute left-2 top-1/2 transform -translate-y-1/2 text-slate-400" />
                           <Input
