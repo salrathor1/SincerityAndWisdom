@@ -873,22 +873,26 @@ export default function Landing() {
                             </Select>
                           </div>
                         )}
-                        
-                        {/* Approval Status Badge */}
-                        {currentTranscript && (
-                          <div className="flex items-center">
-                            <Badge 
-                              variant={getApprovalStatusForLanguage(currentTranscript, selectedLanguage) === 'approved' ? 'default' : 'destructive'}
-                              className={`text-xs ${
-                                getApprovalStatusForLanguage(currentTranscript, selectedLanguage) === 'approved' 
-                                  ? 'bg-green-100 text-green-800 border-green-300' 
-                                  : 'bg-red-100 text-red-800 border-red-300'
-                              }`}
-                            >
-                              {getApprovalStatusForLanguage(currentTranscript, selectedLanguage) === 'approved' ? 'Checked' : 'Unchecked'}
-                            </Badge>
                           </div>
-                        )}
+                          
+                          {/* Approval Status Badge - Full Width under Language Selection */}
+                          {currentTranscript && availableLanguages.length > 0 && (
+                            <div className="w-full px-2">
+                              <Badge 
+                                variant={getApprovalStatusForLanguage(currentTranscript, selectedLanguage) === 'approved' ? 'default' : 'destructive'}
+                                className={`w-full justify-center text-xs py-1 ${
+                                  getApprovalStatusForLanguage(currentTranscript, selectedLanguage) === 'approved' 
+                                    ? 'bg-green-100 text-green-800 border-green-300' 
+                                    : 'bg-red-100 text-red-800 border-red-300'
+                                }`}
+                              >
+                                {getApprovalStatusForLanguage(currentTranscript, selectedLanguage) === 'approved' ? 'Checked' : 'Unchecked'}
+                              </Badge>
+                            </div>
+                          )}
+                          <div>
+                        
+
                         
 
                         
