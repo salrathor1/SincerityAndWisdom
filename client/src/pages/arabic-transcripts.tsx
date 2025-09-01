@@ -115,6 +115,57 @@ function convertTimeToSrt(time: string): string {
   return "00:00:00,000";
 }
 
+// Parse time-stamped format like "(0:02) text (0:22) more text"
+function parseTimeStampedContent(content: string): TranscriptSegment[] {
+  if (!content || typeof content !== 'string') return [];
+  
+  const segments: TranscriptSegment[] = [];
+  // Match pattern: (time) text
+  const regex = /\((\d+:\d+(?::\d+)?)\)\s*([^(]*?)(?=\(\d+:\d+(?::\d+)?\)|$)/g;
+  let match;
+  
+  while ((match = regex.exec(content)) !== null) {
+    const [, time, text] = match;
+    const trimmedText = text.trim();
+    if (trimmedText) {
+      segments.push({
+        time: time,
+        text: trimmedText
+      });
+    }
+  }
+  
+  return segments;
+}
+
+// Convert time-stamped format to SRT format
+function convertTimeStampedToSRT(segments: TranscriptSegment[]): string {
+  if (!segments || segments.length === 0) return "";
+  
+  let srtContent = "";
+  segments.forEach((segment, index) => {
+    const startTime = convertTimeToSrt(segment.time);
+    // Calculate end time - use next segment's time or add 5 seconds if last segment
+    let endTime = "00:00:05,000";
+    if (index < segments.length - 1) {
+      endTime = convertTimeToSrt(segments[index + 1].time);
+    } else {
+      // For last segment, add 5 seconds to start time
+      const parts = segment.time.split(':');
+      if (parts.length === 2) {
+        const totalSeconds = parseInt(parts[0]) * 60 + parseInt(parts[1]) + 5;
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        endTime = convertTimeToSrt(`${minutes}:${seconds.toString().padStart(2, '0')}`);
+      }
+    }
+    
+    srtContent += `${index + 1}\n${startTime} --> ${endTime}\n${segment.text}\n\n`;
+  });
+  
+  return srtContent.trim();
+}
+
 // Helper function to parse time string to seconds
 function parseTimeToSeconds(timeString: string): number {
   const parts = timeString.split(':');
@@ -144,7 +195,8 @@ export default function ArabicTranscriptsPage() {
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [srtTextContent, setSrtTextContent] = useState("");
-  const [viewMode, setViewMode] = useState<'segments' | 'text'>('segments');
+  const [timeStampedContent, setTimeStampedContent] = useState("");
+  const [viewMode, setViewMode] = useState<'segments' | 'text' | 'timestamped'>('segments');
   const [timeInputs, setTimeInputs] = useState<string[]>([]);
   const [player, setPlayer] = useState<any>(null);
   const [activeSegmentIndex, setActiveSegmentIndex] = useState(0);
@@ -305,12 +357,14 @@ export default function ArabicTranscriptsPage() {
       setArabicSegments(segments);
       setTimeInputs(segments.map(seg => seg.time));
       updateSrtTextFromSegments(segments);
+      updateTimeStampedFromSegments(segments);
       setHasDraftChanges(true);
     } else if (arabicTranscript?.content) {
       const segments = parseSRTContent(arabicTranscript.content);
       setArabicSegments(segments);
       setTimeInputs(segments.map(seg => seg.time));
       updateSrtTextFromSegments(segments);
+      updateTimeStampedFromSegments(segments);
       setHasDraftChanges(false);
     } else {
       // Initialize with empty segment for new transcripts
@@ -318,6 +372,7 @@ export default function ArabicTranscriptsPage() {
       setArabicSegments(emptySegments);
       setTimeInputs(["0:00"]);
       updateSrtTextFromSegments(emptySegments);
+      updateTimeStampedFromSegments(emptySegments);
       setHasDraftChanges(false);
     }
   }, [arabicTranscript]);
@@ -339,6 +394,9 @@ export default function ArabicTranscriptsPage() {
         // Auto-save the current content
         if (viewMode === 'text') {
           const segments = parseSrtText(srtTextContent);
+          saveDraft.mutate(segments);
+        } else if (viewMode === 'timestamped') {
+          const segments = parseTimeStampedContent(timeStampedContent);
           saveDraft.mutate(segments);
         } else {
           saveDraft.mutate(arabicSegments);
@@ -362,6 +420,12 @@ export default function ArabicTranscriptsPage() {
       }
     };
   }, []);
+
+  // Update time-stamped text when segments change (for timestamped mode)
+  const updateTimeStampedFromSegments = (segments: TranscriptSegment[]) => {
+    const timestampedText = segments.map(seg => `(${seg.time}) ${seg.text}`).join(' ');
+    setTimeStampedContent(timestampedText);
+  };
 
   // Update SRT text from segments
   const updateSrtTextFromSegments = (segments: TranscriptSegment[]) => {
@@ -400,6 +464,26 @@ export default function ArabicTranscriptsPage() {
     });
     
     return segments;
+  };
+
+  // Parse time-stamped content back to segments
+  const parseTimeStampedContent = (content: string): TranscriptSegment[] => {
+    const segments: TranscriptSegment[] = [];
+    
+    // Match pattern: (time) text content
+    const regex = /\(([^)]+)\)\s*([^(]*?)(?=\([^)]+\)|$)/g;
+    let match;
+    
+    while ((match = regex.exec(content)) !== null) {
+      const time = match[1].trim();
+      const text = match[2].trim();
+      
+      if (time && text) {
+        segments.push({ time, text });
+      }
+    }
+    
+    return segments.length > 0 ? segments : [{ time: "0:00", text: content || "Enter Arabic transcript text..." }];
   };
 
   // Save draft Arabic transcript
@@ -541,6 +625,12 @@ export default function ArabicTranscriptsPage() {
       setArabicSegments(segments);
       setTimeInputs(segments.map(seg => seg.time));
       saveDraft.mutate(segments);
+    } else if (viewMode === 'timestamped') {
+      // Parse time-stamped text back to segments
+      const segments = parseTimeStampedContent(timeStampedContent);
+      setArabicSegments(segments);
+      setTimeInputs(segments.map(seg => seg.time));
+      saveDraft.mutate(segments);
     } else {
       saveDraft.mutate(arabicSegments);
     }
@@ -615,9 +705,9 @@ export default function ArabicTranscriptsPage() {
     const newSegments = [...arabicSegments];
     newSegments[index] = { ...newSegments[index], text: newText };
     setArabicSegments(newSegments);
-    if (viewMode === 'segments') {
-      updateSrtTextFromSegments(newSegments);
-    }
+    // Always update both SRT and timestamped views when segments change
+    updateSrtTextFromSegments(newSegments);
+    updateTimeStampedFromSegments(newSegments);
     // Mark as having unsaved changes and update modification time
     setHasDraftChanges(true);
     setLastModifiedAt(new Date());
@@ -633,9 +723,9 @@ export default function ArabicTranscriptsPage() {
     newTimeInputs[index] = formattedTime;
     setTimeInputs(newTimeInputs);
     
-    if (viewMode === 'segments') {
-      updateSrtTextFromSegments(newSegments);
-    }
+    // Always update both SRT and timestamped views when segments change
+    updateSrtTextFromSegments(newSegments);
+    updateTimeStampedFromSegments(newSegments);
     
     // Mark as having unsaved changes and update modification time
     setHasDraftChanges(true);
@@ -671,9 +761,9 @@ export default function ArabicTranscriptsPage() {
     setArabicSegments(newSegments);
     setTimeInputs([...timeInputs, newTime]);
     
-    if (viewMode === 'segments') {
-      updateSrtTextFromSegments(newSegments);
-    }
+    // Always update both SRT and timestamped views when segments change
+    updateSrtTextFromSegments(newSegments);
+    updateTimeStampedFromSegments(newSegments);
     
     // Mark as having unsaved changes and update modification time
     setHasDraftChanges(true);
@@ -694,9 +784,9 @@ export default function ArabicTranscriptsPage() {
     newTimeInputs.splice(index + 1, 0, newTime);
     setTimeInputs(newTimeInputs);
     
-    if (viewMode === 'segments') {
-      updateSrtTextFromSegments(newSegments);
-    }
+    // Always update both SRT and timestamped views when segments change
+    updateSrtTextFromSegments(newSegments);
+    updateTimeStampedFromSegments(newSegments);
     
     // Mark as having unsaved changes and update modification time
     setHasDraftChanges(true);
@@ -724,9 +814,9 @@ export default function ArabicTranscriptsPage() {
       setArabicSegments(newSegments);
       setTimeInputs(newTimeInputs);
       
-      if (viewMode === 'segments') {
-        updateSrtTextFromSegments(newSegments);
-      }
+      // Always update both SRT and timestamped views when segments change
+      updateSrtTextFromSegments(newSegments);
+      updateTimeStampedFromSegments(newSegments);
       
       if (activeSegmentIndex >= newSegments.length) {
         setActiveSegmentIndex(Math.max(0, newSegments.length - 1));
@@ -741,6 +831,14 @@ export default function ArabicTranscriptsPage() {
   // Handle SRT text change
   const handleSrtTextChange = (newText: string) => {
     setSrtTextContent(newText);
+    // Mark as having unsaved changes and update modification time
+    setHasDraftChanges(true);
+    setLastModifiedAt(new Date());
+  };
+
+  // Handle time-stamped text change
+  const handleTimeStampedChange = (newText: string) => {
+    setTimeStampedContent(newText);
     // Mark as having unsaved changes and update modification time
     setHasDraftChanges(true);
     setLastModifiedAt(new Date());
@@ -1033,15 +1131,46 @@ export default function ArabicTranscriptsPage() {
                     <TabsContent value="draft" className="mt-4">
                       <div className="mb-4 flex items-center justify-between">
                         <div className="flex items-center space-x-4">
-                          <div className="flex items-center space-x-2">
-                            <Switch
-                              id="view-mode"
-                              checked={viewMode === 'text'}
-                              onCheckedChange={(checked) => setViewMode(checked ? 'text' : 'segments')}
-                            />
-                            <label htmlFor="view-mode" className="text-sm text-gray-600 cursor-pointer">
-                              SRT Format
-                            </label>
+                          <div className="flex items-center space-x-4">
+                            <div className="flex items-center space-x-1">
+                              <input
+                                type="radio"
+                                id="segments-mode"
+                                name="view-mode"
+                                checked={viewMode === 'segments'}
+                                onChange={() => setViewMode('segments')}
+                                className="w-4 h-4"
+                              />
+                              <label htmlFor="segments-mode" className="text-sm text-gray-600 cursor-pointer">
+                                Segments
+                              </label>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <input
+                                type="radio"
+                                id="srt-mode"
+                                name="view-mode"
+                                checked={viewMode === 'text'}
+                                onChange={() => setViewMode('text')}
+                                className="w-4 h-4"
+                              />
+                              <label htmlFor="srt-mode" className="text-sm text-gray-600 cursor-pointer">
+                                SRT Format
+                              </label>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <input
+                                type="radio"
+                                id="timestamped-mode"
+                                name="view-mode"
+                                checked={viewMode === 'timestamped'}
+                                onChange={() => setViewMode('timestamped')}
+                                className="w-4 h-4"
+                              />
+                              <label htmlFor="timestamped-mode" className="text-sm text-gray-600 cursor-pointer">
+                                Time-Stamped
+                              </label>
+                            </div>
                           </div>
                           
                           {/* Font Size Controls */}
@@ -1069,6 +1198,7 @@ export default function ArabicTranscriptsPage() {
                           </div>
                         </div>
                       </div>
+                      
                   {viewMode === 'segments' ? (
                     <div className="space-y-4">
                       <div className="flex justify-between items-center">
@@ -1161,7 +1291,7 @@ export default function ArabicTranscriptsPage() {
                         ))}
                       </div>
                     </div>
-                  ) : (
+                  ) : viewMode === 'text' ? (
                     <div className="space-y-4">
                       <div className="flex justify-between items-center">
                         <div className="p-3 bg-blue-50 rounded-lg border border-blue-200 flex-1">
@@ -1195,7 +1325,27 @@ export default function ArabicTranscriptsPage() {
                         style={{ fontSize: `${fontSize}px`, lineHeight: '1.8' }}
                       />
                     </div>
-                  )}
+                  ) : viewMode === 'timestamped' ? (
+                    <div className="space-y-4">
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                        <h4 className="font-medium text-blue-800 mb-2">Time-Stamped Format</h4>
+                        <p className="text-sm text-blue-700 mb-2">
+                          Enter text with timestamps in parentheses. Example:
+                        </p>
+                        <code className="text-xs bg-blue-100 px-2 py-1 rounded text-blue-900 block">
+                          (0:02) ألف باء، تاء، ثاء، جيم (0:22) ألف أرنب يجري يلعب
+                        </code>
+                      </div>
+                      <Textarea
+                        value={timeStampedContent}
+                        onChange={(e) => handleTimeStampedChange(e.target.value)}
+                        placeholder="Enter time-stamped format content here...&#10;Example: (0:02) ألف باء، تاء، ثاء، جيم، حاء، خاء (0:22) ألف أرنب يجري يلعب يأكل جزرا"
+                        className="min-h-[400px] text-right direction-rtl arabic-font"
+                        dir="rtl"
+                        style={{ fontSize: `${fontSize}px`, lineHeight: '1.8' }}
+                      />
+                    </div>
+                  ) : null}
                     </TabsContent>
 
                     <TabsContent value="published" className="mt-4">
