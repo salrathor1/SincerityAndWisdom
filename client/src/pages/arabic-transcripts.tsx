@@ -844,6 +844,58 @@ export default function ArabicTranscriptsPage() {
     setLastModifiedAt(new Date());
   };
 
+  // Remove timestamps from highlighted text
+  const removeTimestampsFromSelection = () => {
+    const textarea = document.querySelector('textarea[data-testid="textarea-timestamped"]') as HTMLTextAreaElement;
+    if (!textarea) {
+      toast({
+        title: "Error",
+        description: "Could not find the timestamped text area",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const fullText = textarea.value;
+    
+    if (start === end) {
+      toast({
+        title: "No Selection",
+        description: "Please highlight some text first to remove timestamps from it",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const selectedText = fullText.substring(start, end);
+    // Remove timestamps in format (0:00), (1:23), (12:34), etc.
+    const cleanedText = selectedText.replace(/\(\d{1,2}:\d{2}(?::\d{2})?\)\s*/g, '');
+    
+    const newFullText = fullText.substring(0, start) + cleanedText + fullText.substring(end);
+    setTimeStampedContent(newFullText);
+    setHasDraftChanges(true);
+    setLastModifiedAt(new Date());
+    
+    // Parse and sync to segments
+    const segments = parseTimeStampedContent(newFullText);
+    setArabicSegments(segments);
+    setTimeInputs(segments.map(seg => seg.time));
+    updateSrtTextFromSegments(segments);
+    
+    toast({
+      title: "Timestamps Removed",
+      description: `Removed timestamps from selected text`,
+    });
+
+    // Focus back to textarea and restore cursor position
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start, start + cleanedText.length);
+    }, 100);
+  };
+
   // Generate custom URL for sharing
   const generateCustomUrl = () => {
     if (!selectedVideoId) {
@@ -1328,13 +1380,27 @@ export default function ArabicTranscriptsPage() {
                   ) : viewMode === 'timestamped' ? (
                     <div className="space-y-4">
                       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                        <h4 className="font-medium text-blue-800 mb-2">Time-Stamped Format</h4>
-                        <p className="text-sm text-blue-700 mb-2">
-                          Enter text with timestamps in parentheses. Example:
-                        </p>
-                        <code className="text-xs bg-blue-100 px-2 py-1 rounded text-blue-900 block">
-                          (0:02) ألف باء، تاء، ثاء، جيم (0:22) ألف أرنب يجري يلعب
-                        </code>
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex-1">
+                            <h4 className="font-medium text-blue-800 mb-2">Time-Stamped Format</h4>
+                            <p className="text-sm text-blue-700 mb-2">
+                              Enter text with timestamps in parentheses. Example:
+                            </p>
+                            <code className="text-xs bg-blue-100 px-2 py-1 rounded text-blue-900 block">
+                              (0:02) ألف باء، تاء، ثاء، جيم (0:22) ألف أرنب يجري يلعب
+                            </code>
+                          </div>
+                          <Button
+                            onClick={removeTimestampsFromSelection}
+                            size="sm"
+                            variant="outline"
+                            className="ml-4 border-red-300 text-red-700 hover:bg-red-50"
+                            data-testid="button-remove-timestamps"
+                          >
+                            <Trash2 className="h-3 w-3 mr-1" />
+                            Remove Timestamps
+                          </Button>
+                        </div>
                       </div>
                       <Textarea
                         value={timeStampedContent}
@@ -1343,6 +1409,7 @@ export default function ArabicTranscriptsPage() {
                         className="min-h-[400px] text-right direction-rtl arabic-font"
                         dir="rtl"
                         style={{ fontSize: `${fontSize}px`, lineHeight: '1.8' }}
+                        data-testid="textarea-timestamped"
                       />
                     </div>
                   ) : null}
