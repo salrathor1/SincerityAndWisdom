@@ -53,6 +53,13 @@ export default function GeminiChatPage() {
     queryFn: () => apiRequest('GET', '/api/gemini/conversations'),
   });
 
+  // Debug logging
+  useEffect(() => {
+    console.log('Conversations data updated:', conversations);
+    console.log('Selected conversation ID:', selectedConversationId);
+    console.log('Active tab:', activeTab);
+  }, [conversations, selectedConversationId, activeTab]);
+
   // Fetch selected conversation details
   const { data: selectedConversation, refetch: refetchConversation } = useQuery<GeminiConversation>({
     queryKey: ['/api/gemini/conversations', selectedConversationId],
@@ -68,7 +75,12 @@ export default function GeminiChatPage() {
     onSuccess: async (newConversation) => {
       console.log('New conversation created:', newConversation);
       
-      // Set conversation data immediately in cache to avoid loading state
+      // Update conversations list in cache immediately
+      const existingConversations = queryClient.getQueryData<GeminiConversation[]>(['/api/gemini/conversations']) || [];
+      const updatedConversations = [newConversation, ...existingConversations];
+      queryClient.setQueryData(['/api/gemini/conversations'], updatedConversations);
+      
+      // Set conversation data in cache
       queryClient.setQueryData(['/api/gemini/conversations', newConversation.id], newConversation);
       
       // Set the selected conversation ID and tab
@@ -81,8 +93,8 @@ export default function GeminiChatPage() {
       setSelectedModel(newConversation.model);
       setSystemPrompt(newConversation.systemPrompt || '');
       
-      // Invalidate queries to refresh lists
-      queryClient.invalidateQueries({ queryKey: ['/api/gemini/conversations'] });
+      console.log('Updated conversations list:', updatedConversations);
+      console.log('Selected conversation ID set to:', newConversation.id);
       
       toast({
         title: "Success",
@@ -311,7 +323,7 @@ export default function GeminiChatPage() {
                   <p>No conversations yet</p>
                 </div>
               ) : (
-                (Array.isArray(conversations) ? conversations : []).map((conversation: GeminiConversation) => (
+                conversations.map((conversation: GeminiConversation) => (
                   <Card
                     key={conversation.id}
                     className={`p-3 cursor-pointer hover:bg-gray-50 transition-colors ${
