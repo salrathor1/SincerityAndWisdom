@@ -14,6 +14,7 @@ import TranslationsPage from "@/pages/translations";
 import ArabicTranscriptsPage from "@/pages/arabic-transcripts";
 import AdminPanel from "@/pages/admin";
 import ReportedIssues from "@/pages/reported-issues";
+import GeminiChat from "@/pages/gemini-chat";
 import UserBlank from "@/pages/user-blank";
 import NotFound from "@/pages/not-found";
 
@@ -49,6 +50,7 @@ function Router() {
           <Route path="/arabic-transcripts" component={UserBlank} />
           <Route path="/admin" component={UserBlank} />
           <Route path="/reported-issues" component={UserBlank} />
+          <Route path="/gemini-chat" component={UserBlank} />
         </>
       ) : (
         /* Normal routes for editors and admins */
@@ -62,6 +64,7 @@ function Router() {
           <Route path="/arabic-transcripts" component={ArabicTranscriptsPage} />
           <Route path="/admin" component={AdminPanel} />
           <Route path="/reported-issues" component={ReportedIssues} />
+          <Route path="/gemini-chat" component={GeminiChat} />
         </>
       )}
       <Route component={NotFound} />

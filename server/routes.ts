@@ -4,8 +4,9 @@ import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { youtubeService } from "./services/youtube";
 import { srtService } from "./services/srt";
-import { insertVideoSchema, insertPlaylistSchema, insertTranscriptSchema, insertReportedIssueSchema } from "@shared/schema";
+import { insertVideoSchema, insertPlaylistSchema, insertTranscriptSchema, insertReportedIssueSchema, insertGeminiConversationSchema } from "@shared/schema";
 import { z } from "zod";
+import { GoogleGenAI } from "@google/genai";
 
 // Role-based authentication middleware
 const requireRole = (roles: string[]) => {
@@ -729,6 +730,128 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting reported issue:", error);
       res.status(500).json({ message: "Failed to delete reported issue" });
+    }
+  });
+
+  // Initialize Gemini AI
+  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+
+  // Gemini Chat Routes (Admin only)
+  app.get('/api/gemini/conversations', isAuthenticated, requireRole(['admin']), async (req, res) => {
+    try {
+      const conversations = await storage.getGeminiConversations();
+      res.json(conversations);
+    } catch (error) {
+      console.error("Error fetching conversations:", error);
+      res.status(500).json({ message: "Failed to fetch conversations" });
+    }
+  });
+
+  app.post('/api/gemini/conversations', isAuthenticated, requireRole(['admin']), async (req, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const conversationData = insertGeminiConversationSchema.parse({ ...req.body, createdBy: userId });
+      const conversation = await storage.createGeminiConversation(conversationData);
+      res.json(conversation);
+    } catch (error) {
+      console.error("Error creating conversation:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid conversation data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create conversation" });
+    }
+  });
+
+  app.get('/api/gemini/conversations/:id', isAuthenticated, requireRole(['admin']), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const conversation = await storage.getGeminiConversation(id);
+      if (!conversation) {
+        return res.status(404).json({ message: "Conversation not found" });
+      }
+      res.json(conversation);
+    } catch (error) {
+      console.error("Error fetching conversation:", error);
+      res.status(500).json({ message: "Failed to fetch conversation" });
+    }
+  });
+
+  app.put('/api/gemini/conversations/:id', isAuthenticated, requireRole(['admin']), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const conversationData = insertGeminiConversationSchema.partial().parse(req.body);
+      const conversation = await storage.updateGeminiConversation(id, conversationData);
+      res.json(conversation);
+    } catch (error) {
+      console.error("Error updating conversation:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid conversation data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to update conversation" });
+    }
+  });
+
+  app.post('/api/gemini/conversations/:id/message', isAuthenticated, requireRole(['admin']), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { message } = req.body;
+      
+      if (!message || typeof message !== 'string') {
+        return res.status(400).json({ message: "Message is required" });
+      }
+
+      const conversation = await storage.getGeminiConversation(id);
+      if (!conversation) {
+        return res.status(404).json({ message: "Conversation not found" });
+      }
+
+      // Add user message to conversation
+      const userMessage = {
+        role: 'user' as const,
+        content: message,
+        timestamp: new Date().toISOString()
+      };
+
+      const updatedMessages = [...(conversation.messages || []), userMessage];
+
+      // Generate AI response
+      const response = await ai.models.generateContent({
+        model: conversation.model || 'gemini-2.5-flash',
+        config: conversation.systemPrompt ? {
+          systemInstruction: conversation.systemPrompt,
+        } : undefined,
+        contents: message,
+      });
+
+      const aiMessage = {
+        role: 'assistant' as const,
+        content: response.text || "I apologize, but I couldn't generate a response.",
+        timestamp: new Date().toISOString()
+      };
+
+      const finalMessages = [...updatedMessages, aiMessage];
+
+      // Update conversation with new messages
+      await storage.updateGeminiConversation(id, { 
+        messages: finalMessages,
+        updatedAt: new Date()
+      });
+
+      res.json({ userMessage, aiMessage });
+    } catch (error) {
+      console.error("Error sending message:", error);
+      res.status(500).json({ message: "Failed to send message" });
+    }
+  });
+
+  app.delete('/api/gemini/conversations/:id', isAuthenticated, requireRole(['admin']), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteGeminiConversation(id);
+      res.json({ message: "Conversation deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting conversation:", error);
+      res.status(500).json({ message: "Failed to delete conversation" });
     }
   });
 

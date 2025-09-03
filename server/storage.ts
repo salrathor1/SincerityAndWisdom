@@ -21,6 +21,9 @@ import {
   type ReportedIssue,
   type InsertReportedIssue,
   type ReportedIssueWithRelations,
+  geminiConversations,
+  type GeminiConversation,
+  type InsertGeminiConversation,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql, asc, and, or, isNull } from "drizzle-orm";
@@ -70,6 +73,13 @@ export interface IStorage {
   getReportedIssue(id: number): Promise<ReportedIssueWithRelations | undefined>;
   updateReportedIssue(id: number, issue: Partial<InsertReportedIssue>): Promise<ReportedIssue>;
   deleteReportedIssue(id: number): Promise<void>;
+  
+  // Gemini conversation operations
+  createGeminiConversation(conversation: InsertGeminiConversation): Promise<GeminiConversation>;
+  getGeminiConversations(): Promise<GeminiConversation[]>;
+  getGeminiConversation(id: number): Promise<GeminiConversation | undefined>;
+  updateGeminiConversation(id: number, conversation: Partial<InsertGeminiConversation>): Promise<GeminiConversation>;
+  deleteGeminiConversation(id: number): Promise<void>;
   
   // Dashboard stats
   getDashboardStats(): Promise<{
@@ -474,6 +484,44 @@ export class DatabaseStorage implements IStorage {
       totalLanguages: Number(languageCount.count),
       totalPlaylists: Number(playlistCount.count),
     };
+  }
+
+  // Gemini conversation operations
+  async createGeminiConversation(conversationData: InsertGeminiConversation): Promise<GeminiConversation> {
+    const [conversation] = await db
+      .insert(geminiConversations)
+      .values(conversationData)
+      .returning();
+    return conversation;
+  }
+
+  async getGeminiConversations(): Promise<GeminiConversation[]> {
+    return await db
+      .select()
+      .from(geminiConversations)
+      .orderBy(desc(geminiConversations.updatedAt))
+      .limit(10); // Limit to last 10 conversations
+  }
+
+  async getGeminiConversation(id: number): Promise<GeminiConversation | undefined> {
+    const [conversation] = await db
+      .select()
+      .from(geminiConversations)
+      .where(eq(geminiConversations.id, id));
+    return conversation;
+  }
+
+  async updateGeminiConversation(id: number, conversationData: Partial<InsertGeminiConversation>): Promise<GeminiConversation> {
+    const [updated] = await db
+      .update(geminiConversations)
+      .set({ ...conversationData, updatedAt: new Date() })
+      .where(eq(geminiConversations.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteGeminiConversation(id: number): Promise<void> {
+    await db.delete(geminiConversations).where(eq(geminiConversations.id, id));
   }
 }
 

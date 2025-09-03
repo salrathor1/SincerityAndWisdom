@@ -1,0 +1,470 @@
+import { useState, useEffect, useRef } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
+import { Bot, User, Send, Plus, Trash2, MessageSquare, Settings, Sparkles } from 'lucide-react';
+import { format } from 'date-fns';
+
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: string;
+}
+
+interface GeminiConversation {
+  id: number;
+  title: string;
+  model: string;
+  systemPrompt: string | null;
+  messages: Message[];
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string;
+}
+
+const availableModels = [
+  { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash (Recommended)' },
+  { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
+  { value: 'gemini-2.0-flash-preview', label: 'Gemini 2.0 Flash Preview' },
+];
+
+export default function GeminiChatPage() {
+  const [selectedConversationId, setSelectedConversationId] = useState<number | null>(null);
+  const [currentMessage, setCurrentMessage] = useState('');
+  const [selectedModel, setSelectedModel] = useState('gemini-2.5-flash');
+  const [systemPrompt, setSystemPrompt] = useState('');
+  const [conversationTitle, setConversationTitle] = useState('');
+  const [isCreatingNew, setIsCreatingNew] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Fetch conversations
+  const { data: conversations = [], isLoading: loadingConversations } = useQuery<GeminiConversation[]>({
+    queryKey: ['/api/gemini/conversations'],
+    queryFn: () => apiRequest('GET', '/api/gemini/conversations'),
+  });
+
+  // Fetch selected conversation details
+  const { data: selectedConversation } = useQuery<GeminiConversation>({
+    queryKey: ['/api/gemini/conversations', selectedConversationId],
+    queryFn: () => apiRequest('GET', `/api/gemini/conversations/${selectedConversationId}`),
+    enabled: !!selectedConversationId,
+  });
+
+  // Create new conversation mutation
+  const createConversation = useMutation<GeminiConversation, Error, { title: string; model: string; systemPrompt?: string }>({
+    mutationFn: async (data: { title: string; model: string; systemPrompt?: string }) => {
+      return apiRequest('POST', '/api/gemini/conversations', data);
+    },
+    onSuccess: (newConversation) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/gemini/conversations'] });
+      setSelectedConversationId(newConversation.id);
+      setIsCreatingNew(false);
+      setConversationTitle('');
+      toast({
+        title: "Success",
+        description: "New conversation created successfully!",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to create conversation",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Send message mutation
+  const sendMessage = useMutation({
+    mutationFn: async (data: { conversationId: number; message: string }) => {
+      return apiRequest('POST', `/api/gemini/conversations/${data.conversationId}/message`, {
+        message: data.message,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/gemini/conversations', selectedConversationId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/gemini/conversations'] });
+      setCurrentMessage('');
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to send message",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete conversation mutation
+  const deleteConversation = useMutation({
+    mutationFn: async (id: number) => {
+      return apiRequest('DELETE', `/api/gemini/conversations/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/gemini/conversations'] });
+      if (selectedConversationId === (conversations as GeminiConversation[])[0]?.id) {
+        setSelectedConversationId(null);
+      }
+      toast({
+        title: "Success",
+        description: "Conversation deleted successfully!",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete conversation",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Update conversation settings mutation
+  const updateConversation = useMutation({
+    mutationFn: async (data: { id: number; model?: string; systemPrompt?: string }) => {
+      return apiRequest('PUT', `/api/gemini/conversations/${data.id}`, {
+        model: data.model,
+        systemPrompt: data.systemPrompt,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/gemini/conversations', selectedConversationId] });
+      toast({
+        title: "Success",
+        description: "Conversation settings updated!",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update conversation",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [selectedConversation?.messages]);
+
+  // Update model and system prompt when conversation changes
+  useEffect(() => {
+    if (selectedConversation) {
+      setSelectedModel(selectedConversation.model);
+      setSystemPrompt(selectedConversation.systemPrompt || '');
+    }
+  }, [selectedConversation]);
+
+  const handleCreateConversation = () => {
+    if (!conversationTitle.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a conversation title",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    createConversation.mutate({
+      title: conversationTitle,
+      model: selectedModel,
+      systemPrompt: systemPrompt || undefined,
+    });
+  };
+
+  const handleSendMessage = () => {
+    if (!currentMessage.trim() || !selectedConversationId) return;
+
+    sendMessage.mutate({
+      conversationId: selectedConversationId,
+      message: currentMessage,
+    });
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
+  const handleUpdateSettings = () => {
+    if (!selectedConversationId) return;
+
+    updateConversation.mutate({
+      id: selectedConversationId,
+      model: selectedModel,
+      systemPrompt: systemPrompt,
+    });
+  };
+
+  return (
+    <div className="container mx-auto p-6 max-w-7xl">
+      <div className="flex items-center gap-2 mb-6">
+        <Sparkles className="h-6 w-6 text-purple-600" />
+        <h1 className="text-3xl font-bold">Gemini AI Chat</h1>
+        <Badge variant="secondary">Admin Only</Badge>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-200px)]">
+        {/* Sidebar - Conversations List */}
+        <div className="lg:col-span-1">
+          <Card className="h-full">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg">Conversations</CardTitle>
+                <Button
+                  size="sm"
+                  onClick={() => setIsCreatingNew(true)}
+                  data-testid="button-new-conversation"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-2 h-[calc(100%-80px)] overflow-y-auto">
+              {isCreatingNew && (
+                <Card className="p-3 border-dashed">
+                  <div className="space-y-2">
+                    <Input
+                      placeholder="Conversation title"
+                      value={conversationTitle}
+                      onChange={(e) => setConversationTitle(e.target.value)}
+                      data-testid="input-conversation-title"
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={handleCreateConversation}
+                        disabled={createConversation.isPending}
+                        data-testid="button-create-conversation"
+                      >
+                        Create
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setIsCreatingNew(false);
+                          setConversationTitle('');
+                        }}
+                        data-testid="button-cancel-create"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              )}
+
+              {loadingConversations ? (
+                <div className="text-center text-gray-500 py-4">Loading conversations...</div>
+              ) : conversations.length === 0 ? (
+                <div className="text-center text-gray-500 py-4">
+                  <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p>No conversations yet</p>
+                </div>
+              ) : (
+                conversations.map((conversation: GeminiConversation) => (
+                  <Card
+                    key={conversation.id}
+                    className={`p-3 cursor-pointer hover:bg-gray-50 transition-colors ${
+                      selectedConversationId === conversation.id ? 'ring-2 ring-blue-500' : ''
+                    }`}
+                    onClick={() => setSelectedConversationId(conversation.id)}
+                    data-testid={`conversation-${conversation.id}`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-sm truncate">{conversation.title}</h3>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {format(new Date(conversation.updatedAt), 'MMM dd, HH:mm')}
+                        </p>
+                        <p className="text-xs text-blue-600 mt-1">{conversation.model}</p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteConversation.mutate(conversation.id);
+                        }}
+                        className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                        data-testid={`button-delete-${conversation.id}`}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </Card>
+                ))
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Main Chat Area */}
+        <div className="lg:col-span-3">
+          {selectedConversation ? (
+            <Card className="h-full flex flex-col">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-lg">{selectedConversation.title}</CardTitle>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Model: {selectedConversation.model} • 
+                      Messages: {selectedConversation.messages?.length || 0}
+                    </p>
+                  </div>
+                </div>
+              </CardHeader>
+              
+              <Tabs defaultValue="chat" className="flex-1 flex flex-col">
+                <TabsList className="mx-6">
+                  <TabsTrigger value="chat">Chat</TabsTrigger>
+                  <TabsTrigger value="settings">Settings</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="chat" className="flex-1 flex flex-col">
+                  {/* Messages Area */}
+                  <CardContent className="flex-1 overflow-y-auto space-y-4 min-h-0">
+                    {selectedConversation.messages?.length === 0 ? (
+                      <div className="text-center text-gray-500 py-8">
+                        <Bot className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p>Start a conversation with Gemini AI</p>
+                      </div>
+                    ) : (
+                      selectedConversation.messages?.map((message, index) => (
+                        <div
+                          key={index}
+                          className={`flex items-start gap-3 ${
+                            message.role === 'user' ? 'flex-row-reverse' : 'flex-row'
+                          }`}
+                          data-testid={`message-${index}`}
+                        >
+                          <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+                            message.role === 'user' 
+                              ? 'bg-blue-100 text-blue-600' 
+                              : 'bg-purple-100 text-purple-600'
+                          }`}>
+                            {message.role === 'user' ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
+                          </div>
+                          <div className={`flex-1 ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
+                            <div className={`inline-block p-3 rounded-lg max-w-[80%] ${
+                              message.role === 'user'
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-gray-100 text-gray-900'
+                            }`}>
+                              <p className="whitespace-pre-wrap">{message.content}</p>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-1">
+                              {format(new Date(message.timestamp), 'HH:mm')}
+                            </p>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                    <div ref={messagesEndRef} />
+                  </CardContent>
+
+                  {/* Message Input */}
+                  <div className="p-4 border-t">
+                    <div className="flex gap-2">
+                      <Textarea
+                        value={currentMessage}
+                        onChange={(e) => setCurrentMessage(e.target.value)}
+                        onKeyPress={handleKeyPress}
+                        placeholder="Type your message here..."
+                        className="flex-1 min-h-[60px] max-h-[120px]"
+                        disabled={sendMessage.isPending}
+                        data-testid="textarea-message"
+                      />
+                      <Button
+                        onClick={handleSendMessage}
+                        disabled={!currentMessage.trim() || sendMessage.isPending}
+                        size="lg"
+                        data-testid="button-send-message"
+                      >
+                        <Send className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="settings" className="flex-1">
+                  <CardContent className="space-y-6">
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">Gemini Model</label>
+                      <Select value={selectedModel} onValueChange={setSelectedModel}>
+                        <SelectTrigger data-testid="select-model">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableModels.map((model) => (
+                            <SelectItem key={model.value} value={model.value}>
+                              {model.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium mb-2 block">System Prompt</label>
+                      <Textarea
+                        value={systemPrompt}
+                        onChange={(e) => setSystemPrompt(e.target.value)}
+                        placeholder="Enter system instructions for the AI..."
+                        className="min-h-[120px]"
+                        data-testid="textarea-system-prompt"
+                      />
+                      <p className="text-xs text-gray-500 mt-2">
+                        System prompts help guide the AI's behavior and responses.
+                      </p>
+                    </div>
+
+                    <Button
+                      onClick={handleUpdateSettings}
+                      disabled={updateConversation.isPending}
+                      data-testid="button-update-settings"
+                    >
+                      <Settings className="h-4 w-4 mr-2" />
+                      Update Settings
+                    </Button>
+                  </CardContent>
+                </TabsContent>
+              </Tabs>
+            </Card>
+          ) : (
+            <Card className="h-full flex items-center justify-center">
+              <CardContent className="text-center">
+                <Sparkles className="h-16 w-16 mx-auto mb-4 text-purple-300" />
+                <h3 className="text-xl font-medium mb-2">Welcome to Gemini AI Chat</h3>
+                <p className="text-gray-500 mb-4">
+                  Select a conversation from the sidebar or create a new one to get started.
+                </p>
+                <Button
+                  onClick={() => setIsCreatingNew(true)}
+                  disabled={isCreatingNew}
+                  data-testid="button-start-new-chat"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Start New Chat
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

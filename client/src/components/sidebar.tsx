@@ -16,7 +16,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Menu,
-  AlertTriangle
+  AlertTriangle,
+  Bot
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -150,21 +151,38 @@ export function Sidebar() {
             
             {/* Admin Panel Link (Admin Only) */}
             {currentUser?.role === 'admin' && (
-              <li>
-                <Link href="/admin">
-                  <a
-                    className={cn(
-                      "flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors border-t border-border mt-4 pt-4",
-                      location === "/admin"
-                        ? "bg-red-100 text-red-700 border-red-200"
-                        : "text-red-600 hover:bg-red-50 hover:text-red-700"
-                    )}
-                  >
-                    <Shield size={20} />
-                    <span className="font-medium">Admin Panel</span>
-                  </a>
-                </Link>
-              </li>
+              <>
+                <li>
+                  <Link href="/gemini-chat">
+                    <a
+                      className={cn(
+                        "flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors border-t border-border mt-4 pt-4",
+                        location === "/gemini-chat"
+                          ? "bg-purple-100 text-purple-700 border-purple-200"
+                          : "text-purple-600 hover:bg-purple-50 hover:text-purple-700"
+                      )}
+                    >
+                      <Bot size={20} />
+                      <span className="font-medium">Gemini AI Chat</span>
+                    </a>
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/admin">
+                    <a
+                      className={cn(
+                        "flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors",
+                        location === "/admin"
+                          ? "bg-red-100 text-red-700 border-red-200"
+                          : "text-red-600 hover:bg-red-50 hover:text-red-700"
+                      )}
+                    >
+                      <Shield size={20} />
+                      <span className="font-medium">Admin Panel</span>
+                    </a>
+                  </Link>
+                </li>
+              </>
             )}
           </ul>
         </nav>

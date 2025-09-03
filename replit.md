@@ -44,6 +44,7 @@ The application adopts a modern full-stack architecture, ensuring clear separati
 - **Segment Sharing**: Simplified two-click segment selection for sharing video portions with highlighting and toast notifications.
 - **Support Us Ribbon**: Persistent ribbon component that appears on every page load to encourage community support and contributions, with modal containing contact information and donation links.
 - **Consistent Navigation**: All admin pages include the unified sidebar navigation component for seamless navigation between features.
+- **Gemini AI Chat Interface**: Admin-only feature providing direct integration with Google's Gemini AI models for chat-based interactions, including conversation management, model selection, system prompt configuration, and message history storage.
 
 ## External Dependencies
 
@@ -58,3 +59,4 @@ The application adopts a modern full-stack architecture, ensuring clear separati
 ### External APIs
 - **YouTube Data API v3**: Utilized for fetching video metadata.
 - **Replit Auth**: Provides authentication and user management services.
+- **Google Gemini AI API**: Integrated for AI chat functionality with support for multiple models (gemini-2.5-flash, gemini-2.5-pro, gemini-2.0-flash-preview).

@@ -4,6 +4,7 @@ import {
   varchar,
   timestamp,
   jsonb,
+  json,
   index,
   serial,
   boolean,
@@ -112,6 +113,17 @@ export const reportedIssues = pgTable("reported_issues", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+export const geminiConversations = pgTable("gemini_conversations", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  model: varchar("model", { length: 50 }).notNull().default("gemini-2.5-flash"),
+  systemPrompt: text("system_prompt"),
+  messages: json("messages").$type<Array<{role: 'user' | 'assistant', content: string, timestamp: string}>>().notNull().default([]),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+});
+
 // Relations
 export const playlistsRelations = relations(playlists, ({ many }) => ({
   videos: many(videos),
@@ -149,6 +161,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   assignedTasks: many(tasks, { relationName: "assignedTasks" }),
   createdTasks: many(tasks, { relationName: "createdTasks" }),
   reportedIssues: many(reportedIssues),
+  geminiConversations: many(geminiConversations),
 }));
 
 export const reportedIssuesRelations = relations(reportedIssues, ({ one }) => ({
@@ -162,6 +175,13 @@ export const reportedIssuesRelations = relations(reportedIssues, ({ one }) => ({
   }),
   reportedByUser: one(users, {
     fields: [reportedIssues.reportedByUserId],
+    references: [users.id],
+  }),
+}));
+
+export const geminiConversationsRelations = relations(geminiConversations, ({ one }) => ({
+  createdByUser: one(users, {
+    fields: [geminiConversations.createdBy],
     references: [users.id],
   }),
 }));
@@ -199,6 +219,12 @@ export const insertReportedIssueSchema = createInsertSchema(reportedIssues).omit
   updatedAt: true,
 });
 
+export const insertGeminiConversationSchema = createInsertSchema(geminiConversations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -217,6 +243,8 @@ export type InsertTask = z.infer<typeof insertTaskSchema>;
 export type Task = typeof tasks.$inferSelect;
 export type InsertReportedIssue = z.infer<typeof insertReportedIssueSchema>;
 export type ReportedIssue = typeof reportedIssues.$inferSelect;
+export type InsertGeminiConversation = z.infer<typeof insertGeminiConversationSchema>;
+export type GeminiConversation = typeof geminiConversations.$inferSelect;
 
 // Extended types for API responses
 export type VideoWithRelations = Video & {
