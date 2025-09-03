@@ -82,9 +82,8 @@ export default function GeminiChatPage() {
       // Set conversation data in cache
       queryClient.setQueryData(['/api/gemini/conversations', newConversation.id], newConversation);
       
-      // Set the selected conversation ID and tab
+      // Set the selected conversation ID
       setSelectedConversationId(newConversation.id);
-      setActiveTab('settings');
       setIsCreatingNew(false);
       setConversationTitle('');
       
@@ -193,12 +192,6 @@ export default function GeminiChatPage() {
       console.log('Selected conversation updated:', selectedConversation);
       setSelectedModel(selectedConversation.model);
       setSystemPrompt(selectedConversation.systemPrompt || '');
-      // If it's a new conversation with no messages, open settings tab
-      if (!selectedConversation.messages || selectedConversation.messages.length === 0) {
-        setActiveTab('settings');
-      } else {
-        setActiveTab('chat');
-      }
     }
   }, [selectedConversation]);
 
@@ -373,27 +366,71 @@ export default function GeminiChatPage() {
           {selectedConversationId ? (
             <Card className="h-full flex flex-col">
               <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mb-4">
                   <div>
                     <CardTitle className="text-lg">
                       {selectedConversation?.title || 'Loading...'}
                     </CardTitle>
                     <p className="text-sm text-gray-500 mt-1">
-                      Model: {selectedConversation?.model || selectedModel} • 
                       Messages: {selectedConversation?.messages?.length || 0}
                     </p>
                   </div>
                 </div>
+
+                {/* Model and System Prompt Controls */}
+                <div className="space-y-4 border-t pt-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        AI Model
+                      </label>
+                      <Select
+                        value={selectedModel}
+                        onValueChange={setSelectedModel}
+                      >
+                        <SelectTrigger data-testid="select-model">
+                          <SelectValue placeholder="Select model" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {AVAILABLE_MODELS.map((model: any) => (
+                            <SelectItem key={model.value} value={model.value}>
+                              {model.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        System Prompt
+                      </label>
+                      <Textarea
+                        placeholder="Enter system instructions for the AI (optional)"
+                        value={systemPrompt}
+                        onChange={(e) => setSystemPrompt(e.target.value)}
+                        className="min-h-[40px] max-h-[120px] resize-y"
+                        data-testid="textarea-system-prompt"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-end">
+                    <Button
+                      onClick={handleUpdateSettings}
+                      disabled={updateConversation.isPending}
+                      size="sm"
+                      data-testid="button-update-settings"
+                    >
+                      <Settings className="h-4 w-4 mr-2" />
+                      Update Settings
+                    </Button>
+                  </div>
+                </div>
               </CardHeader>
               
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-                <TabsList className="mx-6">
-                  <TabsTrigger value="chat">Chat</TabsTrigger>
-                  <TabsTrigger value="settings">Settings</TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="chat" className="flex-1 flex flex-col">
-                  {/* Messages Area */}
+              <div className="flex-1 flex flex-col">
+                {/* Messages Area */}
                   <CardContent className="flex-1 overflow-y-auto space-y-4 min-h-0">
                     {(!selectedConversation?.messages || selectedConversation.messages.length === 0) ? (
                       <div className="text-center text-gray-500 py-8">
@@ -434,82 +471,29 @@ export default function GeminiChatPage() {
                     <div ref={messagesEndRef} />
                   </CardContent>
 
-                  {/* Message Input */}
-                  <div className="p-4 border-t">
-                    <div className="flex gap-2">
-                      <Textarea
-                        value={currentMessage}
-                        onChange={(e) => setCurrentMessage(e.target.value)}
-                        onKeyPress={handleKeyPress}
-                        placeholder="Type your message here..."
-                        className="flex-1 min-h-[60px] max-h-[120px]"
-                        disabled={sendMessage.isPending}
-                        data-testid="textarea-message"
-                      />
-                      <Button
-                        onClick={handleSendMessage}
-                        disabled={!currentMessage.trim() || sendMessage.isPending}
-                        size="lg"
-                        data-testid="button-send-message"
-                      >
-                        <Send className="h-4 w-4" />
-                      </Button>
-                    </div>
+                {/* Message Input */}
+                <div className="p-4 border-t">
+                  <div className="flex gap-2">
+                    <Textarea
+                      value={currentMessage}
+                      onChange={(e) => setCurrentMessage(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      placeholder="Type your message here..."
+                      className="flex-1 min-h-[60px] max-h-[120px]"
+                      disabled={sendMessage.isPending}
+                      data-testid="textarea-message"
+                    />
+                    <Button
+                      onClick={handleSendMessage}
+                      disabled={!currentMessage.trim() || sendMessage.isPending}
+                      size="lg"
+                      data-testid="button-send-message"
+                    >
+                      <Send className="h-4 w-4" />
+                    </Button>
                   </div>
-                </TabsContent>
-
-                <TabsContent value="settings" className="flex-1">
-                  <CardContent className="space-y-6">
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">Gemini Model</label>
-                      <Select value={selectedModel} onValueChange={setSelectedModel}>
-                        <SelectTrigger data-testid="select-model">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availableModels.map((model) => (
-                            <SelectItem key={model.value} value={model.value}>
-                              {model.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">System Prompt</label>
-                      <Textarea
-                        value={systemPrompt}
-                        onChange={(e) => setSystemPrompt(e.target.value)}
-                        placeholder="Enter system instructions for the AI..."
-                        className="min-h-[120px]"
-                        data-testid="textarea-system-prompt"
-                      />
-                      <p className="text-xs text-gray-500 mt-2">
-                        System prompts help guide the AI's behavior and responses.
-                      </p>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={handleUpdateSettings}
-                        disabled={updateConversation.isPending}
-                        data-testid="button-update-settings"
-                      >
-                        <Settings className="h-4 w-4 mr-2" />
-                        Update Settings
-                      </Button>
-                      <Button
-                        onClick={() => setActiveTab('chat')}
-                        variant="outline"
-                        data-testid="button-start-chatting"
-                      >
-                        Start Chatting
-                      </Button>
-                    </div>
-                  </CardContent>
-                </TabsContent>
-              </Tabs>
+                </div>
+              </div>
             </Card>
           ) : (
             <Card className="h-full flex items-center justify-center">
