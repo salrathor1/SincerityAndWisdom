@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Bot, User, Send, Plus, Trash2, MessageSquare, Settings, Sparkles, Info } from 'lucide-react';
+import { Bot, User, Send, Plus, Trash2, MessageSquare, Settings, Sparkles, Info, Copy, Check } from 'lucide-react';
 import { format } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
@@ -46,6 +46,7 @@ export default function GeminiChatPage() {
   const [activeTab, setActiveTab] = useState('chat');
   const [showApiDetails, setShowApiDetails] = useState(false);
   const [lastApiRequest, setLastApiRequest] = useState<any>(null);
+  const [copiedMessageIndex, setCopiedMessageIndex] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -276,6 +277,25 @@ export default function GeminiChatPage() {
       model: selectedModel,
       systemPrompt: systemPrompt,
     });
+  };
+
+  const handleCopyMessage = async (content: string, messageIndex: number) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopiedMessageIndex(messageIndex);
+      toast({
+        title: "Copied!",
+        description: "Message copied to clipboard",
+      });
+      // Reset the copied state after 2 seconds
+      setTimeout(() => setCopiedMessageIndex(null), 2000);
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to copy message",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -532,12 +552,27 @@ export default function GeminiChatPage() {
                             {message.role === 'user' ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
                           </div>
                           <div className={`flex-1 ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
-                            <div className={`inline-block p-3 rounded-lg max-w-[80%] ${
+                            <div className={`relative group inline-block p-3 rounded-lg max-w-[80%] ${
                               message.role === 'user'
                                 ? 'bg-blue-600 text-white'
                                 : 'bg-gray-100 text-gray-900'
                             }`}>
                               <p className="whitespace-pre-wrap">{message.content}</p>
+                              {message.role === 'assistant' && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 p-0"
+                                  onClick={() => handleCopyMessage(message.content, index)}
+                                  data-testid={`button-copy-message-${index}`}
+                                >
+                                  {copiedMessageIndex === index ? (
+                                    <Check className="h-3 w-3 text-green-600" />
+                                  ) : (
+                                    <Copy className="h-3 w-3" />
+                                  )}
+                                </Button>
+                              )}
                             </div>
                             <p className="text-xs text-gray-500 mt-1">
                               {format(new Date(message.timestamp), 'HH:mm')}
