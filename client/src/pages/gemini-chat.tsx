@@ -66,17 +66,23 @@ export default function GeminiChatPage() {
       return apiRequest('POST', '/api/gemini/conversations', data);
     },
     onSuccess: async (newConversation) => {
-      // First invalidate and wait for conversations list to update
-      await queryClient.invalidateQueries({ queryKey: ['/api/gemini/conversations'] });
+      console.log('New conversation created:', newConversation);
       
-      // Set the selected conversation ID
+      // Set conversation data immediately in cache to avoid loading state
+      queryClient.setQueryData(['/api/gemini/conversations', newConversation.id], newConversation);
+      
+      // Set the selected conversation ID and tab
       setSelectedConversationId(newConversation.id);
-      setActiveTab('settings'); // Open settings tab for new conversations
+      setActiveTab('settings');
       setIsCreatingNew(false);
       setConversationTitle('');
       
-      // Invalidate the specific conversation query to ensure it loads
-      queryClient.invalidateQueries({ queryKey: ['/api/gemini/conversations', newConversation.id] });
+      // Update form state with new conversation data
+      setSelectedModel(newConversation.model);
+      setSystemPrompt(newConversation.systemPrompt || '');
+      
+      // Invalidate queries to refresh lists
+      queryClient.invalidateQueries({ queryKey: ['/api/gemini/conversations'] });
       
       toast({
         title: "Success",
@@ -170,6 +176,7 @@ export default function GeminiChatPage() {
   // Update model and system prompt when conversation changes
   useEffect(() => {
     if (selectedConversation) {
+      console.log('Selected conversation updated:', selectedConversation);
       setSelectedModel(selectedConversation.model);
       setSystemPrompt(selectedConversation.systemPrompt || '');
       // If it's a new conversation with no messages, open settings tab
@@ -310,7 +317,10 @@ export default function GeminiChatPage() {
                     className={`p-3 cursor-pointer hover:bg-gray-50 transition-colors ${
                       selectedConversationId === conversation.id ? 'ring-2 ring-blue-500' : ''
                     }`}
-                    onClick={() => setSelectedConversationId(conversation.id)}
+                    onClick={() => {
+                    console.log('Selecting conversation:', conversation.id);
+                    setSelectedConversationId(conversation.id);
+                  }}
                     data-testid={`conversation-${conversation.id}`}
                   >
                     <div className="flex items-start justify-between">
