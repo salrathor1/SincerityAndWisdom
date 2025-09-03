@@ -122,22 +122,24 @@ export default function GeminiChatPage() {
 
   // Send message mutation
   const sendMessage = useMutation({
-    mutationFn: async (data: { conversationId: number; message: string }) => {
+    mutationFn: async (data: { conversationId: number; message: string; model: string; systemPrompt?: string }) => {
       // Capture API request details
+      const requestBody = {
+        message: data.message,
+        model: data.model,
+        systemPrompt: data.systemPrompt
+      };
+      
       const requestDetails = {
         method: 'POST',
         url: `/api/gemini/conversations/${data.conversationId}/message`,
-        body: {
-          message: data.message,
-        },
+        body: requestBody,
         timestamp: new Date().toISOString(),
         conversationId: data.conversationId
       };
       setLastApiRequest(requestDetails);
       
-      const response = await apiRequest('POST', `/api/gemini/conversations/${data.conversationId}/message`, {
-        message: data.message,
-      });
+      const response = await apiRequest('POST', `/api/gemini/conversations/${data.conversationId}/message`, requestBody);
       return await response.json();
     },
     onSuccess: () => {
@@ -254,6 +256,8 @@ export default function GeminiChatPage() {
     sendMessage.mutate({
       conversationId: selectedConversationId,
       message: currentMessage,
+      model: selectedModel,
+      systemPrompt: systemPrompt || undefined,
     });
   };
 
