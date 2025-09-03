@@ -47,6 +47,8 @@ export default function GeminiChatPage() {
   const [showApiDetails, setShowApiDetails] = useState(false);
   const [lastApiRequest, setLastApiRequest] = useState<any>(null);
   const [copiedMessageIndex, setCopiedMessageIndex] = useState<number | null>(null);
+  const [editingConversationId, setEditingConversationId] = useState<number | null>(null);
+  const [editingTitle, setEditingTitle] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -185,18 +187,20 @@ export default function GeminiChatPage() {
 
   // Update conversation settings mutation
   const updateConversation = useMutation({
-    mutationFn: async (data: { id: number; model?: string; systemPrompt?: string }) => {
+    mutationFn: async (data: { id: number; model?: string; systemPrompt?: string; title?: string }) => {
       const response = await apiRequest('PUT', `/api/gemini/conversations/${data.id}`, {
         model: data.model,
         systemPrompt: data.systemPrompt,
+        title: data.title,
       });
       return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/gemini/conversations', selectedConversationId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/gemini/conversations'] });
       toast({
         title: "Success",
-        description: "Conversation settings updated!",
+        description: "Conversation updated!",
       });
     },
     onError: () => {
@@ -298,6 +302,36 @@ export default function GeminiChatPage() {
     }
   };
 
+  const handleStartEditingTitle = (conversation: GeminiConversation) => {
+    setEditingConversationId(conversation.id);
+    setEditingTitle(conversation.title);
+  };
+
+  const handleSaveTitleEdit = () => {
+    if (!editingConversationId || !editingTitle.trim()) return;
+
+    updateConversation.mutate({
+      id: editingConversationId,
+      title: editingTitle.trim(),
+    });
+
+    setEditingConversationId(null);
+    setEditingTitle('');
+  };
+
+  const handleCancelTitleEdit = () => {
+    setEditingConversationId(null);
+    setEditingTitle('');
+  };
+
+  const handleTitleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSaveTitleEdit();
+    } else if (e.key === 'Escape') {
+      handleCancelTitleEdit();
+    }
+  };
+
   return (
     <div className="container mx-auto p-6 max-w-7xl">
       <div className="flex items-center gap-2 mb-6">
@@ -382,7 +416,29 @@ export default function GeminiChatPage() {
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-sm truncate">{conversation.title}</h3>
+                        {editingConversationId === conversation.id ? (
+                          <Input
+                            value={editingTitle}
+                            onChange={(e) => setEditingTitle(e.target.value)}
+                            onKeyDown={handleTitleKeyPress}
+                            onBlur={handleSaveTitleEdit}
+                            className="text-sm h-6 p-1 mb-1"
+                            autoFocus
+                            data-testid={`input-edit-title-${conversation.id}`}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        ) : (
+                          <h3 
+                            className="font-medium text-sm truncate cursor-pointer hover:text-blue-600"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleStartEditingTitle(conversation);
+                            }}
+                            data-testid={`title-${conversation.id}`}
+                          >
+                            {conversation.title}
+                          </h3>
+                        )}
                         <p className="text-xs text-gray-500 mt-1">
                           {format(new Date(conversation.updatedAt), 'MMM dd, HH:mm')}
                         </p>
