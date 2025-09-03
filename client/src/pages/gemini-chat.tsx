@@ -56,7 +56,9 @@ export default function GeminiChatPage() {
   const [queryStartTime, setQueryStartTime] = useState<number | null>(null);
   const [currentQueryStatus, setCurrentQueryStatus] = useState<'idle' | 'sending' | 'success' | 'failed'>('idle');
   const [lastQueryTime, setLastQueryTime] = useState<number | null>(null);
+  const [currentElapsed, setCurrentElapsed] = useState<number>(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -133,10 +135,19 @@ export default function GeminiChatPage() {
   // Send message mutation
   const sendMessage = useMutation({
     mutationFn: async (data: { conversationId: number; message: string; model: string; systemPrompt?: string }) => {
-      // Start timing
+      // Start timing and live timer
       const startTime = Date.now();
       setQueryStartTime(startTime);
       setCurrentQueryStatus('sending');
+      setCurrentElapsed(0);
+      
+      // Start live timer update
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+      }
+      timerIntervalRef.current = setInterval(() => {
+        setCurrentElapsed(Date.now() - startTime);
+      }, 100);
       
       // Capture API request details
       const requestBody = {
@@ -158,10 +169,21 @@ export default function GeminiChatPage() {
       const responseTime = Date.now() - startTime;
       setLastQueryTime(responseTime);
       
+      // Clear live timer
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+        timerIntervalRef.current = null;
+      }
+      
       return await response.json();
     },
     onSuccess: () => {
       setCurrentQueryStatus('success');
+      // Clear live timer
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+        timerIntervalRef.current = null;
+      }
       queryClient.invalidateQueries({ queryKey: ['/api/gemini/conversations', selectedConversationId] });
       queryClient.invalidateQueries({ queryKey: ['/api/gemini/conversations'] });
       setCurrentMessage('');
@@ -170,6 +192,12 @@ export default function GeminiChatPage() {
       const responseTime = queryStartTime ? Date.now() - queryStartTime : 0;
       setLastQueryTime(responseTime);
       setCurrentQueryStatus('failed');
+      
+      // Clear live timer
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+        timerIntervalRef.current = null;
+      }
       
       toast({
         title: "Error",
@@ -281,6 +309,7 @@ export default function GeminiChatPage() {
     // Reset status for new query
     setCurrentQueryStatus('idle');
     setLastQueryTime(null);
+    setCurrentElapsed(0);
 
     sendMessage.mutate({
       conversationId: selectedConversationId,
@@ -357,6 +386,15 @@ export default function GeminiChatPage() {
   };
 
   const { isAuthenticated, isLoading } = useAuth();
+
+  // Cleanup timer on component unmount
+  useEffect(() => {
+    return () => {
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+      }
+    };
+  }, []);
 
   // Redirect to home if not authenticated
   useEffect(() => {
@@ -712,27 +750,22 @@ export default function GeminiChatPage() {
                         {currentQueryStatus === 'sending' && (
                           <div className="flex items-center gap-2 text-blue-600">
                             <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
-                            <span>Sending query...</span>
+                            <span>Sending query... {currentElapsed < 1000 ? `${currentElapsed}ms` : `${(currentElapsed / 1000).toFixed(1)}s`}</span>
                           </div>
                         )}
                         {currentQueryStatus === 'success' && lastQueryTime && (
                           <div className="flex items-center gap-2 text-green-600">
                             <Check className="h-3 w-3" />
-                            <span>Query successful</span>
+                            <span>Query successful - took {lastQueryTime < 1000 ? `${lastQueryTime}ms` : `${(lastQueryTime / 1000).toFixed(1)}s`}</span>
                           </div>
                         )}
                         {currentQueryStatus === 'failed' && (
                           <div className="flex items-center gap-2 text-red-600">
                             <span>✕</span>
-                            <span>Query failed</span>
+                            <span>Query failed{lastQueryTime ? ` - took ${lastQueryTime < 1000 ? `${lastQueryTime}ms` : `${(lastQueryTime / 1000).toFixed(1)}s`}` : ''}</span>
                           </div>
                         )}
                       </div>
-                      {lastQueryTime && (
-                        <div className="text-xs text-gray-500">
-                          {lastQueryTime < 1000 ? `${lastQueryTime}ms` : `${(lastQueryTime / 1000).toFixed(1)}s`}
-                        </div>
-                      )}
                     </div>
                   )}
                   
