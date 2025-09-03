@@ -54,7 +54,7 @@ export default function GeminiChatPage() {
   });
 
   // Fetch selected conversation details
-  const { data: selectedConversation } = useQuery<GeminiConversation>({
+  const { data: selectedConversation, refetch: refetchConversation } = useQuery<GeminiConversation>({
     queryKey: ['/api/gemini/conversations', selectedConversationId],
     queryFn: () => apiRequest('GET', `/api/gemini/conversations/${selectedConversationId}`),
     enabled: !!selectedConversationId,
@@ -65,15 +65,22 @@ export default function GeminiChatPage() {
     mutationFn: async (data: { title: string; model: string; systemPrompt?: string }) => {
       return apiRequest('POST', '/api/gemini/conversations', data);
     },
-    onSuccess: (newConversation) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/gemini/conversations'] });
+    onSuccess: async (newConversation) => {
+      // First invalidate and wait for conversations list to update
+      await queryClient.invalidateQueries({ queryKey: ['/api/gemini/conversations'] });
+      
+      // Set the selected conversation ID
       setSelectedConversationId(newConversation.id);
       setActiveTab('settings'); // Open settings tab for new conversations
       setIsCreatingNew(false);
       setConversationTitle('');
+      
+      // Invalidate the specific conversation query to ensure it loads
+      queryClient.invalidateQueries({ queryKey: ['/api/gemini/conversations', newConversation.id] });
+      
       toast({
         title: "Success",
-        description: "New conversation created successfully!",
+        description: "New conversation created and ready for setup!",
       });
     },
     onError: () => {
@@ -336,15 +343,17 @@ export default function GeminiChatPage() {
 
         {/* Main Chat Area */}
         <div className="lg:col-span-3">
-          {selectedConversation ? (
+          {selectedConversationId ? (
             <Card className="h-full flex flex-col">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-lg">{selectedConversation.title}</CardTitle>
+                    <CardTitle className="text-lg">
+                      {selectedConversation?.title || 'Loading...'}
+                    </CardTitle>
                     <p className="text-sm text-gray-500 mt-1">
-                      Model: {selectedConversation.model} • 
-                      Messages: {selectedConversation.messages?.length || 0}
+                      Model: {selectedConversation?.model || selectedModel} • 
+                      Messages: {selectedConversation?.messages?.length || 0}
                     </p>
                   </div>
                 </div>
@@ -359,7 +368,7 @@ export default function GeminiChatPage() {
                 <TabsContent value="chat" className="flex-1 flex flex-col">
                   {/* Messages Area */}
                   <CardContent className="flex-1 overflow-y-auto space-y-4 min-h-0">
-                    {selectedConversation.messages?.length === 0 ? (
+                    {(!selectedConversation?.messages || selectedConversation.messages.length === 0) ? (
                       <div className="text-center text-gray-500 py-8">
                         <Bot className="h-12 w-12 mx-auto mb-4 opacity-50" />
                         <p>Start a conversation with Gemini AI</p>
