@@ -19,6 +19,8 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   timestamp: string;
+  responseTime?: number;
+  success?: boolean;
 }
 
 interface GeminiConversation {
@@ -51,6 +53,9 @@ export default function GeminiChatPage() {
   const [copiedMessageIndex, setCopiedMessageIndex] = useState<number | null>(null);
   const [editingConversationId, setEditingConversationId] = useState<number | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
+  const [queryStartTime, setQueryStartTime] = useState<number | null>(null);
+  const [currentQueryStatus, setCurrentQueryStatus] = useState<'idle' | 'sending' | 'success' | 'failed'>('idle');
+  const [lastQueryTime, setLastQueryTime] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -128,6 +133,11 @@ export default function GeminiChatPage() {
   // Send message mutation
   const sendMessage = useMutation({
     mutationFn: async (data: { conversationId: number; message: string; model: string; systemPrompt?: string }) => {
+      // Start timing
+      const startTime = Date.now();
+      setQueryStartTime(startTime);
+      setCurrentQueryStatus('sending');
+      
       // Capture API request details
       const requestBody = {
         message: data.message,
@@ -145,14 +155,22 @@ export default function GeminiChatPage() {
       setLastApiRequest(requestDetails);
       
       const response = await apiRequest('POST', `/api/gemini/conversations/${data.conversationId}/message`, requestBody);
+      const responseTime = Date.now() - startTime;
+      setLastQueryTime(responseTime);
+      
       return await response.json();
     },
     onSuccess: () => {
+      setCurrentQueryStatus('success');
       queryClient.invalidateQueries({ queryKey: ['/api/gemini/conversations', selectedConversationId] });
       queryClient.invalidateQueries({ queryKey: ['/api/gemini/conversations'] });
       setCurrentMessage('');
     },
-    onError: () => {
+    onError: (error) => {
+      const responseTime = queryStartTime ? Date.now() - queryStartTime : 0;
+      setLastQueryTime(responseTime);
+      setCurrentQueryStatus('failed');
+      
       toast({
         title: "Error",
         description: "Failed to send message",
@@ -259,6 +277,10 @@ export default function GeminiChatPage() {
 
   const handleSendMessage = () => {
     if (!currentMessage.trim() || !selectedConversationId) return;
+
+    // Reset status for new query
+    setCurrentQueryStatus('idle');
+    setLastQueryTime(null);
 
     sendMessage.mutate({
       conversationId: selectedConversationId,
@@ -683,6 +705,37 @@ export default function GeminiChatPage() {
 
                 {/* Message Input */}
                 <div className="p-4 border-t">
+                  {/* Query Status Display */}
+                  {(currentQueryStatus !== 'idle' || lastQueryTime) && (
+                    <div className="mb-3 flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        {currentQueryStatus === 'sending' && (
+                          <div className="flex items-center gap-2 text-blue-600">
+                            <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
+                            <span>Sending query...</span>
+                          </div>
+                        )}
+                        {currentQueryStatus === 'success' && lastQueryTime && (
+                          <div className="flex items-center gap-2 text-green-600">
+                            <Check className="h-3 w-3" />
+                            <span>Query successful</span>
+                          </div>
+                        )}
+                        {currentQueryStatus === 'failed' && (
+                          <div className="flex items-center gap-2 text-red-600">
+                            <span>✕</span>
+                            <span>Query failed</span>
+                          </div>
+                        )}
+                      </div>
+                      {lastQueryTime && (
+                        <div className="text-xs text-gray-500">
+                          {lastQueryTime < 1000 ? `${lastQueryTime}ms` : `${(lastQueryTime / 1000).toFixed(1)}s`}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
                   <div className="flex gap-2">
                     <Textarea
                       value={currentMessage}
