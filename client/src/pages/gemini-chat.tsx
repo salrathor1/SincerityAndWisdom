@@ -40,7 +40,7 @@ export default function GeminiChatPage() {
   const [selectedConversationId, setSelectedConversationId] = useState<number | null>(null);
   const [currentMessage, setCurrentMessage] = useState('');
   const [selectedModel, setSelectedModel] = useState('gemini-2.5-flash');
-  const [systemPrompt, setSystemPrompt] = useState('');
+  const [systemPrompt, setSystemPrompt] = useState('- You are a world famous Arabic grammarian with a PhD from the Islamic University of Madinah that never misses anything. Please add harakaat to this file and keep its original formatting. Do not add any additional words or references.\n\n- Please decide where the sentences should be, keep the same structure but remove the timestamps that are in the middle only keeping the timestamp at the end of the sentence.\n\n- If a sentence is less than 5 words you can add it to the next sentence but only if the whole sentence will be lesson than 20 words!');
   const [conversationTitle, setConversationTitle] = useState('');
   const [isCreatingNew, setIsCreatingNew] = useState(false);
   const [activeTab, setActiveTab] = useState('chat');
