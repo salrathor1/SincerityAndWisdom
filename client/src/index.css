@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Noto+Sans+Arabic:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Sakkal+Majallah&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -95,6 +95,6 @@
 
 /* Arabic font family */
 .arabic-font {
-  font-family: 'Amiri', 'Noto Sans Arabic', 'Traditional Arabic', 'Geeza Pro', 'Arabic Typesetting', 'Tahoma', sans-serif;
+  font-family: 'Sakkal Majallah', 'Traditional Arabic', 'Geeza Pro', 'Arabic Typesetting', 'Tahoma', sans-serif;
   line-height: 1.8; /* Increased line spacing for Arabic text */
 }
