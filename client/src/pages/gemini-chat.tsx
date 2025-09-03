@@ -289,7 +289,7 @@ export default function GeminiChatPage() {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-200px)]">
         {/* Sidebar - Conversations List */}
         <div className="lg:col-span-1">
-          <Card className="h-full sticky top-6">
+          <Card className="sticky top-6 h-[calc(100vh-120px)]">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg">Conversations</CardTitle>
@@ -303,7 +303,7 @@ export default function GeminiChatPage() {
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="space-y-2 h-[calc(100%-80px)] overflow-y-auto">
+            <CardContent className="space-y-2 h-[calc(100vh-220px)] overflow-y-auto">
               {isCreatingNew && (
                 <Card className="p-3 border-dashed">
                   <div className="space-y-2">
