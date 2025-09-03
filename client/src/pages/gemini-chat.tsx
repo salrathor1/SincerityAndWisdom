@@ -56,9 +56,7 @@ export default function GeminiChatPage() {
   const [queryStartTime, setQueryStartTime] = useState<number | null>(null);
   const [currentQueryStatus, setCurrentQueryStatus] = useState<'idle' | 'sending' | 'success' | 'failed'>('idle');
   const [lastQueryTime, setLastQueryTime] = useState<number | null>(null);
-  const [currentElapsed, setCurrentElapsed] = useState<number>(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -135,19 +133,10 @@ export default function GeminiChatPage() {
   // Send message mutation
   const sendMessage = useMutation({
     mutationFn: async (data: { conversationId: number; message: string; model: string; systemPrompt?: string }) => {
-      // Start timing and live timer
+      // Start timing
       const startTime = Date.now();
       setQueryStartTime(startTime);
       setCurrentQueryStatus('sending');
-      setCurrentElapsed(0);
-      
-      // Start live timer update
-      if (timerIntervalRef.current) {
-        clearInterval(timerIntervalRef.current);
-      }
-      timerIntervalRef.current = setInterval(() => {
-        setCurrentElapsed(Date.now() - startTime);
-      }, 100);
       
       // Capture API request details
       const requestBody = {
@@ -169,21 +158,10 @@ export default function GeminiChatPage() {
       const responseTime = Date.now() - startTime;
       setLastQueryTime(responseTime);
       
-      // Clear live timer
-      if (timerIntervalRef.current) {
-        clearInterval(timerIntervalRef.current);
-        timerIntervalRef.current = null;
-      }
-      
       return await response.json();
     },
     onSuccess: () => {
       setCurrentQueryStatus('success');
-      // Clear live timer
-      if (timerIntervalRef.current) {
-        clearInterval(timerIntervalRef.current);
-        timerIntervalRef.current = null;
-      }
       queryClient.invalidateQueries({ queryKey: ['/api/gemini/conversations', selectedConversationId] });
       queryClient.invalidateQueries({ queryKey: ['/api/gemini/conversations'] });
       setCurrentMessage('');
@@ -192,12 +170,6 @@ export default function GeminiChatPage() {
       const responseTime = queryStartTime ? Date.now() - queryStartTime : 0;
       setLastQueryTime(responseTime);
       setCurrentQueryStatus('failed');
-      
-      // Clear live timer
-      if (timerIntervalRef.current) {
-        clearInterval(timerIntervalRef.current);
-        timerIntervalRef.current = null;
-      }
       
       toast({
         title: "Error",
@@ -309,7 +281,6 @@ export default function GeminiChatPage() {
     // Reset status for new query
     setCurrentQueryStatus('idle');
     setLastQueryTime(null);
-    setCurrentElapsed(0);
 
     sendMessage.mutate({
       conversationId: selectedConversationId,
@@ -387,14 +358,7 @@ export default function GeminiChatPage() {
 
   const { isAuthenticated, isLoading } = useAuth();
 
-  // Cleanup timer on component unmount
-  useEffect(() => {
-    return () => {
-      if (timerIntervalRef.current) {
-        clearInterval(timerIntervalRef.current);
-      }
-    };
-  }, []);
+
 
   // Redirect to home if not authenticated
   useEffect(() => {
