@@ -582,20 +582,20 @@ export default function GeminiChatPage() {
                               <div className="grid grid-cols-2 gap-4">
                                 <div>
                                   <h4 className="font-medium text-sm text-gray-600">Method</h4>
-                                  <p className="font-mono text-sm bg-gray-100 p-2 rounded">{lastApiRequest.method}</p>
+                                  <p className="font-mono text-sm bg-gray-100 p-2 rounded break-words">{lastApiRequest.method}</p>
                                 </div>
                                 <div>
                                   <h4 className="font-medium text-sm text-gray-600">URL</h4>
-                                  <p className="font-mono text-sm bg-gray-100 p-2 rounded">{lastApiRequest.url}</p>
+                                  <p className="font-mono text-sm bg-gray-100 p-2 rounded break-words">{lastApiRequest.url}</p>
                                 </div>
                               </div>
                               <div>
                                 <h4 className="font-medium text-sm text-gray-600">Timestamp</h4>
-                                <p className="font-mono text-sm bg-gray-100 p-2 rounded">{lastApiRequest.timestamp}</p>
+                                <p className="font-mono text-sm bg-gray-100 p-2 rounded break-words">{lastApiRequest.timestamp}</p>
                               </div>
                               <div>
                                 <h4 className="font-medium text-sm text-gray-600">Request Body</h4>
-                                <pre className="font-mono text-sm bg-gray-100 p-3 rounded overflow-auto max-h-64">
+                                <pre className="font-mono text-sm bg-gray-100 p-3 rounded overflow-auto max-h-64 whitespace-pre-wrap break-words">
                                   {JSON.stringify(lastApiRequest.body, null, 2)}
                                 </pre>
                               </div>
