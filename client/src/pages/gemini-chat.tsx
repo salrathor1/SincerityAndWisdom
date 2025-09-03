@@ -323,8 +323,10 @@ export default function GeminiChatPage() {
                   <p>No conversations yet</p>
                 </div>
               ) : (
-                conversations.map((conversation: GeminiConversation) => (
-                  <Card
+                conversations.map((conversation: GeminiConversation) => {
+                  console.log('Rendering conversation:', conversation.id, conversation.title);
+                  return (
+                    <Card
                     key={conversation.id}
                     className={`p-3 cursor-pointer hover:bg-gray-50 transition-colors ${
                       selectedConversationId === conversation.id ? 'ring-2 ring-blue-500' : ''
@@ -356,8 +358,9 @@ export default function GeminiChatPage() {
                         <Trash2 className="h-3 w-3" />
                       </Button>
                     </div>
-                  </Card>
-                ))
+                    </Card>
+                  );
+                })
               )}
             </CardContent>
           </Card>
