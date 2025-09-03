@@ -445,7 +445,6 @@ export default function GeminiChatPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          disabled={!lastApiRequest}
                           data-testid="button-api-details"
                         >
                           <Info className="h-4 w-4 mr-2" />
@@ -454,32 +453,40 @@ export default function GeminiChatPage() {
                       </DialogTrigger>
                       <DialogContent className="max-w-2xl">
                         <DialogHeader>
-                          <DialogTitle>Latest API Request Details</DialogTitle>
+                          <DialogTitle>Current API Request Details</DialogTitle>
                         </DialogHeader>
-                        {lastApiRequest && (
-                          <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <h4 className="font-medium text-sm text-gray-600">Method</h4>
-                                <p className="font-mono text-sm bg-gray-100 p-2 rounded">{lastApiRequest.method}</p>
+                        <div className="space-y-4">
+                          {lastApiRequest ? (
+                            <>
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <h4 className="font-medium text-sm text-gray-600">Method</h4>
+                                  <p className="font-mono text-sm bg-gray-100 p-2 rounded">{lastApiRequest.method}</p>
+                                </div>
+                                <div>
+                                  <h4 className="font-medium text-sm text-gray-600">URL</h4>
+                                  <p className="font-mono text-sm bg-gray-100 p-2 rounded">{lastApiRequest.url}</p>
+                                </div>
                               </div>
                               <div>
-                                <h4 className="font-medium text-sm text-gray-600">URL</h4>
-                                <p className="font-mono text-sm bg-gray-100 p-2 rounded">{lastApiRequest.url}</p>
+                                <h4 className="font-medium text-sm text-gray-600">Timestamp</h4>
+                                <p className="font-mono text-sm bg-gray-100 p-2 rounded">{lastApiRequest.timestamp}</p>
                               </div>
+                              <div>
+                                <h4 className="font-medium text-sm text-gray-600">Request Body</h4>
+                                <pre className="font-mono text-sm bg-gray-100 p-3 rounded overflow-auto max-h-64">
+                                  {JSON.stringify(lastApiRequest.body, null, 2)}
+                                </pre>
+                              </div>
+                            </>
+                          ) : (
+                            <div className="text-center py-8">
+                              <Info className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                              <p className="text-gray-500">No API requests made yet.</p>
+                              <p className="text-sm text-gray-400 mt-2">Send a message or create a conversation to see API details.</p>
                             </div>
-                            <div>
-                              <h4 className="font-medium text-sm text-gray-600">Timestamp</h4>
-                              <p className="font-mono text-sm bg-gray-100 p-2 rounded">{lastApiRequest.timestamp}</p>
-                            </div>
-                            <div>
-                              <h4 className="font-medium text-sm text-gray-600">Request Body</h4>
-                              <pre className="font-mono text-sm bg-gray-100 p-3 rounded overflow-auto max-h-64">
-                                {JSON.stringify(lastApiRequest.body, null, 2)}
-                              </pre>
-                            </div>
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </DialogContent>
                     </Dialog>
                     
