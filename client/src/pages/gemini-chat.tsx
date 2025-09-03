@@ -392,7 +392,7 @@ export default function GeminiChatPage() {
                           <SelectValue placeholder="Select model" />
                         </SelectTrigger>
                         <SelectContent>
-                          {AVAILABLE_MODELS.map((model: any) => (
+                          {availableModels.map((model: any) => (
                             <SelectItem key={model.value} value={model.value}>
                               {model.label}
                             </SelectItem>
