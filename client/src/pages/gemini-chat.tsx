@@ -111,7 +111,8 @@ export default function GeminiChatPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/gemini/conversations'] });
-      if (selectedConversationId === (conversations as GeminiConversation[])[0]?.id) {
+      const conversationsList = Array.isArray(conversations) ? conversations : [];
+      if (selectedConversationId === conversationsList[0]?.id) {
         setSelectedConversationId(null);
       }
       toast({
@@ -269,13 +270,13 @@ export default function GeminiChatPage() {
 
               {loadingConversations ? (
                 <div className="text-center text-gray-500 py-4">Loading conversations...</div>
-              ) : conversations.length === 0 ? (
+              ) : !Array.isArray(conversations) || conversations.length === 0 ? (
                 <div className="text-center text-gray-500 py-4">
                   <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
                   <p>No conversations yet</p>
                 </div>
               ) : (
-                conversations.map((conversation: GeminiConversation) => (
+                (Array.isArray(conversations) ? conversations : []).map((conversation: GeminiConversation) => (
                   <Card
                     key={conversation.id}
                     className={`p-3 cursor-pointer hover:bg-gray-50 transition-colors ${
