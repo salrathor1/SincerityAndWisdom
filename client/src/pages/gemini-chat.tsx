@@ -42,6 +42,7 @@ export default function GeminiChatPage() {
   const [systemPrompt, setSystemPrompt] = useState('');
   const [conversationTitle, setConversationTitle] = useState('');
   const [isCreatingNew, setIsCreatingNew] = useState(false);
+  const [activeTab, setActiveTab] = useState('chat');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -67,6 +68,7 @@ export default function GeminiChatPage() {
     onSuccess: (newConversation) => {
       queryClient.invalidateQueries({ queryKey: ['/api/gemini/conversations'] });
       setSelectedConversationId(newConversation.id);
+      setActiveTab('settings'); // Open settings tab for new conversations
       setIsCreatingNew(false);
       setConversationTitle('');
       toast({
@@ -163,6 +165,12 @@ export default function GeminiChatPage() {
     if (selectedConversation) {
       setSelectedModel(selectedConversation.model);
       setSystemPrompt(selectedConversation.systemPrompt || '');
+      // If it's a new conversation with no messages, open settings tab
+      if (!selectedConversation.messages || selectedConversation.messages.length === 0) {
+        setActiveTab('settings');
+      } else {
+        setActiveTab('chat');
+      }
     }
   }, [selectedConversation]);
 
@@ -342,7 +350,7 @@ export default function GeminiChatPage() {
                 </div>
               </CardHeader>
               
-              <Tabs defaultValue="chat" className="flex-1 flex flex-col">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
                 <TabsList className="mx-6">
                   <TabsTrigger value="chat">Chat</TabsTrigger>
                   <TabsTrigger value="settings">Settings</TabsTrigger>
@@ -446,14 +454,23 @@ export default function GeminiChatPage() {
                       </p>
                     </div>
 
-                    <Button
-                      onClick={handleUpdateSettings}
-                      disabled={updateConversation.isPending}
-                      data-testid="button-update-settings"
-                    >
-                      <Settings className="h-4 w-4 mr-2" />
-                      Update Settings
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={handleUpdateSettings}
+                        disabled={updateConversation.isPending}
+                        data-testid="button-update-settings"
+                      >
+                        <Settings className="h-4 w-4 mr-2" />
+                        Update Settings
+                      </Button>
+                      <Button
+                        onClick={() => setActiveTab('chat')}
+                        variant="outline"
+                        data-testid="button-start-chatting"
+                      >
+                        Start Chatting
+                      </Button>
+                    </div>
                   </CardContent>
                 </TabsContent>
               </Tabs>
