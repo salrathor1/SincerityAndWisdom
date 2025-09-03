@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { Button } from '@/components/ui/button';
@@ -39,6 +39,94 @@ const availableModels = [
   { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
   { value: 'gemini-2.0-flash-preview', label: 'Gemini 2.0 Flash Preview' },
 ];
+
+// Memoized conversation list to prevent unnecessary re-renders
+const ConversationList = React.memo(({ 
+  conversations, 
+  selectedConversationId, 
+  setSelectedConversationId, 
+  editingConversationId, 
+  editingTitle, 
+  setEditingTitle,
+  handleTitleKeyPress,
+  handleSaveTitleEdit,
+  handleStartEditingTitle,
+  deleteConversation
+}: {
+  conversations: GeminiConversation[];
+  selectedConversationId: number | null;
+  setSelectedConversationId: (id: number) => void;
+  editingConversationId: number | null;
+  editingTitle: string;
+  setEditingTitle: (title: string) => void;
+  handleTitleKeyPress: (e: React.KeyboardEvent) => void;
+  handleSaveTitleEdit: () => void;
+  handleStartEditingTitle: (conversation: GeminiConversation) => void;
+  deleteConversation: any;
+}) => {
+  return (
+    <>
+      {conversations.map((conversation: GeminiConversation) => {
+        return (
+          <Card
+            key={conversation.id}
+            className={`p-3 cursor-pointer hover:bg-gray-50 transition-colors ${
+              selectedConversationId === conversation.id ? 'ring-2 ring-blue-500' : ''
+            }`}
+            onClick={() => {
+              setSelectedConversationId(conversation.id);
+            }}
+            data-testid={`conversation-${conversation.id}`}
+          >
+            <div className="flex items-start justify-between">
+              <div className="flex-1 min-w-0">
+                {editingConversationId === conversation.id ? (
+                  <Input
+                    value={editingTitle}
+                    onChange={(e) => setEditingTitle(e.target.value)}
+                    onKeyDown={handleTitleKeyPress}
+                    onBlur={handleSaveTitleEdit}
+                    className="text-sm h-6 p-1 mb-1"
+                    autoFocus
+                    data-testid={`input-edit-title-${conversation.id}`}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                ) : (
+                  <h3 
+                    className="font-medium text-sm truncate cursor-pointer hover:text-blue-600"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleStartEditingTitle(conversation);
+                    }}
+                    data-testid={`title-${conversation.id}`}
+                  >
+                    {conversation.title}
+                  </h3>
+                )}
+                <p className="text-xs text-gray-500 mt-1">
+                  {format(new Date(conversation.updatedAt), 'MMM dd, HH:mm')}
+                </p>
+                <p className="text-xs text-blue-600 mt-1">{conversation.model}</p>
+              </div>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  deleteConversation.mutate(conversation.id);
+                }}
+                className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                data-testid={`button-delete-${conversation.id}`}
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            </div>
+          </Card>
+        );
+      })}
+    </>
+  );
+});
 
 export default function GeminiChatPage() {
   const [selectedConversationId, setSelectedConversationId] = useState<number | null>(null);
@@ -501,64 +589,18 @@ export default function GeminiChatPage() {
                   <p>No conversations yet</p>
                 </div>
               ) : (
-                conversations.map((conversation: GeminiConversation) => {
-                  return (
-                    <Card
-                    key={conversation.id}
-                    className={`p-3 cursor-pointer hover:bg-gray-50 transition-colors ${
-                      selectedConversationId === conversation.id ? 'ring-2 ring-blue-500' : ''
-                    }`}
-                    onClick={() => {
-                    setSelectedConversationId(conversation.id);
-                  }}
-                    data-testid={`conversation-${conversation.id}`}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 min-w-0">
-                        {editingConversationId === conversation.id ? (
-                          <Input
-                            value={editingTitle}
-                            onChange={(e) => setEditingTitle(e.target.value)}
-                            onKeyDown={handleTitleKeyPress}
-                            onBlur={handleSaveTitleEdit}
-                            className="text-sm h-6 p-1 mb-1"
-                            autoFocus
-                            data-testid={`input-edit-title-${conversation.id}`}
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                        ) : (
-                          <h3 
-                            className="font-medium text-sm truncate cursor-pointer hover:text-blue-600"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleStartEditingTitle(conversation);
-                            }}
-                            data-testid={`title-${conversation.id}`}
-                          >
-                            {conversation.title}
-                          </h3>
-                        )}
-                        <p className="text-xs text-gray-500 mt-1">
-                          {format(new Date(conversation.updatedAt), 'MMM dd, HH:mm')}
-                        </p>
-                        <p className="text-xs text-blue-600 mt-1">{conversation.model}</p>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteConversation.mutate(conversation.id);
-                        }}
-                        className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
-                        data-testid={`button-delete-${conversation.id}`}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                    </Card>
-                  );
-                })
+                <ConversationList
+                  conversations={conversations}
+                  selectedConversationId={selectedConversationId}
+                  setSelectedConversationId={setSelectedConversationId}
+                  editingConversationId={editingConversationId}
+                  editingTitle={editingTitle}
+                  setEditingTitle={setEditingTitle}
+                  handleTitleKeyPress={handleTitleKeyPress}
+                  handleSaveTitleEdit={handleSaveTitleEdit}
+                  handleStartEditingTitle={handleStartEditingTitle}
+                  deleteConversation={deleteConversation}
+                />
               )}
             </CardContent>
           </Card>
