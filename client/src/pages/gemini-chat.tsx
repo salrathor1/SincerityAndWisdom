@@ -502,7 +502,6 @@ export default function GeminiChatPage() {
                 </div>
               ) : (
                 conversations.map((conversation: GeminiConversation) => {
-                  console.log('Rendering conversation:', conversation.id, conversation.title);
                   return (
                     <Card
                     key={conversation.id}
@@ -510,7 +509,6 @@ export default function GeminiChatPage() {
                       selectedConversationId === conversation.id ? 'ring-2 ring-blue-500' : ''
                     }`}
                     onClick={() => {
-                    console.log('Selecting conversation:', conversation.id);
                     setSelectedConversationId(conversation.id);
                   }}
                     data-testid={`conversation-${conversation.id}`}
