@@ -166,18 +166,30 @@ export default function GeminiChatPage() {
     }
   }, [selectedConversation]);
 
-  const handleCreateConversation = () => {
-    if (!conversationTitle.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter a conversation title",
-        variant: "destructive",
-      });
-      return;
-    }
+  const generateConversationTitle = () => {
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric', 
+      hour: 'numeric', 
+      minute: '2-digit' 
+    });
+    return `Chat ${dateStr}`;
+  };
 
+  const handleCreateConversation = () => {
+    const title = conversationTitle.trim() || generateConversationTitle();
+    
     createConversation.mutate({
-      title: conversationTitle,
+      title,
+      model: selectedModel,
+      systemPrompt: systemPrompt || undefined,
+    });
+  };
+
+  const handleQuickCreateConversation = () => {
+    createConversation.mutate({
+      title: generateConversationTitle(),
       model: selectedModel,
       systemPrompt: systemPrompt || undefined,
     });
@@ -226,7 +238,8 @@ export default function GeminiChatPage() {
                 <CardTitle className="text-lg">Conversations</CardTitle>
                 <Button
                   size="sm"
-                  onClick={() => setIsCreatingNew(true)}
+                  onClick={handleQuickCreateConversation}
+                  disabled={createConversation.isPending}
                   data-testid="button-new-conversation"
                 >
                   <Plus className="h-4 w-4" />
@@ -454,8 +467,8 @@ export default function GeminiChatPage() {
                   Select a conversation from the sidebar or create a new one to get started.
                 </p>
                 <Button
-                  onClick={() => setIsCreatingNew(true)}
-                  disabled={isCreatingNew}
+                  onClick={handleQuickCreateConversation}
+                  disabled={createConversation.isPending}
                   data-testid="button-start-new-chat"
                 >
                   <Plus className="h-4 w-4 mr-2" />
