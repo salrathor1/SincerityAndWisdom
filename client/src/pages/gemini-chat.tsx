@@ -9,8 +9,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Bot, User, Send, Plus, Trash2, MessageSquare, Settings, Sparkles } from 'lucide-react';
+import { Bot, User, Send, Plus, Trash2, MessageSquare, Settings, Sparkles, Info } from 'lucide-react';
 import { format } from 'date-fns';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -43,6 +44,8 @@ export default function GeminiChatPage() {
   const [conversationTitle, setConversationTitle] = useState('');
   const [isCreatingNew, setIsCreatingNew] = useState(false);
   const [activeTab, setActiveTab] = useState('chat');
+  const [showApiDetails, setShowApiDetails] = useState(false);
+  const [lastApiRequest, setLastApiRequest] = useState<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -68,6 +71,15 @@ export default function GeminiChatPage() {
   // Create new conversation mutation
   const createConversation = useMutation<GeminiConversation, Error, { title: string; model: string; systemPrompt?: string }>({
     mutationFn: async (data: { title: string; model: string; systemPrompt?: string }) => {
+      // Capture API request details
+      const requestDetails = {
+        method: 'POST',
+        url: '/api/gemini/conversations',
+        body: data,
+        timestamp: new Date().toISOString(),
+      };
+      setLastApiRequest(requestDetails);
+      
       const response = await apiRequest('POST', '/api/gemini/conversations', data);
       return await response.json();
     },
@@ -111,6 +123,18 @@ export default function GeminiChatPage() {
   // Send message mutation
   const sendMessage = useMutation({
     mutationFn: async (data: { conversationId: number; message: string }) => {
+      // Capture API request details
+      const requestDetails = {
+        method: 'POST',
+        url: `/api/gemini/conversations/${data.conversationId}/message`,
+        body: {
+          message: data.message,
+        },
+        timestamp: new Date().toISOString(),
+        conversationId: data.conversationId
+      };
+      setLastApiRequest(requestDetails);
+      
       const response = await apiRequest('POST', `/api/gemini/conversations/${data.conversationId}/message`, {
         message: data.message,
       });
@@ -415,7 +439,50 @@ export default function GeminiChatPage() {
                     </div>
                   </div>
                   
-                  <div className="flex justify-end">
+                  <div className="flex justify-end gap-2">
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={!lastApiRequest}
+                          data-testid="button-api-details"
+                        >
+                          <Info className="h-4 w-4 mr-2" />
+                          API Details
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-2xl">
+                        <DialogHeader>
+                          <DialogTitle>Latest API Request Details</DialogTitle>
+                        </DialogHeader>
+                        {lastApiRequest && (
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <h4 className="font-medium text-sm text-gray-600">Method</h4>
+                                <p className="font-mono text-sm bg-gray-100 p-2 rounded">{lastApiRequest.method}</p>
+                              </div>
+                              <div>
+                                <h4 className="font-medium text-sm text-gray-600">URL</h4>
+                                <p className="font-mono text-sm bg-gray-100 p-2 rounded">{lastApiRequest.url}</p>
+                              </div>
+                            </div>
+                            <div>
+                              <h4 className="font-medium text-sm text-gray-600">Timestamp</h4>
+                              <p className="font-mono text-sm bg-gray-100 p-2 rounded">{lastApiRequest.timestamp}</p>
+                            </div>
+                            <div>
+                              <h4 className="font-medium text-sm text-gray-600">Request Body</h4>
+                              <pre className="font-mono text-sm bg-gray-100 p-3 rounded overflow-auto max-h-64">
+                                {JSON.stringify(lastApiRequest.body, null, 2)}
+                              </pre>
+                            </div>
+                          </div>
+                        )}
+                      </DialogContent>
+                    </Dialog>
+                    
                     <Button
                       onClick={handleUpdateSettings}
                       disabled={updateConversation.isPending}
