@@ -50,7 +50,6 @@ export default function GeminiChatPage() {
   // Fetch conversations
   const { data: conversations = [], isLoading: loadingConversations } = useQuery<GeminiConversation[]>({
     queryKey: ['/api/gemini/conversations'],
-    queryFn: () => apiRequest('GET', '/api/gemini/conversations'),
   });
 
   // Debug logging
@@ -63,14 +62,14 @@ export default function GeminiChatPage() {
   // Fetch selected conversation details
   const { data: selectedConversation, refetch: refetchConversation } = useQuery<GeminiConversation>({
     queryKey: ['/api/gemini/conversations', selectedConversationId],
-    queryFn: () => apiRequest('GET', `/api/gemini/conversations/${selectedConversationId}`),
     enabled: !!selectedConversationId,
   });
 
   // Create new conversation mutation
   const createConversation = useMutation<GeminiConversation, Error, { title: string; model: string; systemPrompt?: string }>({
     mutationFn: async (data: { title: string; model: string; systemPrompt?: string }) => {
-      return apiRequest('POST', '/api/gemini/conversations', data);
+      const response = await apiRequest('POST', '/api/gemini/conversations', data);
+      return await response.json();
     },
     onSuccess: async (newConversation) => {
       console.log('New conversation created:', newConversation);
@@ -113,9 +112,10 @@ export default function GeminiChatPage() {
   // Send message mutation
   const sendMessage = useMutation({
     mutationFn: async (data: { conversationId: number; message: string }) => {
-      return apiRequest('POST', `/api/gemini/conversations/${data.conversationId}/message`, {
+      const response = await apiRequest('POST', `/api/gemini/conversations/${data.conversationId}/message`, {
         message: data.message,
       });
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/gemini/conversations', selectedConversationId] });
@@ -134,7 +134,8 @@ export default function GeminiChatPage() {
   // Delete conversation mutation
   const deleteConversation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest('DELETE', `/api/gemini/conversations/${id}`);
+      const response = await apiRequest('DELETE', `/api/gemini/conversations/${id}`);
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/gemini/conversations'] });
@@ -159,10 +160,11 @@ export default function GeminiChatPage() {
   // Update conversation settings mutation
   const updateConversation = useMutation({
     mutationFn: async (data: { id: number; model?: string; systemPrompt?: string }) => {
-      return apiRequest('PUT', `/api/gemini/conversations/${data.id}`, {
+      const response = await apiRequest('PUT', `/api/gemini/conversations/${data.id}`, {
         model: data.model,
         systemPrompt: data.systemPrompt,
       });
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/gemini/conversations', selectedConversationId] });
