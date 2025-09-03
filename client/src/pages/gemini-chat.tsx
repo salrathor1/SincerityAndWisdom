@@ -12,6 +12,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Bot, User, Send, Plus, Trash2, MessageSquare, Settings, Sparkles, Info, Copy, Check } from 'lucide-react';
 import { format } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Sidebar } from '@/components/sidebar';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -332,15 +334,54 @@ export default function GeminiChatPage() {
     }
   };
 
-  return (
-    <div className="container mx-auto p-6 max-w-7xl">
-      <div className="flex items-center gap-2 mb-6">
-        <Sparkles className="h-6 w-6 text-purple-600" />
-        <h1 className="text-3xl font-bold">Gemini AI Chat</h1>
-        <Badge variant="secondary">Admin Only</Badge>
-      </div>
+  const { isAuthenticated, isLoading } = useAuth();
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-200px)]">
+  // Redirect to home if not authenticated
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      toast({
+        title: "Unauthorized",
+        description: "You are logged out. Logging in again...",
+        variant: "destructive",
+      });
+      setTimeout(() => {
+        window.location.href = "/api/login";
+      }, 500);
+      return;
+    }
+  }, [isAuthenticated, isLoading, toast]);
+
+  if (isLoading || !isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-pulse text-lg">Loading...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen flex bg-slate-50">
+      <Sidebar />
+      
+      <div className="flex-1 overflow-hidden">
+        {/* Header */}
+        <header className="bg-white border-b border-border px-8 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-semibold text-foreground flex items-center">
+                <Sparkles className="mr-3 text-purple-600" size={28} />
+                Gemini AI Chat
+                <Badge variant="secondary" className="ml-3">Admin Only</Badge>
+              </h2>
+              <p className="text-sm text-muted-foreground">Advanced AI conversation interface</p>
+            </div>
+          </div>
+        </header>
+
+        {/* Main Content */}
+        <main className="p-6 overflow-y-auto h-[calc(100vh-80px)]">
+          <div className="max-w-7xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-200px)]">
         {/* Sidebar - Conversations List */}
         <div className="lg:col-span-1">
           <Card className="sticky top-6 h-[calc(100vh-120px)]">
@@ -684,6 +725,9 @@ export default function GeminiChatPage() {
             </Card>
           )}
         </div>
+            </div>
+          </div>
+        </main>
       </div>
     </div>
   );
