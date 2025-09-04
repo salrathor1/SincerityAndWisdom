@@ -248,9 +248,12 @@ export default function ArabicTranscriptsPage() {
     retry: false,
   });
 
-  // Fetch videos for selected playlist
+  // Fetch videos for selected playlist (including hidden videos)
   const { data: playlistVideos = [] } = useQuery<any[]>({
     queryKey: ["/api/playlists", selectedPlaylistId, "videos"],
+    queryFn: () => 
+      fetch(`/api/playlists/${selectedPlaylistId}/videos?includeHidden=true`)
+        .then(res => res.json()),
     enabled: !!selectedPlaylistId,
     retry: false,
   });
